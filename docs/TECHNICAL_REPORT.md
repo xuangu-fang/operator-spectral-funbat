@@ -1,4 +1,178 @@
-# 方向 3 技术报告：Domain-kernel Bayesian Functional Tucker
+# 方向 3 技术报告：Operator-Spectral FunBaT
+
+> 独立仓库高级 POC 状态（2026-08-15）：青基申请书中的“算子联合功率谱 → 非负可分离谱 → 各 mode/rank GP 核 → functional tensor likelihood”已完整实现，并完成 3 seeds、400 steps、1%/2%/5% 观测率的五轮机制实验。结论是 **数学链条与预测机制成立，但从极稀疏数据恢复具体 kernel atom 并不可识别**。最合理的新方法不是放弃已有 kernel dictionary，而是将 operator-derived atoms 与通用 dictionary 组成带安全兜底的混合先验。
+
+## A. 当前最简故事
+
+普通 FunBaT 为每个连续 mode 的因子指定通用 Matérn/RBF GP。青基本子的关键提升是：如果物理场满足
+
+\[
+\mathcal L u=w,
+\]
+
+先由算子频率响应构造联合物理谱
+
+\[
+S_{\rm phys}(\omega_x,\omega_y,\omega_t)
+=|\widehat{\mathcal L}(\boldsymbol\omega)|^{-2}S_w(\boldsymbol\omega),
+\]
+
+再作非负低秩分离
+
+\[
+S_{\rm phys}\approx
+\sum_{q=1}^{Q}\lambda_q
+s_{xq}(\omega_x)s_{yq}(\omega_y)s_{tq}(\omega_t),
+\qquad \lambda_q,s_{dq}\geq0.
+\]
+
+每个非负一维谱通过 Wiener--Khinchin 对应一个合法 GP kernel。不同 tensor mode/rank 再选择不同 kernel：
+
+\[
+k_{dr}=\sum_q \pi_{drq}k_{dq},\qquad
+\pi_{drq}\geq0,\quad\sum_q\pi_{drq}=1.
+\]
+
+最后使用 functional CP likelihood：
+
+\[
+y(x,y,t)=\sum_{r=1}^{R}c_r
+f_{xr}(x)f_{yr}(y)f_{tr}(t)+\epsilon.
+\]
+
+当前先采用 CP 而不是 dense Tucker core，因为它能最直接地判断收益是否来自 mode-wise kernel，而不是额外 core 参数。若该机制在更真实数据上成立，再替换为小 Tucker core 并不困难。
+
+## B. 可审计实现
+
+实现文件为 `src/geoaware/operator_spectral_funbat.py`。
+
+1. `operator_joint_spectrum` 分别实现 anisotropic diffusion、damped wave 和 advection--diffusion 的 $|\widehat L|^{-2}S_w$。
+2. `nonnegative_cp_spectrum` 用非负 CP 将三维联合谱投影为一维 mode spectra。
+3. `fourier_features` 将每个非负单边谱 $s_q$ 转换成
+
+   \[
+   \phi_q(x)=\left[\sqrt{s_q(0)},
+   \sqrt{2s_q(k)}\cos 2\pi kx,
+   \sqrt{2s_q(k)}\sin 2\pi kx\right]_{k=1}^{K}.
+   \]
+
+   因而 $k_q(x,x')=\phi_q(x)^\top\phi_q(x')$ 必然半正定。混合特征使用 $\sqrt{\pi_{drq}}\phi_q$，所以任意学习到的 routing 也保持 PSD。
+4. 每个 Fourier coefficient 使用 mean-field Gaussian $q(a)=\mathcal N(\mu,\operatorname{diag}\sigma^2)$；训练目标是 Monte-Carlo Gaussian ELBO：
+
+   \[
+   \mathcal L=\mathbb E_q[\log p(y\mid f_x,f_y,f_t,c)]
+   -\sum_{d,r}\operatorname{KL}[q(a_{dr})\|\mathcal N(0,I)].
+   \]
+
+5. `global`、`per_mode`、`per_mode_rank`、`oracle`、`swap` 使用完全相同的 feature budget、rank、噪声、mask 和 400-step 预算。
+
+层级折中版本使用
+
+\[
+\pi_{dq}=\operatorname{softmax}(g_q+\Delta_{dq}),
+\qquad \Delta_{dq}\sim\mathcal N(0,0.35^2),
+\]
+
+并把前 100 steps 固定为 global warm start、后 300 steps 才释放 mode deviation。它是“简单字典与高级 routing”的最小桥，而不是额外网络。
+
+## C. 五轮实验
+
+### R1：不同 mode/rank 使用不同 kernel 的 planted sanity
+
+- 数据：$24^3$ 连续坐标张量，rank 2；smooth、Matérn、oscillatory、broadband 四种谱。
+- 真值的 $x/y/t$ mode 和两个 rank 使用不同 kernel。
+- 观测率：1%、2%、5%；噪声标准差 0.05；3 seeds。
+- 每个 seed 的非观测条目全部作为 test；没有 validation、early stopping 或 test 调参。
+
+| 方法 | 1% NRMSE | 2% NRMSE | 5% NRMSE |
+|---|---:|---:|---:|
+| global dictionary | 0.593±0.066 | 0.088±0.027 | 0.045±0.007 |
+| global + shrunk mode | 0.587±0.069 | 0.086±0.025 | 0.041±0.006 |
+| per-mode | 0.529±0.099 | 0.093±0.004 | 0.043±0.008 |
+| per-mode/rank | **0.482±0.143** | 0.072±0.013 | **0.033±0.005** |
+| oracle route | 0.302±0.192 | **0.047±0.005** | 0.033±0.001 |
+| swapped route | 0.811±0.152 | 0.897±0.203 | 0.604±0.023 |
+
+正信号：正确 mode/rank kernel 确实显著改变极稀疏样本效率；2% 的 oracle 比 global 误差降低约 47%，错误交换 route 明显失败。5% 时 learned per-mode/rank 已追平 oracle。
+
+### R2：预测有效不等于 kernel atom 可识别
+
+per-mode/rank 的 atom top-1 recovery 只有 22%--33%。即使 5% 预测误差达到 0.033，top-1 也没有恢复。这并不矛盾：四个 atom 共享有限 Fourier support，彼此高度相关；变分 coefficient 也可以补偿 prior amplitude。
+
+因此论文不得把 softmax argmax 解释成“发现了真实 PDE kernel”。本仓库额外报告 induced prior spectrum 的 cosine/L2，而不只报告 atom label。当前 learned spectrum cosine 约 0.60--0.77，oracle 为 1，swap 仅 0.382。**当前证据支持预测归纳偏置，不支持参数识别。**
+
+### R3：PDE 联合谱是否能低秩分离
+
+| operator | rank 1 error | rank 4 error | rank 6 error |
+|---|---:|---:|---:|
+| anisotropic diffusion | 0.0619 | **0.0028** | 0.0016 |
+| advection--diffusion | 0.2374 | **0.0325** | 0.0122 |
+| damped wave | 0.4044 | **0.1079** | 0.0974 |
+
+扩散和输运联合谱能用很低的非负 rank 逼近；波动谱的倾斜 dispersion surface 难以轴向分离，是明确负信号。这给方法适用范围一个可测量指标：operator spectrum separability，而不是泛称“任何 PDE 都适用”。
+
+### R4：operator atoms 与通用 kernel dictionary 的平衡
+
+在 operator-planted advection 数据、2% observation 下：
+
+| 方法 | NRMSE |
+|---|---:|
+| operator global | 0.0817±0.0137 |
+| generic per-mode/rank | 0.0706±0.0240 |
+| operator per-mode/rank | 0.0679±0.0166 |
+| operator + generic hybrid per-mode/rank | **0.0651±0.0180** |
+| hybrid hierarchical | 0.0747±0.0078 |
+
+hybrid 有小幅最好均值，但优势不足以单独构成论文证据。层级 shrinkage 方差较小，却没有超过自由 per-mode/rank；它是稳定 baseline，不是当前 winner。
+
+### R5：mismatch 与安全兜底
+
+只把 advection prior 换为 diffusion prior 时误差没有明显恶化。原因不是模型识别了正确 PDE，而是两个 finite-spectrum prior 具有相同 Fourier support，likelihood 可以通过 coefficient posterior 补偿谱幅值失配。
+
+更严格的 spectral-support mismatch 把 prior 中 $k\geq2$ 的频率删除：
+
+| 失配控制 | NRMSE |
+|---|---:|
+| wrong-support operator only | 0.631±0.141 |
+| wrong-support operator + generic dictionary | **0.068±0.018** |
+
+这给出了最有价值的折中：operator atoms 提供物理偏置，generic atoms 是 prior misspecification 的安全网。它比“从一个字典里任意选核”更有物理来源，也比完全相信解析算子核更稳健。
+
+## D. 当前推荐论文方法
+
+推荐暂定为 **Operator-Spectral FunBaT with a Robust Kernel Bank**：
+
+1. 用已知/近似 PDE 构造 joint operator spectrum；
+2. 用非负谱分离得到有物理解释且 PSD 的 mode atoms；
+3. 与少量 generic smooth/oscillatory atoms 合并；
+4. 用 ELBO 学习 per-mode 或 per-mode/rank 的 soft routing；
+5. 用 operator-centered Dirichlet/logit prior 约束 routing，但始终保留 generic escape mass；
+6. 把 prediction、induced covariance recovery、uncertainty calibration 分开报告。
+
+不建议当前声称“自动发现每个维度的真实 kernel”。更准确的主张是：**将不可分的算子联合谱投影为低秩、合法的 mode-wise GP prior，并在模型失配时通过通用谱库进行稳健修正。**
+
+## E. 与官方代码的借鉴边界
+
+- [FunBaT 官方实现](https://github.com/xuangu-fang/Functional-Bayesian-Tucker-Decomposition)提供逐 mode GP 因子和 functional CP/Tucker 的出发点。其 SDE/message passing 代码没有搬入本仓库；本 POC 使用有限 Fourier posterior，是为了先隔离 kernel-routing 机制。
+- [高频 GP 官方实现](https://github.com/xuangu-fang/Gaussian-Process-Slover-for-High-Freq-PDE)中的 `SE/Matern × cosine` 说明非负频谱混合可以表达高频/多尺度场。本仓库没有搬入其 JAX PDE residual solver，只复用了“正谱权重 + cosine features”的数学结构。
+- [LinPDE-GP](https://github.com/marvinpfoertner/linpde-gp)用于核对线性算子作用于 GP 的语义边界；本方法当前不是 probabilistic PDE solver，也没有把 PDE residual 放进 likelihood。
+
+## F. 结果与复现入口
+
+- 主实验：`experiments/run_operator_spectral_poc.py`
+- 层级桥：`experiments/run_hierarchical_bridge.py`
+- 支撑集失配：`experiments/run_support_mismatch_control.py`
+- 汇总/绘图：`experiments/analyze_operator_spectral_poc.py`
+- raw JSON、summary 和图：`results/advanced_poc_r1_r5/`
+- 单元测试：PSD、unit diagonal、非负谱分离、routing gradient、ELBO shape、hierarchical shrinkage。
+
+![routing phase](../results/advanced_poc_r1_r5/r1_r2_routing_phase.png)
+
+![operator bridge](../results/advanced_poc_r1_r5/r4_r5_operator_bridge.png)
+
+---
+
+以下保留拆库前的 domain-kernel dictionary 报告，作为 Stage-0 基线和历史证据。
 
 > 状态（2026-08-15 R4 更新）：**显式 finite-feature variational GP、四类几何 kernel dictionary 和 ELBO 学习的非负 kernel mixture 均已实现。** 方法友好的 matched/near-matched sanity 为强正信号；现有 elliptic 数据上，纯 GP mixture 有小幅收益，但 neural tensor + GP residual 的三 seed 收益不稳定。因此当前结论是“kernel selection 机制跑通，真实 PDE 泛化仍为条件 GO”，不是已经完成 Bayesian functional Tucker。
 
