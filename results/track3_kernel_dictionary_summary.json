@@ -1,0 +1,106 @@
+{
+  "experiment_id": "TRACK3-KERNEL-DICTIONARY-R4-THREE-SEED-SUMMARY",
+  "status": "VALIDATION_ONLY_CONDITIONAL_GO",
+  "aggregation": {
+    "seeds": [0, 1, 2],
+    "mean": "arithmetic mean over optimizer/mask seeds",
+    "std": "population standard deviation over optimizer/mask seeds (ddof=0)",
+    "raw_dictionary_results": "track3_kernel_dictionary_seed{0,1,2}.json",
+    "raw_neural_residual_results": "track3_kernel_mixture_neural_residual_seed{0,1,2}.json"
+  },
+  "protocol": {
+    "train_geometries": ["l_shape", "u_notch", "wavy_three_lobe"],
+    "validation_geometries": ["dumbbell", "slanted_channel"],
+    "test_geometries_read": [],
+    "frozen_test_geometry": "wavy_with_hole",
+    "train_resolution": 24,
+    "validation_resolution": 32,
+    "observation_ratio": 0.01,
+    "steps": 400,
+    "inference": "full-covariance finite-feature variational GP; mini-batch ELBO+SGD",
+    "checkpoint": "training-observed full negative ELBO only",
+    "validation_target_used_for_training_or_selection": false,
+    "kernel_families": ["matern_resolvent", "heat_diffusion", "geodesic_rbf", "euclidean_rbf"],
+    "mixture": "k=sum_q softmax(logit)_q k_q; logits learned jointly by ELBO"
+  },
+  "dictionary_summary": {
+    "matched": {
+      "matern_resolvent": {"nrmse_mean": 0.126180, "nrmse_std": 0.003434, "boundary_nrmse_mean": 0.136050, "boundary_nrmse_std": 0.005391},
+      "heat_diffusion": {"nrmse_mean": 0.074109, "nrmse_std": 0.001479, "boundary_nrmse_mean": 0.075673, "boundary_nrmse_std": 0.001154},
+      "geodesic_rbf": {"nrmse_mean": 0.425788, "nrmse_std": 0.039277, "boundary_nrmse_mean": 0.454077, "boundary_nrmse_std": 0.035969},
+      "euclidean_rbf": {"nrmse_mean": 0.367926, "nrmse_std": 0.027781, "boundary_nrmse_mean": 0.398315, "boundary_nrmse_std": 0.033278},
+      "learned_nonnegative_mixture": {
+        "nrmse_mean": 0.072515,
+        "nrmse_std": 0.004566,
+        "boundary_nrmse_mean": 0.073610,
+        "boundary_nrmse_std": 0.004614,
+        "weight_mean_std": {
+          "matern_resolvent": {"mean": 0.329324, "std": 0.004149},
+          "heat_diffusion": {"mean": 0.519193, "std": 0.008205},
+          "geodesic_rbf": {"mean": 0.069163, "std": 0.005095},
+          "euclidean_rbf": {"mean": 0.082320, "std": 0.003792}
+        }
+      }
+    },
+    "near_matched": {
+      "matern_resolvent": {"nrmse_mean": 0.240560, "nrmse_std": 0.007353, "boundary_nrmse_mean": 0.242357, "boundary_nrmse_std": 0.012587},
+      "heat_diffusion": {"nrmse_mean": 0.191418, "nrmse_std": 0.003919, "boundary_nrmse_mean": 0.179188, "boundary_nrmse_std": 0.004559},
+      "geodesic_rbf": {"nrmse_mean": 0.481905, "nrmse_std": 0.031656, "boundary_nrmse_mean": 0.495846, "boundary_nrmse_std": 0.026271},
+      "euclidean_rbf": {"nrmse_mean": 0.419239, "nrmse_std": 0.020238, "boundary_nrmse_mean": 0.437693, "boundary_nrmse_std": 0.022396},
+      "learned_nonnegative_mixture": {
+        "nrmse_mean": 0.143233,
+        "nrmse_std": 0.009647,
+        "boundary_nrmse_mean": 0.149420,
+        "boundary_nrmse_std": 0.015605,
+        "weight_mean_std": {
+          "matern_resolvent": {"mean": 0.337143, "std": 0.010763},
+          "heat_diffusion": {"mean": 0.476465, "std": 0.013185},
+          "geodesic_rbf": {"mean": 0.083377, "std": 0.003235},
+          "euclidean_rbf": {"mean": 0.103015, "std": 0.001279}
+        }
+      }
+    },
+    "elliptic": {
+      "matern_resolvent": {"nrmse_mean": 0.381538, "nrmse_std": 0.019064, "boundary_nrmse_mean": 0.402795, "boundary_nrmse_std": 0.026367},
+      "heat_diffusion": {"nrmse_mean": 0.347335, "nrmse_std": 0.016173, "boundary_nrmse_mean": 0.344441, "boundary_nrmse_std": 0.021100},
+      "geodesic_rbf": {"nrmse_mean": 0.377934, "nrmse_std": 0.010251, "boundary_nrmse_mean": 0.419710, "boundary_nrmse_std": 0.004306},
+      "euclidean_rbf": {"nrmse_mean": 0.325144, "nrmse_std": 0.002793, "boundary_nrmse_mean": 0.360475, "boundary_nrmse_std": 0.007639},
+      "learned_nonnegative_mixture": {
+        "nrmse_mean": 0.311555,
+        "nrmse_std": 0.005478,
+        "boundary_nrmse_mean": 0.336358,
+        "boundary_nrmse_std": 0.008313,
+        "weight_mean_std": {
+          "matern_resolvent": {"mean": 0.290911, "std": 0.004483},
+          "heat_diffusion": {"mean": 0.299983, "std": 0.015196},
+          "geodesic_rbf": {"mean": 0.239005, "std": 0.022798},
+          "euclidean_rbf": {"mean": 0.170102, "std": 0.020397}
+        }
+      }
+    }
+  },
+  "neural_residual_summary": {
+    "shared_neural_cp_mean_only": {"nrmse_mean": 0.207291, "nrmse_std": 0.010477, "boundary_nrmse_mean": 0.228606, "boundary_nrmse_std": 0.020153},
+    "shared_neural_cp_plus_matern_gp": {"nrmse_mean": 0.217424, "nrmse_std": 0.025616, "boundary_nrmse_mean": 0.246258, "boundary_nrmse_std": 0.027917},
+    "shared_neural_cp_plus_heat_gp": {"nrmse_mean": 0.198549, "nrmse_std": 0.026687, "boundary_nrmse_mean": 0.223191, "boundary_nrmse_std": 0.027153},
+    "shared_neural_cp_plus_learned_kernel_gp": {
+      "nrmse_mean": 0.205414,
+      "nrmse_std": 0.027498,
+      "boundary_nrmse_mean": 0.232914,
+      "boundary_nrmse_std": 0.033277,
+      "weight_mean_std": {
+        "matern_resolvent": {"mean": 0.331456, "std": 0.024502},
+        "heat_diffusion": {"mean": 0.291605, "std": 0.028257},
+        "geodesic_rbf": {"mean": 0.242214, "std": 0.041118},
+        "euclidean_rbf": {"mean": 0.134725, "std": 0.015034}
+      }
+    }
+  },
+  "decision": {
+    "overall": "CONDITIONAL_GO",
+    "positive": "ELBO recovers the heat-dominant family on the deliberately matched sanity and the learned mixture is strongest on the near-matched operator layer.",
+    "limitation": "On the mismatched elliptic simulator no single intrinsic kernel beats Euclidean RBF; the pure-GP mixture gain is modest, and neural-tensor residual gains are not stable across seeds.",
+    "next": "Increase geometry count and evaluate frozen-neural-mean new-domain few-shot adaptation before adding a more complex variational family.",
+    "claim_boundary": "The matched and near-matched layers validate mechanism only; they are not evidence of general superiority."
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "experiment": "TRACK3-VARIATIONAL-DOMAIN-GP-3-SEED-SUMMARY",
+  "seeds": [0, 1, 2],
+  "steps": 500,
+  "observation_ratio": 0.01,
+  "test_geometries_read": [],
+  "validation_geometry": "slanted_channel_r32",
+  "models": {
+    "intrinsic_finite_feature_variational_gp": {
+      "nrmse_mean": 0.3281636933,
+      "nrmse_sample_std": 0.0100981134,
+      "boundary_nrmse_mean": 0.3592583934,
+      "boundary_nrmse_sample_std": 0.0135079675,
+      "coverage_95_mean": 0.9758728147,
+      "coverage_95_sample_std": 0.0053437609,
+      "uncertainty_abs_error_correlation_mean": 0.5368336177,
+      "variational_exact_mean_rmse_normalized_mean": 0.0973684440,
+      "variational_exact_variance_relative_l1_mean": 0.0195986914
+    },
+    "euclidean_finite_feature_variational_gp": {
+      "nrmse_mean": 0.3216391007,
+      "nrmse_sample_std": 0.0148189533,
+      "boundary_nrmse_mean": 0.3171660304,
+      "boundary_nrmse_sample_std": 0.0126531124,
+      "coverage_95_mean": 0.9643881122,
+      "coverage_95_sample_std": 0.0037605733,
+      "uncertainty_abs_error_correlation_mean": 0.3198862042,
+      "variational_exact_mean_rmse_normalized_mean": 0.0917627364,
+      "variational_exact_variance_relative_l1_mean": 0.0393008118
+    },
+    "intrinsic_exact_finite_gp_control": {
+      "nrmse_mean": 0.3118848999,
+      "nrmse_sample_std": 0.0173460590,
+      "boundary_nrmse_mean": 0.3531608880,
+      "boundary_nrmse_sample_std": 0.0312981438,
+      "coverage_95_mean": 0.9736189047
+    },
+    "euclidean_exact_finite_gp_control": {
+      "nrmse_mean": 0.3127880196,
+      "nrmse_sample_std": 0.0238726933,
+      "boundary_nrmse_mean": 0.2975402574,
+      "boundary_nrmse_sample_std": 0.0160402737,
+      "coverage_95_mean": 0.9666932623
+    }
+  },
+  "decision": "Explicit ELBO GP succeeds as an inference POC, but the pure 35-feature GP is not point-prediction competitive and intrinsic superiority is not established. Continue with a neural mean plus domain-GP residual; do not claim a pure-GP win."
+}

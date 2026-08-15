@@ -1,0 +1,523 @@
+{
+  "experiment_id": "TRACK3-NEURAL-MEAN-GP-RESIDUAL-SEED0",
+  "status": "VALIDATION_ONLY_JOINT_ELBO_R3",
+  "protocol": {
+    "train_geometries": [
+      "l_shape",
+      "u_notch",
+      "wavy_three_lobe",
+      "dumbbell"
+    ],
+    "validation_geometries": [
+      "slanted_channel"
+    ],
+    "test_geometries_read": [],
+    "train_resolution": 24,
+    "validation_resolution": 32,
+    "observation_ratio": 0.01,
+    "validation_target_used_for_checkpointing": false,
+    "shared_mean_architecture_and_initialization": true,
+    "matched_masks_batch_sequence_steps_and_learning_rates": true,
+    "joint_residual_objective": "E_q Gaussian log likelihood - KL[q(u)||p(u)]"
+  },
+  "config": {
+    "data": "data/irregular_boundary_elliptic",
+    "split": "experiments/dataset_splits/irregular_boundary_wave_smoke.json",
+    "ratio": 0.01,
+    "seed": 0,
+    "steps": 500,
+    "batch_size": 512,
+    "checkpoint_every": 25,
+    "modes": 48,
+    "mean_learning_rate": 0.002,
+    "gp_learning_rate": 0.02,
+    "output": "papers/four_tracks/results/track3_neural_mean_gp_residual_seed0.json"
+  },
+  "observed_counts": {
+    "l_shape_r24": 203,
+    "u_notch_r24": 231,
+    "wavy_three_lobe_r24": 159,
+    "dumbbell_r24": 132
+  },
+  "trivial_baseline": {
+    "model": "train_observed_global_mean",
+    "inference": "no_fit_train_observations_only",
+    "case_metrics": [
+      {
+        "case": "slanted_channel_r32",
+        "nrmse": 0.9999880194664001,
+        "boundary_nrmse": 1.0011167526245117,
+        "predictive_nll": 1.253928303718567,
+        "coverage_90": 0.9346569180488586,
+        "coverage_95": 0.9512539505958557,
+        "mean_predictive_std": 0.840796947479248,
+        "uncertainty_abs_error_correlation": 0.0
+      }
+    ],
+    "validation_nrmse": 0.9999880194664001,
+    "validation_boundary_nrmse": 1.0011167526245117,
+    "validation_predictive_nll": 1.253928303718567,
+    "validation_coverage_90": 0.9346569180488586,
+    "validation_coverage_95": 0.9512539505958557,
+    "validation_mean_predictive_std": 0.840796947479248,
+    "validation_uncertainty_abs_error_correlation": 0.0
+  },
+  "rows": [
+    {
+      "model": "shared_neural_mean_only",
+      "mean_architecture": "GeometryConditionedNeuralFunctionalCP_rank24_hidden64",
+      "residual_kernel": null,
+      "inference": "Gaussian_neural_mean_maximum_likelihood_SGD",
+      "observed_entries": 725,
+      "finite_feature_dimension": 0,
+      "best_negative_objective_per_observation": -0.470437616109848,
+      "learned_noise_std_normalized": 0.19393722712993622,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.18491841852664948,
+          "boundary_nrmse": 0.20417070388793945,
+          "predictive_nll": -0.4324663579463959,
+          "coverage_90": 0.9210104942321777,
+          "coverage_95": 0.9484263062477112,
+          "mean_predictive_std": 0.16306184232234955,
+          "uncertainty_abs_error_correlation": 0.0
+        }
+      ],
+      "optimization_trace": [
+        {
+          "step": 25,
+          "negative_objective_per_observation": 3.214205741882324,
+          "kl": 0.0,
+          "noise_std_normalized": 0.23223876953125
+        },
+        {
+          "step": 50,
+          "negative_objective_per_observation": 1.2347164154052734,
+          "kl": 0.0,
+          "noise_std_normalized": 0.27950260043144226
+        },
+        {
+          "step": 75,
+          "negative_objective_per_observation": 0.4459867477416992,
+          "kl": 0.0,
+          "noise_std_normalized": 0.30023881793022156
+        },
+        {
+          "step": 100,
+          "negative_objective_per_observation": 0.23337335884571075,
+          "kl": 0.0,
+          "noise_std_normalized": 0.3059326410293579
+        },
+        {
+          "step": 125,
+          "negative_objective_per_observation": 0.18790560960769653,
+          "kl": 0.0,
+          "noise_std_normalized": 0.3059631884098053
+        },
+        {
+          "step": 150,
+          "negative_objective_per_observation": 0.12749256193637848,
+          "kl": 0.0,
+          "noise_std_normalized": 0.30414697527885437
+        },
+        {
+          "step": 175,
+          "negative_objective_per_observation": 0.1419416218996048,
+          "kl": 0.0,
+          "noise_std_normalized": 0.30088385939598083
+        },
+        {
+          "step": 200,
+          "negative_objective_per_observation": 0.051419664174318314,
+          "kl": 0.0,
+          "noise_std_normalized": 0.29702767729759216
+        },
+        {
+          "step": 225,
+          "negative_objective_per_observation": 0.03533069044351578,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2917957305908203
+        },
+        {
+          "step": 250,
+          "negative_objective_per_observation": -0.05563928186893463,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2847619354724884
+        },
+        {
+          "step": 275,
+          "negative_objective_per_observation": -0.089997299015522,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2768784463405609
+        },
+        {
+          "step": 300,
+          "negative_objective_per_observation": -0.12008479982614517,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2683407664299011
+        },
+        {
+          "step": 325,
+          "negative_objective_per_observation": -0.14512953162193298,
+          "kl": 0.0,
+          "noise_std_normalized": 0.25982576608657837
+        },
+        {
+          "step": 350,
+          "negative_objective_per_observation": -0.18127037584781647,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2511468231678009
+        },
+        {
+          "step": 375,
+          "negative_objective_per_observation": -0.21962586045265198,
+          "kl": 0.0,
+          "noise_std_normalized": 0.24255825579166412
+        },
+        {
+          "step": 400,
+          "negative_objective_per_observation": -0.2983158230781555,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2332848161458969
+        },
+        {
+          "step": 425,
+          "negative_objective_per_observation": -0.34657496213912964,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2237636297941208
+        },
+        {
+          "step": 450,
+          "negative_objective_per_observation": -0.38154786825180054,
+          "kl": 0.0,
+          "noise_std_normalized": 0.2138102799654007
+        },
+        {
+          "step": 475,
+          "negative_objective_per_observation": -0.4408916234970093,
+          "kl": 0.0,
+          "noise_std_normalized": 0.20378172397613525
+        },
+        {
+          "step": 500,
+          "negative_objective_per_observation": -0.470437616109848,
+          "kl": 0.0,
+          "noise_std_normalized": 0.19393722712993622
+        }
+      ],
+      "elapsed_seconds": 21.54338211659342,
+      "validation_nrmse": 0.18491841852664948,
+      "validation_boundary_nrmse": 0.20417070388793945,
+      "validation_predictive_nll": -0.4324663579463959,
+      "validation_coverage_90": 0.9210104942321777,
+      "validation_coverage_95": 0.9484263062477112,
+      "validation_mean_predictive_std": 0.16306184232234955,
+      "validation_uncertainty_abs_error_correlation": 0.0
+    },
+    {
+      "model": "shared_neural_mean_plus_intrinsic_gp",
+      "mean_architecture": "GeometryConditionedNeuralFunctionalCP_rank24_hidden64",
+      "residual_kernel": "intrinsic",
+      "inference": "joint_neural_mean_and_full_cov_q(u)_mini_batch_ELBO_SGD",
+      "observed_entries": 725,
+      "finite_feature_dimension": 35,
+      "best_negative_objective_per_observation": -0.7077021598815918,
+      "learned_noise_std_normalized": 0.1385134607553482,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.18251332640647888,
+          "boundary_nrmse": 0.19732126593589783,
+          "predictive_nll": -0.49900680780410767,
+          "coverage_90": 0.8910744786262512,
+          "coverage_95": 0.921594500541687,
+          "mean_predictive_std": 0.12239993363618851,
+          "uncertainty_abs_error_correlation": 0.4912482525821162
+        }
+      ],
+      "optimization_trace": [
+        {
+          "step": 25,
+          "negative_objective_per_observation": 1.587295651435852,
+          "kl": 7.128683090209961,
+          "noise_std_normalized": 0.2315073013305664
+        },
+        {
+          "step": 50,
+          "negative_objective_per_observation": 0.49330756068229675,
+          "kl": 8.700728416442871,
+          "noise_std_normalized": 0.27299049496650696
+        },
+        {
+          "step": 75,
+          "negative_objective_per_observation": 0.299702912569046,
+          "kl": 9.703275680541992,
+          "noise_std_normalized": 0.2877938449382782
+        },
+        {
+          "step": 100,
+          "negative_objective_per_observation": 0.19799773395061493,
+          "kl": 10.529854774475098,
+          "noise_std_normalized": 0.29246777296066284
+        },
+        {
+          "step": 125,
+          "negative_objective_per_observation": 0.11767296493053436,
+          "kl": 11.323978424072266,
+          "noise_std_normalized": 0.29216551780700684
+        },
+        {
+          "step": 150,
+          "negative_objective_per_observation": 0.06401608884334564,
+          "kl": 12.011456489562988,
+          "noise_std_normalized": 0.2878180146217346
+        },
+        {
+          "step": 175,
+          "negative_objective_per_observation": 0.009319952689111233,
+          "kl": 12.76180362701416,
+          "noise_std_normalized": 0.2803252041339874
+        },
+        {
+          "step": 200,
+          "negative_objective_per_observation": -0.027648095041513443,
+          "kl": 13.467620849609375,
+          "noise_std_normalized": 0.2717665135860443
+        },
+        {
+          "step": 225,
+          "negative_objective_per_observation": -0.049521736800670624,
+          "kl": 14.146467208862305,
+          "noise_std_normalized": 0.26255276799201965
+        },
+        {
+          "step": 250,
+          "negative_objective_per_observation": -0.10557549446821213,
+          "kl": 14.772120475769043,
+          "noise_std_normalized": 0.2525060474872589
+        },
+        {
+          "step": 275,
+          "negative_objective_per_observation": -0.14846615493297577,
+          "kl": 15.36259651184082,
+          "noise_std_normalized": 0.24262863397598267
+        },
+        {
+          "step": 300,
+          "negative_objective_per_observation": -0.1910138577222824,
+          "kl": 15.958799362182617,
+          "noise_std_normalized": 0.23193415999412537
+        },
+        {
+          "step": 325,
+          "negative_objective_per_observation": -0.2671852111816406,
+          "kl": 16.47132682800293,
+          "noise_std_normalized": 0.22052143514156342
+        },
+        {
+          "step": 350,
+          "negative_objective_per_observation": -0.3469041883945465,
+          "kl": 17.002704620361328,
+          "noise_std_normalized": 0.2075427621603012
+        },
+        {
+          "step": 375,
+          "negative_objective_per_observation": -0.40734604001045227,
+          "kl": 17.709835052490234,
+          "noise_std_normalized": 0.1944582611322403
+        },
+        {
+          "step": 400,
+          "negative_objective_per_observation": -0.4481368958950043,
+          "kl": 18.373809814453125,
+          "noise_std_normalized": 0.18230323493480682
+        },
+        {
+          "step": 425,
+          "negative_objective_per_observation": -0.5220575928688049,
+          "kl": 19.18191909790039,
+          "noise_std_normalized": 0.17158177495002747
+        },
+        {
+          "step": 450,
+          "negative_objective_per_observation": -0.5802484750747681,
+          "kl": 20.000450134277344,
+          "noise_std_normalized": 0.16023433208465576
+        },
+        {
+          "step": 475,
+          "negative_objective_per_observation": -0.6485539674758911,
+          "kl": 20.90203857421875,
+          "noise_std_normalized": 0.1494630128145218
+        },
+        {
+          "step": 500,
+          "negative_objective_per_observation": -0.7077021598815918,
+          "kl": 21.78030776977539,
+          "noise_std_normalized": 0.1385134607553482
+        }
+      ],
+      "elapsed_seconds": 22.939946542028338,
+      "validation_nrmse": 0.18251332640647888,
+      "validation_boundary_nrmse": 0.19732126593589783,
+      "validation_predictive_nll": -0.49900680780410767,
+      "validation_coverage_90": 0.8910744786262512,
+      "validation_coverage_95": 0.921594500541687,
+      "validation_mean_predictive_std": 0.12239993363618851,
+      "validation_uncertainty_abs_error_correlation": 0.4912482525821162
+    },
+    {
+      "model": "shared_neural_mean_plus_euclidean_gp",
+      "mean_architecture": "GeometryConditionedNeuralFunctionalCP_rank24_hidden64",
+      "residual_kernel": "euclidean",
+      "inference": "joint_neural_mean_and_full_cov_q(u)_mini_batch_ELBO_SGD",
+      "observed_entries": 725,
+      "finite_feature_dimension": 35,
+      "best_negative_objective_per_observation": -0.5126692056655884,
+      "learned_noise_std_normalized": 0.16362988948822021,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.23898357152938843,
+          "boundary_nrmse": 0.2450714409351349,
+          "predictive_nll": -0.22330494225025177,
+          "coverage_90": 0.8704511523246765,
+          "coverage_95": 0.9052740931510925,
+          "mean_predictive_std": 0.14486059546470642,
+          "uncertainty_abs_error_correlation": 0.5266369333800606
+        }
+      ],
+      "optimization_trace": [
+        {
+          "step": 25,
+          "negative_objective_per_observation": 1.8471370935440063,
+          "kl": 7.96917724609375,
+          "noise_std_normalized": 0.23265224695205688
+        },
+        {
+          "step": 50,
+          "negative_objective_per_observation": 0.5180512070655823,
+          "kl": 10.04627799987793,
+          "noise_std_normalized": 0.2772987484931946
+        },
+        {
+          "step": 75,
+          "negative_objective_per_observation": 0.3396296501159668,
+          "kl": 11.446155548095703,
+          "noise_std_normalized": 0.2927705943584442
+        },
+        {
+          "step": 100,
+          "negative_objective_per_observation": 0.2522914409637451,
+          "kl": 12.470090866088867,
+          "noise_std_normalized": 0.29809895157814026
+        },
+        {
+          "step": 125,
+          "negative_objective_per_observation": 0.18993152678012848,
+          "kl": 13.412150382995605,
+          "noise_std_normalized": 0.2991187870502472
+        },
+        {
+          "step": 150,
+          "negative_objective_per_observation": 0.14668169617652893,
+          "kl": 14.25439739227295,
+          "noise_std_normalized": 0.29685378074645996
+        },
+        {
+          "step": 175,
+          "negative_objective_per_observation": 0.09394145011901855,
+          "kl": 15.067609786987305,
+          "noise_std_normalized": 0.29167449474334717
+        },
+        {
+          "step": 200,
+          "negative_objective_per_observation": 0.040863342583179474,
+          "kl": 15.875962257385254,
+          "noise_std_normalized": 0.28524425625801086
+        },
+        {
+          "step": 225,
+          "negative_objective_per_observation": -0.0029531598556786776,
+          "kl": 16.654094696044922,
+          "noise_std_normalized": 0.2767326831817627
+        },
+        {
+          "step": 250,
+          "negative_objective_per_observation": -0.058154236525297165,
+          "kl": 17.462743759155273,
+          "noise_std_normalized": 0.2665291130542755
+        },
+        {
+          "step": 275,
+          "negative_objective_per_observation": -0.09604312479496002,
+          "kl": 18.25959014892578,
+          "noise_std_normalized": 0.25588634610176086
+        },
+        {
+          "step": 300,
+          "negative_objective_per_observation": -0.11873775720596313,
+          "kl": 19.144329071044922,
+          "noise_std_normalized": 0.24499094486236572
+        },
+        {
+          "step": 325,
+          "negative_objective_per_observation": -0.16662028431892395,
+          "kl": 19.974281311035156,
+          "noise_std_normalized": 0.23496456444263458
+        },
+        {
+          "step": 350,
+          "negative_objective_per_observation": -0.18857964873313904,
+          "kl": 20.824745178222656,
+          "noise_std_normalized": 0.22548432648181915
+        },
+        {
+          "step": 375,
+          "negative_objective_per_observation": -0.23121818900108337,
+          "kl": 21.800769805908203,
+          "noise_std_normalized": 0.21677641570568085
+        },
+        {
+          "step": 400,
+          "negative_objective_per_observation": -0.2814755141735077,
+          "kl": 22.58209228515625,
+          "noise_std_normalized": 0.2068473994731903
+        },
+        {
+          "step": 425,
+          "negative_objective_per_observation": -0.2915817201137543,
+          "kl": 23.538135528564453,
+          "noise_std_normalized": 0.19747032225131989
+        },
+        {
+          "step": 450,
+          "negative_objective_per_observation": -0.42318466305732727,
+          "kl": 24.43943214416504,
+          "noise_std_normalized": 0.18734093010425568
+        },
+        {
+          "step": 475,
+          "negative_objective_per_observation": -0.47253748774528503,
+          "kl": 25.30146598815918,
+          "noise_std_normalized": 0.17536042630672455
+        },
+        {
+          "step": 500,
+          "negative_objective_per_observation": -0.5126692056655884,
+          "kl": 26.332592010498047,
+          "noise_std_normalized": 0.16362988948822021
+        }
+      ],
+      "elapsed_seconds": 22.305462033953518,
+      "validation_nrmse": 0.23898357152938843,
+      "validation_boundary_nrmse": 0.2450714409351349,
+      "validation_predictive_nll": -0.22330494225025177,
+      "validation_coverage_90": 0.8704511523246765,
+      "validation_coverage_95": 0.9052740931510925,
+      "validation_mean_predictive_std": 0.14486059546470642,
+      "validation_uncertainty_abs_error_correlation": 0.5266369333800606
+    }
+  ]
+}

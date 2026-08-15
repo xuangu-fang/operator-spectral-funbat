@@ -1,0 +1,1727 @@
+{
+  "experiment_id": "TRACK3-KERNEL-DICTIONARY-SEED1",
+  "status": "VALIDATION_ONLY_THREE_LAYER_KERNEL_AUDIT",
+  "protocol": {
+    "train_geometries": [
+      "l_shape",
+      "u_notch",
+      "wavy_three_lobe"
+    ],
+    "validation_geometries": [
+      "dumbbell",
+      "slanted_channel"
+    ],
+    "test_geometries_read": [],
+    "observation_ratio": 0.01,
+    "optimization": "mini-batch ELBO+SGD, train-observed checkpoint only",
+    "validation_target_used_for_checkpointing": false,
+    "matched_layer": "shared heat finite-GP sample plus fixed 3% noise; method-friendly sanity only",
+    "near_matched_layer": "perturbed diffusion response plus 0.2 nonlinear resolvent component and fixed 5% noise",
+    "mismatched_layer": "existing screened elliptic PDE simulator",
+    "kernel_mixture": "k=sum_q softmax(logit)_q k_q; logits learned jointly by ELBO"
+  },
+  "config": {
+    "data": "data/irregular_boundary_elliptic",
+    "split": "experiments/dataset_splits/track3_kernel_dictionary.json",
+    "layers": [
+      "matched",
+      "near_matched",
+      "elliptic"
+    ],
+    "ratio": 0.01,
+    "seed": 1,
+    "steps": 400,
+    "batch_size": 256,
+    "checkpoint_every": 50,
+    "modes": 48,
+    "output": "papers/four_tracks/results/track3_kernel_dictionary_seed1.json"
+  },
+  "layers": {
+    "matched": [
+      {
+        "model": "matern_resolvent",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": -0.5077799558639526,
+        "learned_noise_std_normalized": 0.17023865878582,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 0.5380113124847412,
+            "kl": 9.478019714355469,
+            "noise_std_normalized": 0.2857659161090851,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.19029729068279266,
+            "kl": 11.85161304473877,
+            "noise_std_normalized": 0.302663117647171,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.04495750740170479,
+            "kl": 14.148531913757324,
+            "noise_std_normalized": 0.29363399744033813,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": -0.08313163369894028,
+            "kl": 16.458559036254883,
+            "noise_std_normalized": 0.2733163833618164,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": -0.19995364546775818,
+            "kl": 18.737945556640625,
+            "noise_std_normalized": 0.24655091762542725,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": -0.31209900975227356,
+            "kl": 21.11023712158203,
+            "noise_std_normalized": 0.21941591799259186,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": -0.4152500331401825,
+            "kl": 23.278179168701172,
+            "noise_std_normalized": 0.19337940216064453,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": -0.5077799558639526,
+            "kl": 25.515705108642578,
+            "noise_std_normalized": 0.17023865878582,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.11794978380203247,
+            "boundary_nrmse": 0.12052738666534424,
+            "predictive_nll": -1.246456265449524,
+            "coverage_90": 0.9917953610420227,
+            "coverage_95": 0.9962998628616333,
+            "mean_predictive_std": 0.0968928337097168,
+            "uncertainty_abs_error_correlation": 0.48650629545694984
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.12576249241828918,
+            "boundary_nrmse": 0.13749627768993378,
+            "predictive_nll": -1.2337406873703003,
+            "coverage_90": 0.9840483665466309,
+            "coverage_95": 0.9925927519798279,
+            "mean_predictive_std": 0.09703230857849121,
+            "uncertainty_abs_error_correlation": 0.5704006481730441
+          }
+        ],
+        "elapsed_seconds": 1.8278026971966028,
+        "validation_nrmse": 0.12185613811016083,
+        "validation_boundary_nrmse": 0.129011832177639,
+        "validation_predictive_nll": -1.240098476409912,
+        "validation_coverage_90": 0.9879218637943268,
+        "validation_coverage_95": 0.9944463074207306,
+        "validation_mean_predictive_std": 0.096962571144104,
+        "validation_uncertainty_abs_error_correlation": 0.528453471814997
+      },
+      {
+        "model": "heat_diffusion",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": -0.8709399104118347,
+        "learned_noise_std_normalized": 0.1277192234992981,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 0.30816027522087097,
+            "kl": 10.246761322021484,
+            "noise_std_normalized": 0.27656030654907227,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": -0.007737359032034874,
+            "kl": 12.509249687194824,
+            "noise_std_normalized": 0.28107336163520813,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": -0.15567417442798615,
+            "kl": 15.001595497131348,
+            "noise_std_normalized": 0.26294997334480286,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": -0.29306238889694214,
+            "kl": 17.389780044555664,
+            "noise_std_normalized": 0.23674319684505463,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": -0.43280693888664246,
+            "kl": 19.673866271972656,
+            "noise_std_normalized": 0.20712977647781372,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": -0.5797945857048035,
+            "kl": 22.245187759399414,
+            "noise_std_normalized": 0.17832785844802856,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": -0.7258197069168091,
+            "kl": 24.924072265625,
+            "noise_std_normalized": 0.1514650136232376,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": -0.8709399104118347,
+            "kl": 27.876062393188477,
+            "noise_std_normalized": 0.1277192234992981,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.06958609819412231,
+            "boundary_nrmse": 0.06838935613632202,
+            "predictive_nll": -1.5729330778121948,
+            "coverage_90": 0.9990347623825073,
+            "coverage_95": 0.9998391270637512,
+            "mean_predictive_std": 0.07544679194688797,
+            "uncertainty_abs_error_correlation": 0.49515256862203283
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.08239416033029556,
+            "boundary_nrmse": 0.08564577996730804,
+            "predictive_nll": -1.5350521802902222,
+            "coverage_90": 0.9955740571022034,
+            "coverage_95": 0.999262273311615,
+            "mean_predictive_std": 0.07599532604217529,
+            "uncertainty_abs_error_correlation": 0.5330595857763074
+          }
+        ],
+        "elapsed_seconds": 1.6153663638979197,
+        "validation_nrmse": 0.07599012926220894,
+        "validation_boundary_nrmse": 0.07701756805181503,
+        "validation_predictive_nll": -1.5539926290512085,
+        "validation_coverage_90": 0.9973044097423553,
+        "validation_coverage_95": 0.9995507001876831,
+        "validation_mean_predictive_std": 0.07572105899453163,
+        "validation_uncertainty_abs_error_correlation": 0.5141060771991701
+      },
+      {
+        "model": "geodesic_rbf",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.6860191226005554,
+        "learned_noise_std_normalized": 0.4728192389011383,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.6727498769760132,
+            "kl": 9.128837585449219,
+            "noise_std_normalized": 0.32182759046554565,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.9786267876625061,
+            "kl": 11.887852668762207,
+            "noise_std_normalized": 0.39775270223617554,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.8252095580101013,
+            "kl": 13.976401329040527,
+            "noise_std_normalized": 0.43723276257514954,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.7637544870376587,
+            "kl": 15.756877899169922,
+            "noise_std_normalized": 0.4605216383934021,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.732668936252594,
+            "kl": 17.139442443847656,
+            "noise_std_normalized": 0.4701922535896301,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.7111362814903259,
+            "kl": 18.587814331054688,
+            "noise_std_normalized": 0.47696414589881897,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.6965525150299072,
+            "kl": 19.821781158447266,
+            "noise_std_normalized": 0.4747372269630432,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.6860191226005554,
+            "kl": 21.025808334350586,
+            "noise_std_normalized": 0.4728192389011383,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.3703842759132385,
+            "boundary_nrmse": 0.4087492823600769,
+            "predictive_nll": -0.18315795063972473,
+            "coverage_90": 0.9785633683204651,
+            "coverage_95": 0.9868484735488892,
+            "mean_predictive_std": 0.2607199251651764,
+            "uncertainty_abs_error_correlation": 0.2115800032708778
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.3845353126525879,
+            "boundary_nrmse": 0.39860689640045166,
+            "predictive_nll": -0.17513889074325562,
+            "coverage_90": 0.9724304676055908,
+            "coverage_95": 0.9839869141578674,
+            "mean_predictive_std": 0.26093876361846924,
+            "uncertainty_abs_error_correlation": 0.3448147777721486
+          }
+        ],
+        "elapsed_seconds": 1.6519123618490994,
+        "validation_nrmse": 0.3774597942829132,
+        "validation_boundary_nrmse": 0.4036780893802643,
+        "validation_predictive_nll": -0.17914842069149017,
+        "validation_coverage_90": 0.975496917963028,
+        "validation_coverage_95": 0.9854176938533783,
+        "validation_mean_predictive_std": 0.2608293443918228,
+        "validation_uncertainty_abs_error_correlation": 0.2781973905215132
+      },
+      {
+        "model": "euclidean_rbf",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.5885677337646484,
+        "learned_noise_std_normalized": 0.42902061343193054,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.4350073337554932,
+            "kl": 9.580829620361328,
+            "noise_std_normalized": 0.3156391382217407,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.8271800875663757,
+            "kl": 12.497771263122559,
+            "noise_std_normalized": 0.37875595688819885,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.7016482949256897,
+            "kl": 14.694207191467285,
+            "noise_std_normalized": 0.408440500497818,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.6527820825576782,
+            "kl": 16.506427764892578,
+            "noise_std_normalized": 0.42471766471862793,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.6278228163719177,
+            "kl": 17.840234756469727,
+            "noise_std_normalized": 0.4290812015533447,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.6097293496131897,
+            "kl": 19.2027530670166,
+            "noise_std_normalized": 0.4342144727706909,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.5976210236549377,
+            "kl": 20.29204559326172,
+            "noise_std_normalized": 0.4311700165271759,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.5885677337646484,
+            "kl": 21.35440444946289,
+            "noise_std_normalized": 0.42902061343193054,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.31843236088752747,
+            "boundary_nrmse": 0.34374451637268066,
+            "predictive_nll": -0.3077253997325897,
+            "coverage_90": 0.9837114214897156,
+            "coverage_95": 0.9885376691818237,
+            "mean_predictive_std": 0.23685282468795776,
+            "uncertainty_abs_error_correlation": 0.25751006271505744
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.33903083205223083,
+            "boundary_nrmse": 0.3600234091281891,
+            "predictive_nll": -0.29415714740753174,
+            "coverage_90": 0.973168134689331,
+            "coverage_95": 0.9852777719497681,
+            "mean_predictive_std": 0.23710469901561737,
+            "uncertainty_abs_error_correlation": 0.3752541856249083
+          }
+        ],
+        "elapsed_seconds": 1.6128375492990017,
+        "validation_nrmse": 0.32873159646987915,
+        "validation_boundary_nrmse": 0.3518839627504349,
+        "validation_predictive_nll": -0.30094127357006073,
+        "validation_coverage_90": 0.9784397780895233,
+        "validation_coverage_95": 0.9869077205657959,
+        "validation_mean_predictive_std": 0.23697876185178757,
+        "validation_uncertainty_abs_error_correlation": 0.3163821241699829
+      },
+      {
+        "model": "learned_nonnegative_mixture",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 100,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": -0.8935138583183289,
+        "learned_noise_std_normalized": 0.11092781275510788,
+        "learned_mixture_weights": {
+          "matern_resolvent": 0.3347089886665344,
+          "heat_diffusion": 0.5123787522315979,
+          "geodesic_rbf": 0.06789055466651917,
+          "euclidean_rbf": 0.08502171188592911
+        },
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 0.04202573373913765,
+            "kl": 21.663471221923828,
+            "noise_std_normalized": 0.2603234052658081,
+            "mixture_weights": {
+              "matern_resolvent": 0.31311044096946716,
+              "heat_diffusion": 0.3363325893878937,
+              "geodesic_rbf": 0.18057747185230255,
+              "euclidean_rbf": 0.16997948288917542
+            }
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": -0.16445079445838928,
+            "kl": 26.645267486572266,
+            "noise_std_normalized": 0.25341933965682983,
+            "mixture_weights": {
+              "matern_resolvent": 0.3251926600933075,
+              "heat_diffusion": 0.365447998046875,
+              "geodesic_rbf": 0.15657690167427063,
+              "euclidean_rbf": 0.15278242528438568
+            }
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": -0.2978878319263458,
+            "kl": 30.905166625976562,
+            "noise_std_normalized": 0.22998301684856415,
+            "mixture_weights": {
+              "matern_resolvent": 0.3302803337574005,
+              "heat_diffusion": 0.38581809401512146,
+              "geodesic_rbf": 0.14258022606372833,
+              "euclidean_rbf": 0.1413213014602661
+            }
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": -0.4293636083602905,
+            "kl": 35.55546569824219,
+            "noise_std_normalized": 0.20201966166496277,
+            "mixture_weights": {
+              "matern_resolvent": 0.33258122205734253,
+              "heat_diffusion": 0.40712958574295044,
+              "geodesic_rbf": 0.12951773405075073,
+              "euclidean_rbf": 0.13077141344547272
+            }
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": -0.5713161826133728,
+            "kl": 40.05316925048828,
+            "noise_std_normalized": 0.17323677241802216,
+            "mixture_weights": {
+              "matern_resolvent": 0.3318822681903839,
+              "heat_diffusion": 0.43212756514549255,
+              "geodesic_rbf": 0.11575227230787277,
+              "euclidean_rbf": 0.12023788690567017
+            }
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": -0.6966126561164856,
+            "kl": 45.41603088378906,
+            "noise_std_normalized": 0.14783009886741638,
+            "mixture_weights": {
+              "matern_resolvent": 0.3294874429702759,
+              "heat_diffusion": 0.4607137143611908,
+              "geodesic_rbf": 0.10084477066993713,
+              "euclidean_rbf": 0.10895400494337082
+            }
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": -0.7187870740890503,
+            "kl": 50.59708786010742,
+            "noise_std_normalized": 0.12720993161201477,
+            "mixture_weights": {
+              "matern_resolvent": 0.32937145233154297,
+              "heat_diffusion": 0.4889489710330963,
+              "geodesic_rbf": 0.08448769897222519,
+              "euclidean_rbf": 0.09719182550907135
+            }
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": -0.8935138583183289,
+            "kl": 55.49382781982422,
+            "noise_std_normalized": 0.11092781275510788,
+            "mixture_weights": {
+              "matern_resolvent": 0.3347089886665344,
+              "heat_diffusion": 0.5123787522315979,
+              "geodesic_rbf": 0.06789055466651917,
+              "euclidean_rbf": 0.08502171188592911
+            }
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.07205430418252945,
+            "boundary_nrmse": 0.0668715313076973,
+            "predictive_nll": -1.6607158184051514,
+            "coverage_90": 0.9976673126220703,
+            "coverage_95": 0.9995978474617004,
+            "mean_predictive_std": 0.06740238517522812,
+            "uncertainty_abs_error_correlation": 0.3795419005674564
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.08170074224472046,
+            "boundary_nrmse": 0.08312184363603592,
+            "predictive_nll": -1.624935269355774,
+            "coverage_90": 0.9893962740898132,
+            "coverage_95": 0.9958199262619019,
+            "mean_predictive_std": 0.06760754436254501,
+            "uncertainty_abs_error_correlation": 0.34414984502913865
+          }
+        ],
+        "elapsed_seconds": 2.0194145319983363,
+        "validation_nrmse": 0.07687752321362495,
+        "validation_boundary_nrmse": 0.07499668747186661,
+        "validation_predictive_nll": -1.6428255438804626,
+        "validation_coverage_90": 0.9935317933559418,
+        "validation_coverage_95": 0.9977088868618011,
+        "validation_mean_predictive_std": 0.06750496476888657,
+        "validation_uncertainty_abs_error_correlation": 0.3618458727982975
+      }
+    ],
+    "near_matched": [
+      {
+        "model": "matern_resolvent",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.08736229687929153,
+        "learned_noise_std_normalized": 0.28968024253845215,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.0486249923706055,
+            "kl": 9.234793663024902,
+            "noise_std_normalized": 0.30488109588623047,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.5619106292724609,
+            "kl": 11.961478233337402,
+            "noise_std_normalized": 0.34845951199531555,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.4368094801902771,
+            "kl": 14.26414966583252,
+            "noise_std_normalized": 0.35951167345046997,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.35216522216796875,
+            "kl": 16.4277286529541,
+            "noise_std_normalized": 0.3573830723762512,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.28743213415145874,
+            "kl": 18.501169204711914,
+            "noise_std_normalized": 0.3455793261528015,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.220023512840271,
+            "kl": 20.674182891845703,
+            "noise_std_normalized": 0.33026912808418274,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.154547318816185,
+            "kl": 22.929319381713867,
+            "noise_std_normalized": 0.3111010789871216,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.08736229687929153,
+            "kl": 25.266958236694336,
+            "noise_std_normalized": 0.28968024253845215,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.23020631074905396,
+            "boundary_nrmse": 0.2195197194814682,
+            "predictive_nll": -0.9291437864303589,
+            "coverage_90": 0.9768339991569519,
+            "coverage_95": 0.9940878748893738,
+            "mean_predictive_std": 0.1206989660859108,
+            "uncertainty_abs_error_correlation": 0.32273408336469384
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.23031266033649445,
+            "boundary_nrmse": 0.23119619488716125,
+            "predictive_nll": -0.9219399094581604,
+            "coverage_90": 0.9674513936042786,
+            "coverage_95": 0.9856466054916382,
+            "mean_predictive_std": 0.12085692584514618,
+            "uncertainty_abs_error_correlation": 0.4733866569222764
+          }
+        ],
+        "elapsed_seconds": 1.524291643872857,
+        "validation_nrmse": 0.2302594855427742,
+        "validation_boundary_nrmse": 0.22535795718431473,
+        "validation_predictive_nll": -0.9255418479442596,
+        "validation_coverage_90": 0.9721426963806152,
+        "validation_coverage_95": 0.989867240190506,
+        "validation_mean_predictive_std": 0.12077794596552849,
+        "validation_uncertainty_abs_error_correlation": 0.3980603701434851
+      },
+      {
+        "model": "heat_diffusion",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": -0.09982322156429291,
+        "learned_noise_std_normalized": 0.2487495094537735,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 0.8180156350135803,
+            "kl": 9.957903861999512,
+            "noise_std_normalized": 0.2967812120914459,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.41025370359420776,
+            "kl": 12.634664535522461,
+            "noise_std_normalized": 0.32864484190940857,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.30472490191459656,
+            "kl": 14.932126998901367,
+            "noise_std_normalized": 0.3320032060146332,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.22570142149925232,
+            "kl": 17.042064666748047,
+            "noise_std_normalized": 0.32495152950286865,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.15747874975204468,
+            "kl": 19.048742294311523,
+            "noise_std_normalized": 0.3104832172393799,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.08297418057918549,
+            "kl": 21.244274139404297,
+            "noise_std_normalized": 0.29249268770217896,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": -0.005141726229339838,
+            "kl": 23.71036720275879,
+            "noise_std_normalized": 0.27197960019111633,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": -0.09982322156429291,
+            "kl": 26.49317169189453,
+            "noise_std_normalized": 0.2487495094537735,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.19001223146915436,
+            "boundary_nrmse": 0.17524287104606628,
+            "predictive_nll": -1.0945219993591309,
+            "coverage_90": 0.9825048446655273,
+            "coverage_95": 0.9962194561958313,
+            "mean_predictive_std": 0.10539273917675018,
+            "uncertainty_abs_error_correlation": 0.3563033969318622
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.18178695440292358,
+            "boundary_nrmse": 0.17028453946113586,
+            "predictive_nll": -1.1072310209274292,
+            "coverage_90": 0.9814666509628296,
+            "coverage_95": 0.9938836097717285,
+            "mean_predictive_std": 0.10582440346479416,
+            "uncertainty_abs_error_correlation": 0.45876561281463857
+          }
+        ],
+        "elapsed_seconds": 1.4793904819525778,
+        "validation_nrmse": 0.18589959293603897,
+        "validation_boundary_nrmse": 0.17276370525360107,
+        "validation_predictive_nll": -1.10087651014328,
+        "validation_coverage_90": 0.9819857478141785,
+        "validation_coverage_95": 0.9950515329837799,
+        "validation_mean_predictive_std": 0.10560857132077217,
+        "validation_uncertainty_abs_error_correlation": 0.4075345048732504
+      },
+      {
+        "model": "geodesic_rbf",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.8215766549110413,
+        "learned_noise_std_normalized": 0.5361595749855042,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.9378721714019775,
+            "kl": 9.327902793884277,
+            "noise_std_normalized": 0.33000609278678894,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 1.1511598825454712,
+            "kl": 12.015995979309082,
+            "noise_std_normalized": 0.4190866947174072,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.9732216596603394,
+            "kl": 13.994107246398926,
+            "noise_std_normalized": 0.4690297842025757,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.9033936858177185,
+            "kl": 15.69096851348877,
+            "noise_std_normalized": 0.5008525252342224,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.8684647083282471,
+            "kl": 17.04790687561035,
+            "noise_std_normalized": 0.5209336876869202,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.847109317779541,
+            "kl": 18.443370819091797,
+            "noise_std_normalized": 0.5342384576797485,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.8325494527816772,
+            "kl": 19.61503028869629,
+            "noise_std_normalized": 0.5368112921714783,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.8215766549110413,
+            "kl": 20.824445724487305,
+            "noise_std_normalized": 0.5361595749855042,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.43005016446113586,
+            "boundary_nrmse": 0.44829660654067993,
+            "predictive_nll": -0.30892375111579895,
+            "coverage_90": 0.9679456353187561,
+            "coverage_95": 0.9864462614059448,
+            "mean_predictive_std": 0.2209804207086563,
+            "uncertainty_abs_error_correlation": 0.10554214625019372
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.4494456648826599,
+            "boundary_nrmse": 0.4694431722164154,
+            "predictive_nll": -0.27276480197906494,
+            "coverage_90": 0.9551880359649658,
+            "coverage_95": 0.9767026901245117,
+            "mean_predictive_std": 0.22114597260951996,
+            "uncertainty_abs_error_correlation": 0.21227907552144457
+          }
+        ],
+        "elapsed_seconds": 1.4840365112759173,
+        "validation_nrmse": 0.4397479146718979,
+        "validation_boundary_nrmse": 0.45886988937854767,
+        "validation_predictive_nll": -0.29084427654743195,
+        "validation_coverage_90": 0.961566835641861,
+        "validation_coverage_95": 0.9815744757652283,
+        "validation_mean_predictive_std": 0.22106319665908813,
+        "validation_uncertainty_abs_error_correlation": 0.15891061088581915
+      },
+      {
+        "model": "euclidean_rbf",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.7190164923667908,
+        "learned_noise_std_normalized": 0.4858936071395874,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.6867862939834595,
+            "kl": 9.788884162902832,
+            "noise_std_normalized": 0.32434821128845215,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 1.0053287744522095,
+            "kl": 12.738110542297363,
+            "noise_std_normalized": 0.40054967999458313,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.8553036451339722,
+            "kl": 14.83372688293457,
+            "noise_std_normalized": 0.4404030442237854,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.795215904712677,
+            "kl": 16.607587814331055,
+            "noise_std_normalized": 0.46414491534233093,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.7641506195068359,
+            "kl": 18.007123947143555,
+            "noise_std_normalized": 0.47777947783470154,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.7440574765205383,
+            "kl": 19.425315856933594,
+            "noise_std_normalized": 0.4879017472267151,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.7298128008842468,
+            "kl": 20.60089874267578,
+            "noise_std_normalized": 0.488273561000824,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.7190164923667908,
+            "kl": 21.789108276367188,
+            "noise_std_normalized": 0.4858936071395874,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.3817521929740906,
+            "boundary_nrmse": 0.38780874013900757,
+            "predictive_nll": -0.4233304262161255,
+            "coverage_90": 0.964486837387085,
+            "coverage_95": 0.9858430027961731,
+            "mean_predictive_std": 0.20052653551101685,
+            "uncertainty_abs_error_correlation": 0.20560290112175872
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.4000166058540344,
+            "boundary_nrmse": 0.42634499073028564,
+            "predictive_nll": -0.3914739787578583,
+            "coverage_90": 0.9536205530166626,
+            "coverage_95": 0.9736291766166687,
+            "mean_predictive_std": 0.20072337985038757,
+            "uncertainty_abs_error_correlation": 0.2960894969788189
+          }
+        ],
+        "elapsed_seconds": 1.6481235208921134,
+        "validation_nrmse": 0.3908843994140625,
+        "validation_boundary_nrmse": 0.4070768654346466,
+        "validation_predictive_nll": -0.4074022024869919,
+        "validation_coverage_90": 0.9590536952018738,
+        "validation_coverage_95": 0.9797360897064209,
+        "validation_mean_predictive_std": 0.2006249576807022,
+        "validation_uncertainty_abs_error_correlation": 0.2508461990502888
+      },
+      {
+        "model": "learned_nonnegative_mixture",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 100,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": -0.3975319564342499,
+        "learned_noise_std_normalized": 0.18811765313148499,
+        "learned_mixture_weights": {
+          "matern_resolvent": 0.32192811369895935,
+          "heat_diffusion": 0.49406522512435913,
+          "geodesic_rbf": 0.08226704597473145,
+          "euclidean_rbf": 0.10173961520195007
+        },
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 0.5941495895385742,
+            "kl": 22.549644470214844,
+            "noise_std_normalized": 0.27882570028305054,
+            "mixture_weights": {
+              "matern_resolvent": 0.3109113872051239,
+              "heat_diffusion": 0.3354787528514862,
+              "geodesic_rbf": 0.18460571765899658,
+              "euclidean_rbf": 0.1690041571855545
+            }
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.3071666955947876,
+            "kl": 26.891002655029297,
+            "noise_std_normalized": 0.3024198114871979,
+            "mixture_weights": {
+              "matern_resolvent": 0.3245241940021515,
+              "heat_diffusion": 0.3681579828262329,
+              "geodesic_rbf": 0.15505920350551605,
+              "euclidean_rbf": 0.15225860476493835
+            }
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.1853499412536621,
+            "kl": 30.6195068359375,
+            "noise_std_normalized": 0.3015744686126709,
+            "mixture_weights": {
+              "matern_resolvent": 0.32835322618484497,
+              "heat_diffusion": 0.3895300626754761,
+              "geodesic_rbf": 0.13973714411258698,
+              "euclidean_rbf": 0.1423795521259308
+            }
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.08765190094709396,
+            "kl": 34.70576858520508,
+            "noise_std_normalized": 0.28880423307418823,
+            "mixture_weights": {
+              "matern_resolvent": 0.32912904024124146,
+              "heat_diffusion": 0.4100552201271057,
+              "geodesic_rbf": 0.12677060067653656,
+              "euclidean_rbf": 0.1340450942516327
+            }
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": -0.013573355972766876,
+            "kl": 38.7724494934082,
+            "noise_std_normalized": 0.2685021162033081,
+            "mixture_weights": {
+              "matern_resolvent": 0.32897767424583435,
+              "heat_diffusion": 0.43048396706581116,
+              "geodesic_rbf": 0.11457197368144989,
+              "euclidean_rbf": 0.12596632540225983
+            }
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": -0.12521250545978546,
+            "kl": 43.78144073486328,
+            "noise_std_normalized": 0.24362964928150177,
+            "mixture_weights": {
+              "matern_resolvent": 0.32735228538513184,
+              "heat_diffusion": 0.4516170024871826,
+              "geodesic_rbf": 0.10311343520879745,
+              "euclidean_rbf": 0.11791729182004929
+            }
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": -0.24442413449287415,
+            "kl": 49.47393035888672,
+            "noise_std_normalized": 0.2161795049905777,
+            "mixture_weights": {
+              "matern_resolvent": 0.324966698884964,
+              "heat_diffusion": 0.4719976782798767,
+              "geodesic_rbf": 0.09275475144386292,
+              "euclidean_rbf": 0.11028090864419937
+            }
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": -0.3975319564342499,
+            "kl": 56.09246063232422,
+            "noise_std_normalized": 0.18811765313148499,
+            "mixture_weights": {
+              "matern_resolvent": 0.32192811369895935,
+              "heat_diffusion": 0.49406522512435913,
+              "geodesic_rbf": 0.08226704597473145,
+              "euclidean_rbf": 0.10173961520195007
+            }
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.1357789933681488,
+            "boundary_nrmse": 0.13312728703022003,
+            "predictive_nll": -1.398647665977478,
+            "coverage_90": 0.9858027696609497,
+            "coverage_95": 0.9967824816703796,
+            "mean_predictive_std": 0.07942649722099304,
+            "uncertainty_abs_error_correlation": 0.16782492695604548
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.1269403100013733,
+            "boundary_nrmse": 0.12810172140598297,
+            "predictive_nll": -1.4190562963485718,
+            "coverage_90": 0.9893348217010498,
+            "coverage_95": 0.9968649744987488,
+            "mean_predictive_std": 0.07971162348985672,
+            "uncertainty_abs_error_correlation": 0.2645837734998701
+          }
+        ],
+        "elapsed_seconds": 1.995936376042664,
+        "validation_nrmse": 0.13135965168476105,
+        "validation_boundary_nrmse": 0.1306145042181015,
+        "validation_predictive_nll": -1.408851981163025,
+        "validation_coverage_90": 0.9875687956809998,
+        "validation_coverage_95": 0.9968237280845642,
+        "validation_mean_predictive_std": 0.07956906035542488,
+        "validation_uncertainty_abs_error_correlation": 0.2162043502279578
+      }
+    ],
+    "elliptic": [
+      {
+        "model": "matern_resolvent",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.5791873335838318,
+        "learned_noise_std_normalized": 0.4218054711818695,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.2178651094436646,
+            "kl": 8.918115615844727,
+            "noise_std_normalized": 0.3071821630001068,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.7750803232192993,
+            "kl": 10.739192962646484,
+            "noise_std_normalized": 0.362775593996048,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.6927466988563538,
+            "kl": 12.202179908752441,
+            "noise_std_normalized": 0.3896546959877014,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.6364937424659729,
+            "kl": 13.535300254821777,
+            "noise_std_normalized": 0.4077395498752594,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.6157982349395752,
+            "kl": 14.624296188354492,
+            "noise_std_normalized": 0.4136456251144409,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.5978177189826965,
+            "kl": 15.561229705810547,
+            "noise_std_normalized": 0.42468181252479553,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.5879122614860535,
+            "kl": 16.45523452758789,
+            "noise_std_normalized": 0.42308366298675537,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.5791873335838318,
+            "kl": 17.34136962890625,
+            "noise_std_normalized": 0.4218054711818695,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.3752785325050354,
+            "boundary_nrmse": 0.36422237753868103,
+            "predictive_nll": 0.38292911648750305,
+            "coverage_90": 0.9603040814399719,
+            "coverage_95": 0.9701979160308838,
+            "mean_predictive_std": 0.41535744071006775,
+            "uncertainty_abs_error_correlation": 0.40679758058722465
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.33732715249061584,
+            "boundary_nrmse": 0.379985511302948,
+            "predictive_nll": 0.2448405623435974,
+            "coverage_90": 0.9730144739151001,
+            "coverage_95": 0.9810363054275513,
+            "mean_predictive_std": 0.4157855808734894,
+            "uncertainty_abs_error_correlation": 0.5472808499154608
+          }
+        ],
+        "elapsed_seconds": 1.5493935639970005,
+        "validation_nrmse": 0.3563028424978256,
+        "validation_boundary_nrmse": 0.3721039444208145,
+        "validation_predictive_nll": 0.31388483941555023,
+        "validation_coverage_90": 0.966659277677536,
+        "validation_coverage_95": 0.9756171107292175,
+        "validation_mean_predictive_std": 0.41557151079177856,
+        "validation_uncertainty_abs_error_correlation": 0.47703921525134274
+      },
+      {
+        "model": "heat_diffusion",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.5757879614830017,
+        "learned_noise_std_normalized": 0.41809016466140747,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.1885572671890259,
+            "kl": 9.51883316040039,
+            "noise_std_normalized": 0.3050661087036133,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.7705281376838684,
+            "kl": 11.258874893188477,
+            "noise_std_normalized": 0.35994166135787964,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.6905267834663391,
+            "kl": 12.703605651855469,
+            "noise_std_normalized": 0.38679221272468567,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.6376503109931946,
+            "kl": 14.022845268249512,
+            "noise_std_normalized": 0.40534234046936035,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.6157389879226685,
+            "kl": 15.059306144714355,
+            "noise_std_normalized": 0.41094473004341125,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.5978703498840332,
+            "kl": 16.0052490234375,
+            "noise_std_normalized": 0.4210183322429657,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.5856614112854004,
+            "kl": 16.876983642578125,
+            "noise_std_normalized": 0.41930705308914185,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.5757879614830017,
+            "kl": 17.797348022460938,
+            "noise_std_normalized": 0.41809016466140747,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.35275113582611084,
+            "boundary_nrmse": 0.3268027603626251,
+            "predictive_nll": 0.3413804769515991,
+            "coverage_90": 0.9674227833747864,
+            "coverage_95": 0.9753056764602661,
+            "mean_predictive_std": 0.41423818469047546,
+            "uncertainty_abs_error_correlation": 0.3672561156903704
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.2972956895828247,
+            "boundary_nrmse": 0.3083684742450714,
+            "predictive_nll": 0.20096200704574585,
+            "coverage_90": 0.980851948261261,
+            "coverage_95": 0.9858002662658691,
+            "mean_predictive_std": 0.41518017649650574,
+            "uncertainty_abs_error_correlation": 0.46142423092477286
+          }
+        ],
+        "elapsed_seconds": 1.5712542431429029,
+        "validation_nrmse": 0.3250234127044678,
+        "validation_boundary_nrmse": 0.31758561730384827,
+        "validation_predictive_nll": 0.2711712419986725,
+        "validation_coverage_90": 0.9741373658180237,
+        "validation_coverage_95": 0.9805529713630676,
+        "validation_mean_predictive_std": 0.4147091805934906,
+        "validation_uncertainty_abs_error_correlation": 0.41434017330757167
+      },
+      {
+        "model": "geodesic_rbf",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.5045786499977112,
+        "learned_noise_std_normalized": 0.3960813879966736,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.3405598402023315,
+            "kl": 9.370546340942383,
+            "noise_std_normalized": 0.3131086230278015,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.7860414981842041,
+            "kl": 12.221124649047852,
+            "noise_std_normalized": 0.3714747130870819,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.6605737805366516,
+            "kl": 14.339534759521484,
+            "noise_std_normalized": 0.39624857902526855,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.5959333181381226,
+            "kl": 16.389739990234375,
+            "noise_std_normalized": 0.4086267352104187,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.5588882565498352,
+            "kl": 18.026443481445312,
+            "noise_std_normalized": 0.4106374680995941,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.5335087180137634,
+            "kl": 19.744810104370117,
+            "noise_std_normalized": 0.41017088294029236,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.5134894251823425,
+            "kl": 21.26955795288086,
+            "noise_std_normalized": 0.4033854901790619,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.5045786499977112,
+            "kl": 22.8619327545166,
+            "noise_std_normalized": 0.3960813879966736,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.3702782988548279,
+            "boundary_nrmse": 0.45662540197372437,
+            "predictive_nll": 0.3405079245567322,
+            "coverage_90": 0.956322431564331,
+            "coverage_95": 0.9711631536483765,
+            "mean_predictive_std": 0.3958177864551544,
+            "uncertainty_abs_error_correlation": 0.23329544430619303
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.3717629015445709,
+            "boundary_nrmse": 0.37083086371421814,
+            "predictive_nll": 0.26260921359062195,
+            "coverage_90": 0.9684349298477173,
+            "coverage_95": 0.9798069000244141,
+            "mean_predictive_std": 0.39620405435562134,
+            "uncertainty_abs_error_correlation": 0.27704263639612503
+          }
+        ],
+        "elapsed_seconds": 1.5075919553637505,
+        "validation_nrmse": 0.3710206001996994,
+        "validation_boundary_nrmse": 0.41372813284397125,
+        "validation_predictive_nll": 0.30155856907367706,
+        "validation_coverage_90": 0.9623786807060242,
+        "validation_coverage_95": 0.9754850268363953,
+        "validation_mean_predictive_std": 0.3960109204053879,
+        "validation_uncertainty_abs_error_correlation": 0.25516904035115906
+      },
+      {
+        "model": "euclidean_rbf",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 25,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.31049779057502747,
+        "learned_noise_std_normalized": 0.33074626326560974,
+        "learned_mixture_weights": null,
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 1.0745835304260254,
+            "kl": 9.855894088745117,
+            "noise_std_normalized": 0.30646657943725586,
+            "mixture_weights": null
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.5887546539306641,
+            "kl": 12.949472427368164,
+            "noise_std_normalized": 0.3491530418395996,
+            "mixture_weights": null
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.48166826367378235,
+            "kl": 15.222460746765137,
+            "noise_std_normalized": 0.36050641536712646,
+            "mixture_weights": null
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.4156239330768585,
+            "kl": 17.404695510864258,
+            "noise_std_normalized": 0.36219802498817444,
+            "mixture_weights": null
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.37474825978279114,
+            "kl": 19.147449493408203,
+            "noise_std_normalized": 0.35562610626220703,
+            "mixture_weights": null
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.345171183347702,
+            "kl": 20.948942184448242,
+            "noise_std_normalized": 0.3504813611507416,
+            "mixture_weights": null
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.3214278817176819,
+            "kl": 22.54854393005371,
+            "noise_std_normalized": 0.3401404619216919,
+            "mixture_weights": null
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.31049779057502747,
+            "kl": 24.149782180786133,
+            "noise_std_normalized": 0.33074626326560974,
+            "mixture_weights": null
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.3255375027656555,
+            "boundary_nrmse": 0.40274521708488464,
+            "predictive_nll": 0.19377252459526062,
+            "coverage_90": 0.9495656490325928,
+            "coverage_95": 0.9668999314308167,
+            "mean_predictive_std": 0.33198413252830505,
+            "uncertainty_abs_error_correlation": 0.28408889016740385
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.3191944658756256,
+            "boundary_nrmse": 0.3077681064605713,
+            "predictive_nll": 0.08778547495603561,
+            "coverage_90": 0.960874080657959,
+            "coverage_95": 0.9743053317070007,
+            "mean_predictive_std": 0.3324258327484131,
+            "uncertainty_abs_error_correlation": 0.35091646430061146
+          }
+        ],
+        "elapsed_seconds": 1.545707126148045,
+        "validation_nrmse": 0.32236598432064056,
+        "validation_boundary_nrmse": 0.35525666177272797,
+        "validation_predictive_nll": 0.14077899977564812,
+        "validation_coverage_90": 0.9552198648452759,
+        "validation_coverage_95": 0.9706026315689087,
+        "validation_mean_predictive_std": 0.33220498263835907,
+        "validation_uncertainty_abs_error_correlation": 0.31750267723400766
+      },
+      {
+        "model": "learned_nonnegative_mixture",
+        "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+        "prior": "standard_normal_whitened_coefficients",
+        "finite_feature_dimension": 100,
+        "observed_entries": 593,
+        "observed_counts": {
+          "l_shape_r24": 203,
+          "u_notch_r24": 231,
+          "wavy_three_lobe_r24": 159
+        },
+        "best_negative_elbo_per_observation": 0.19795507192611694,
+        "learned_noise_std_normalized": 0.28498169779777527,
+        "learned_mixture_weights": {
+          "matern_resolvent": 0.29687613248825073,
+          "heat_diffusion": 0.32090523838996887,
+          "geodesic_rbf": 0.21896789968013763,
+          "euclidean_rbf": 0.16325069963932037
+        },
+        "optimization_trace": [
+          {
+            "step": 50,
+            "negative_elbo_per_observation": 0.5605689883232117,
+            "kl": 21.77029037475586,
+            "noise_std_normalized": 0.2730084955692291,
+            "mixture_weights": {
+              "matern_resolvent": 0.2929711639881134,
+              "heat_diffusion": 0.3033103048801422,
+              "geodesic_rbf": 0.23324120044708252,
+              "euclidean_rbf": 0.17047736048698425
+            }
+          },
+          {
+            "step": 100,
+            "negative_elbo_per_observation": 0.3471659719944,
+            "kl": 26.06562042236328,
+            "noise_std_normalized": 0.29642996191978455,
+            "mixture_weights": {
+              "matern_resolvent": 0.2973070740699768,
+              "heat_diffusion": 0.3060625195503235,
+              "geodesic_rbf": 0.23425720632076263,
+              "euclidean_rbf": 0.16237318515777588
+            }
+          },
+          {
+            "step": 150,
+            "negative_elbo_per_observation": 0.2860589623451233,
+            "kl": 29.409385681152344,
+            "noise_std_normalized": 0.29995161294937134,
+            "mixture_weights": {
+              "matern_resolvent": 0.29657816886901855,
+              "heat_diffusion": 0.3100983500480652,
+              "geodesic_rbf": 0.23400937020778656,
+              "euclidean_rbf": 0.1593140810728073
+            }
+          },
+          {
+            "step": 200,
+            "negative_elbo_per_observation": 0.24602967500686646,
+            "kl": 32.786746978759766,
+            "noise_std_normalized": 0.2978316843509674,
+            "mixture_weights": {
+              "matern_resolvent": 0.29607492685317993,
+              "heat_diffusion": 0.3147583603858948,
+              "geodesic_rbf": 0.23062007129192352,
+              "euclidean_rbf": 0.15854664146900177
+            }
+          },
+          {
+            "step": 250,
+            "negative_elbo_per_observation": 0.2274722158908844,
+            "kl": 34.99372482299805,
+            "noise_std_normalized": 0.2924189567565918,
+            "mixture_weights": {
+              "matern_resolvent": 0.29655903577804565,
+              "heat_diffusion": 0.3175998330116272,
+              "geodesic_rbf": 0.22656947374343872,
+              "euclidean_rbf": 0.15927167236804962
+            }
+          },
+          {
+            "step": 300,
+            "negative_elbo_per_observation": 0.20948348939418793,
+            "kl": 37.369319915771484,
+            "noise_std_normalized": 0.2910516858100891,
+            "mixture_weights": {
+              "matern_resolvent": 0.2956240773200989,
+              "heat_diffusion": 0.3173997104167938,
+              "geodesic_rbf": 0.22586190700531006,
+              "euclidean_rbf": 0.16111429035663605
+            }
+          },
+          {
+            "step": 350,
+            "negative_elbo_per_observation": 0.19795507192611694,
+            "kl": 39.186561584472656,
+            "noise_std_normalized": 0.28498169779777527,
+            "mixture_weights": {
+              "matern_resolvent": 0.29687613248825073,
+              "heat_diffusion": 0.32090523838996887,
+              "geodesic_rbf": 0.21896789968013763,
+              "euclidean_rbf": 0.16325069963932037
+            }
+          },
+          {
+            "step": 400,
+            "negative_elbo_per_observation": 0.20477990806102753,
+            "kl": 41.03874206542969,
+            "noise_std_normalized": 0.2797446548938751,
+            "mixture_weights": {
+              "matern_resolvent": 0.2939465343952179,
+              "heat_diffusion": 0.31544920802116394,
+              "geodesic_rbf": 0.22092436254024506,
+              "euclidean_rbf": 0.16967988014221191
+            }
+          }
+        ],
+        "case_metrics": [
+          {
+            "case": "dumbbell_r32",
+            "nrmse": 0.32122698426246643,
+            "boundary_nrmse": 0.376670777797699,
+            "predictive_nll": 0.1377669721841812,
+            "coverage_90": 0.9473536014556885,
+            "coverage_95": 0.9621541500091553,
+            "mean_predictive_std": 0.2840748131275177,
+            "uncertainty_abs_error_correlation": 0.3989243214577619
+          },
+          {
+            "case": "slanted_channel_r32",
+            "nrmse": 0.28718188405036926,
+            "boundary_nrmse": 0.28821617364883423,
+            "predictive_nll": -0.044025883078575134,
+            "coverage_90": 0.9635480046272278,
+            "coverage_95": 0.9779013395309448,
+            "mean_predictive_std": 0.284789502620697,
+            "uncertainty_abs_error_correlation": 0.4078601024400232
+          }
+        ],
+        "elapsed_seconds": 2.2221456030383706,
+        "validation_nrmse": 0.30420443415641785,
+        "validation_boundary_nrmse": 0.3324434757232666,
+        "validation_predictive_nll": 0.04687054455280304,
+        "validation_coverage_90": 0.9554508030414581,
+        "validation_coverage_95": 0.97002774477005,
+        "validation_mean_predictive_std": 0.28443215787410736,
+        "validation_uncertainty_abs_error_correlation": 0.4033922119488925
+      }
+    ]
+  }
+}

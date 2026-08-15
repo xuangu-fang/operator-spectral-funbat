@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "dataset": "irregular_boundary_elliptic_with_kernel_sanity_layers",
+  "grouping_rule": "all entries and resolutions from one geometry stay in one split",
+  "train_geometries": ["l_shape", "u_notch", "wavy_three_lobe"],
+  "validation_geometries": ["dumbbell", "slanted_channel"],
+  "test_geometries": ["wavy_with_hole"],
+  "test_access_rule": "never read during kernel construction, ELBO fitting, checkpointing, or this validation round",
+  "selection_seeds": [0, 1, 2],
+  "steps": 400,
+  "observation_ratio": 0.01
+}

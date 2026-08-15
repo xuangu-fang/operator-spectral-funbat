@@ -1,0 +1,47 @@
+{
+  "experiment": "TRACK3-NEURAL-MEAN-GP-RESIDUAL-3-SEED-SUMMARY",
+  "seeds": [0, 1, 2],
+  "steps": 500,
+  "observation_ratio": 0.01,
+  "test_geometries_read": [],
+  "validation_geometry": "slanted_channel_r32",
+  "models": {
+    "train_observed_global_mean": {
+      "nrmse_mean": 1.0008850694,
+      "nrmse_sample_std": 0.0008369900
+    },
+    "shared_neural_mean_only": {
+      "nrmse_mean": 0.2036397805,
+      "nrmse_sample_std": 0.0168517817,
+      "boundary_nrmse_mean": 0.2206200808,
+      "boundary_nrmse_sample_std": 0.0163588345,
+      "predictive_nll_mean": -0.3337793847,
+      "coverage_95_mean": 0.9486312071
+    },
+    "shared_neural_mean_plus_intrinsic_gp": {
+      "nrmse_mean": 0.1764796476,
+      "nrmse_sample_std": 0.0205018867,
+      "boundary_nrmse_mean": 0.1949466765,
+      "boundary_nrmse_sample_std": 0.0276133275,
+      "predictive_nll_mean": -0.5688492457,
+      "coverage_95_mean": 0.9328845541,
+      "uncertainty_abs_error_correlation_mean": 0.5532846760
+    },
+    "shared_neural_mean_plus_euclidean_gp": {
+      "nrmse_mean": 0.2279823075,
+      "nrmse_sample_std": 0.0148019793,
+      "boundary_nrmse_mean": 0.2409534951,
+      "boundary_nrmse_sample_std": 0.0040040344,
+      "predictive_nll_mean": -0.3118429929,
+      "coverage_95_mean": 0.9150888522,
+      "uncertainty_abs_error_correlation_mean": 0.5302470732
+    }
+  },
+  "paired_effects": {
+    "intrinsic_vs_mean_only_global_relative_improvement": 0.1333734149,
+    "intrinsic_vs_mean_only_boundary_relative_improvement": 0.1163692998,
+    "intrinsic_beats_mean_only_all_three_seeds": true,
+    "intrinsic_beats_euclidean_all_three_seeds": true
+  },
+  "decision": "Conditional GO: the shared neural mean plus intrinsic GP residual is the first positive explicit-Bayesian signal, but it is based on one validation geometry and under-covers at 95%. Confirm on a larger frozen multi-geometry validation set before any paper claim."
+}

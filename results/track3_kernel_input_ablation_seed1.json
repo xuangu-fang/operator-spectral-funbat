@@ -1,0 +1,101 @@
+{
+  "experiment_id": "TRACK3-KERNEL-INPUT-ABLATION-SEED1",
+  "status": "VALIDATION_ONLY_MECHANISM_AUDIT_NOT_GP_INFERENCE",
+  "protocol": {
+    "train_geometries": [
+      "l_shape",
+      "u_notch",
+      "wavy_three_lobe",
+      "dumbbell"
+    ],
+    "validation_geometries": [
+      "slanted_channel"
+    ],
+    "test_geometries_read": [],
+    "train_resolution": 24,
+    "validation_resolution": 32,
+    "observation_ratio": 0.01,
+    "checkpoint_metric": "MSE over every observed training entry"
+  },
+  "config": {
+    "data": "data/irregular_boundary_elliptic",
+    "split": "experiments/dataset_splits/irregular_boundary_wave_smoke.json",
+    "ratio": 0.01,
+    "seed": 1,
+    "steps": 900,
+    "checkpoint_every": 50,
+    "batch_size": 2048,
+    "modes": 48,
+    "output": "papers/four_tracks/results/track3_kernel_input_ablation_seed1.json"
+  },
+  "rows": [
+    {
+      "model": "intrinsic_sections_only_tucker",
+      "kernel_section_input": "intrinsic",
+      "uses_correct_sdf_and_local_coordinates": false,
+      "parameters": 15834,
+      "best_all_observed_loss": 0.047996959686279296,
+      "validation_macro_nrmse": 0.26797401905059814,
+      "validation_boundary_nrmse": 0.2881290018558502,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.26797401905059814,
+          "boundary_nrmse": 0.2881290018558502
+        }
+      ],
+      "elapsed_seconds": 5.897269649896771
+    },
+    {
+      "model": "euclidean_rbf_sections_only_tucker",
+      "kernel_section_input": "euclidean",
+      "uses_correct_sdf_and_local_coordinates": false,
+      "parameters": 15834,
+      "best_all_observed_loss": 0.0681808774224643,
+      "validation_macro_nrmse": 0.3584696352481842,
+      "validation_boundary_nrmse": 0.2735966145992279,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.3584696352481842,
+          "boundary_nrmse": 0.2735966145992279
+        }
+      ],
+      "elapsed_seconds": 6.204739428590983
+    },
+    {
+      "model": "intrinsic_plus_local_inputs_tucker",
+      "kernel_section_input": "intrinsic",
+      "uses_correct_sdf_and_local_coordinates": true,
+      "parameters": 16282,
+      "best_all_observed_loss": 0.015526190461783574,
+      "validation_macro_nrmse": 0.22073058784008026,
+      "validation_boundary_nrmse": 0.21654151380062103,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.22073058784008026,
+          "boundary_nrmse": 0.21654151380062103
+        }
+      ],
+      "elapsed_seconds": 9.248959133867174
+    },
+    {
+      "model": "euclidean_rbf_plus_local_inputs_tucker",
+      "kernel_section_input": "euclidean",
+      "uses_correct_sdf_and_local_coordinates": true,
+      "parameters": 16282,
+      "best_all_observed_loss": 0.020946094578710096,
+      "validation_macro_nrmse": 0.24239115417003632,
+      "validation_boundary_nrmse": 0.24450574815273285,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.24239115417003632,
+          "boundary_nrmse": 0.24450574815273285
+        }
+      ],
+      "elapsed_seconds": 9.256780952215195
+    }
+  ]
+}

@@ -1,0 +1,467 @@
+{
+  "experiment_id": "TRACK3-KERNEL-MIXTURE-NEURAL-RESIDUAL-SEED0",
+  "status": "VALIDATION_ONLY_JOINT_ELBO_R4",
+  "protocol": {
+    "train_geometries": [
+      "l_shape",
+      "u_notch",
+      "wavy_three_lobe"
+    ],
+    "validation_geometries": [
+      "dumbbell",
+      "slanted_channel"
+    ],
+    "test_geometries_read": [],
+    "observation_ratio": 0.01,
+    "validation_target_used_for_checkpointing": false,
+    "matched_initialization_masks_batches_steps_and_mean_architecture": true,
+    "kernel_mixture": "simplex PSD sum, weights learned jointly by train-observed ELBO"
+  },
+  "config": {
+    "data": "data/irregular_boundary_elliptic",
+    "split": "experiments/dataset_splits/track3_kernel_dictionary.json",
+    "ratio": 0.01,
+    "seed": 0,
+    "steps": 400,
+    "batch_size": 512,
+    "checkpoint_every": 50,
+    "modes": 48,
+    "output": "papers/four_tracks/results/track3_kernel_mixture_neural_residual_seed0.json"
+  },
+  "observed_counts": {
+    "l_shape_r24": 203,
+    "u_notch_r24": 231,
+    "wavy_three_lobe_r24": 159
+  },
+  "rows": [
+    {
+      "model": "shared_neural_cp_mean_only",
+      "mean_architecture": "GeometryConditionedNeuralFunctionalCP_rank24_hidden64",
+      "residual_kernel": null,
+      "inference": "Gaussian_neural_mean_maximum_likelihood_SGD",
+      "observed_entries": 593,
+      "best_negative_objective_per_observation": -0.29749318957328796,
+      "learned_mixture_weights": null,
+      "optimization_trace": [
+        {
+          "step": 50,
+          "negative_objective_per_observation": 1.192941427230835,
+          "kl": 0.0,
+          "noise_std_normalized": 0.30629104375839233,
+          "mixture_weights": null
+        },
+        {
+          "step": 100,
+          "negative_objective_per_observation": 0.30030280351638794,
+          "kl": 0.0,
+          "noise_std_normalized": 0.34352415800094604,
+          "mixture_weights": null
+        },
+        {
+          "step": 150,
+          "negative_objective_per_observation": 0.1364966779947281,
+          "kl": 0.0,
+          "noise_std_normalized": 0.3343951404094696,
+          "mixture_weights": null
+        },
+        {
+          "step": 200,
+          "negative_objective_per_observation": 0.060241129249334335,
+          "kl": 0.0,
+          "noise_std_normalized": 0.31641361117362976,
+          "mixture_weights": null
+        },
+        {
+          "step": 250,
+          "negative_objective_per_observation": -0.0218343548476696,
+          "kl": 0.0,
+          "noise_std_normalized": 0.294270783662796,
+          "mixture_weights": null
+        },
+        {
+          "step": 300,
+          "negative_objective_per_observation": -0.0185586865991354,
+          "kl": 0.0,
+          "noise_std_normalized": 0.26919427514076233,
+          "mixture_weights": null
+        },
+        {
+          "step": 350,
+          "negative_objective_per_observation": -0.2051207721233368,
+          "kl": 0.0,
+          "noise_std_normalized": 0.24667124450206757,
+          "mixture_weights": null
+        },
+        {
+          "step": 400,
+          "negative_objective_per_observation": -0.29749318957328796,
+          "kl": 0.0,
+          "noise_std_normalized": 0.22367706894874573,
+          "mixture_weights": null
+        }
+      ],
+      "case_metrics": [
+        {
+          "case": "dumbbell_r32",
+          "nrmse": 0.18200375139713287,
+          "boundary_nrmse": 0.21109221875667572,
+          "predictive_nll": -0.3324728012084961,
+          "coverage_90": 0.9592583775520325,
+          "coverage_95": 0.9702380895614624,
+          "mean_predictive_std": 0.18879221379756927,
+          "uncertainty_abs_error_correlation": 0.0
+        },
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.2216535061597824,
+          "boundary_nrmse": 0.23787924647331238,
+          "predictive_nll": -0.2527482509613037,
+          "coverage_90": 0.9246065616607666,
+          "coverage_95": 0.9461826086044312,
+          "mean_predictive_std": 0.18879219889640808,
+          "uncertainty_abs_error_correlation": 0.0
+        }
+      ],
+      "validation_nrmse": 0.20182862877845764,
+      "validation_boundary_nrmse": 0.22448573261499405,
+      "validation_predictive_nll": -0.2926105260848999,
+      "validation_coverage_90": 0.9419324696063995,
+      "validation_coverage_95": 0.9582103490829468,
+      "validation_mean_predictive_std": 0.18879220634698868,
+      "validation_uncertainty_abs_error_correlation": 0.0
+    },
+    {
+      "model": "shared_neural_cp_plus_matern_gp",
+      "mean_architecture": "GeometryConditionedNeuralFunctionalCP_rank24_hidden64",
+      "residual_kernel": "matern_resolvent",
+      "inference": "joint_neural_mean_and_full_cov_q(u)_mini_batch_ELBO_SGD",
+      "observed_entries": 593,
+      "best_negative_objective_per_observation": -0.43469536304473877,
+      "learned_mixture_weights": null,
+      "optimization_trace": [
+        {
+          "step": 50,
+          "negative_objective_per_observation": 0.5187245011329651,
+          "kl": 7.837145805358887,
+          "noise_std_normalized": 0.2741476595401764,
+          "mixture_weights": null
+        },
+        {
+          "step": 100,
+          "negative_objective_per_observation": 0.21722908318042755,
+          "kl": 9.558935165405273,
+          "noise_std_normalized": 0.29448068141937256,
+          "mixture_weights": null
+        },
+        {
+          "step": 150,
+          "negative_objective_per_observation": 0.05748634412884712,
+          "kl": 10.990035057067871,
+          "noise_std_normalized": 0.2897367775440216,
+          "mixture_weights": null
+        },
+        {
+          "step": 200,
+          "negative_objective_per_observation": -0.04003565385937691,
+          "kl": 12.314351081848145,
+          "noise_std_normalized": 0.2729155123233795,
+          "mixture_weights": null
+        },
+        {
+          "step": 250,
+          "negative_objective_per_observation": -0.13896027207374573,
+          "kl": 13.547672271728516,
+          "noise_std_normalized": 0.2511625289916992,
+          "mixture_weights": null
+        },
+        {
+          "step": 300,
+          "negative_objective_per_observation": -0.24018239974975586,
+          "kl": 14.726405143737793,
+          "noise_std_normalized": 0.22725623846054077,
+          "mixture_weights": null
+        },
+        {
+          "step": 350,
+          "negative_objective_per_observation": -0.31331607699394226,
+          "kl": 15.971548080444336,
+          "noise_std_normalized": 0.2045590579509735,
+          "mixture_weights": null
+        },
+        {
+          "step": 400,
+          "negative_objective_per_observation": -0.43469536304473877,
+          "kl": 17.33904266357422,
+          "noise_std_normalized": 0.18357740342617035,
+          "mixture_weights": null
+        }
+      ],
+      "case_metrics": [
+        {
+          "case": "dumbbell_r32",
+          "nrmse": 0.22864995896816254,
+          "boundary_nrmse": 0.26051124930381775,
+          "predictive_nll": -0.17029012739658356,
+          "coverage_90": 0.9417632222175598,
+          "coverage_95": 0.9591779112815857,
+          "mean_predictive_std": 0.1645592898130417,
+          "uncertainty_abs_error_correlation": 0.4341627924382041
+        },
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.24244681000709534,
+          "boundary_nrmse": 0.2775696814060211,
+          "predictive_nll": -0.3229433298110962,
+          "coverage_90": 0.9265121221542358,
+          "coverage_95": 0.9442155957221985,
+          "mean_predictive_std": 0.16478031873703003,
+          "uncertainty_abs_error_correlation": 0.7044702124476173
+        }
+      ],
+      "validation_nrmse": 0.23554838448762894,
+      "validation_boundary_nrmse": 0.26904046535491943,
+      "validation_predictive_nll": -0.24661672860383987,
+      "validation_coverage_90": 0.9341376721858978,
+      "validation_coverage_95": 0.9516967535018921,
+      "validation_mean_predictive_std": 0.16466980427503586,
+      "validation_uncertainty_abs_error_correlation": 0.5693165024429108
+    },
+    {
+      "model": "shared_neural_cp_plus_heat_gp",
+      "mean_architecture": "GeometryConditionedNeuralFunctionalCP_rank24_hidden64",
+      "residual_kernel": "heat_diffusion",
+      "inference": "joint_neural_mean_and_full_cov_q(u)_mini_batch_ELBO_SGD",
+      "observed_entries": 593,
+      "best_negative_objective_per_observation": -0.5003618597984314,
+      "learned_mixture_weights": null,
+      "optimization_trace": [
+        {
+          "step": 50,
+          "negative_objective_per_observation": 0.6091088652610779,
+          "kl": 8.467306137084961,
+          "noise_std_normalized": 0.27836641669273376,
+          "mixture_weights": null
+        },
+        {
+          "step": 100,
+          "negative_objective_per_observation": 0.2612186074256897,
+          "kl": 10.285971641540527,
+          "noise_std_normalized": 0.30254408717155457,
+          "mixture_weights": null
+        },
+        {
+          "step": 150,
+          "negative_objective_per_observation": 0.10449277609586716,
+          "kl": 11.890373229980469,
+          "noise_std_normalized": 0.29890912771224976,
+          "mixture_weights": null
+        },
+        {
+          "step": 200,
+          "negative_objective_per_observation": -0.0011342210927978158,
+          "kl": 13.386361122131348,
+          "noise_std_normalized": 0.28212088346481323,
+          "mixture_weights": null
+        },
+        {
+          "step": 250,
+          "negative_objective_per_observation": -0.11328283697366714,
+          "kl": 14.791994094848633,
+          "noise_std_normalized": 0.2591873109340668,
+          "mixture_weights": null
+        },
+        {
+          "step": 300,
+          "negative_objective_per_observation": -0.23767085373401642,
+          "kl": 16.19496726989746,
+          "noise_std_normalized": 0.23277246952056885,
+          "mixture_weights": null
+        },
+        {
+          "step": 350,
+          "negative_objective_per_observation": -0.35601988434791565,
+          "kl": 17.70235824584961,
+          "noise_std_normalized": 0.20684725046157837,
+          "mixture_weights": null
+        },
+        {
+          "step": 400,
+          "negative_objective_per_observation": -0.5003618597984314,
+          "kl": 19.411762237548828,
+          "noise_std_normalized": 0.18224717676639557,
+          "mixture_weights": null
+        }
+      ],
+      "case_metrics": [
+        {
+          "case": "dumbbell_r32",
+          "nrmse": 0.19335906207561493,
+          "boundary_nrmse": 0.2241550236940384,
+          "predictive_nll": -0.3716583847999573,
+          "coverage_90": 0.9597812294960022,
+          "coverage_95": 0.9691924452781677,
+          "mean_predictive_std": 0.16586175560951233,
+          "uncertainty_abs_error_correlation": 0.3696370470443961
+        },
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.21512353420257568,
+          "boundary_nrmse": 0.2397199273109436,
+          "predictive_nll": -0.4330449402332306,
+          "coverage_90": 0.939666748046875,
+          "coverage_95": 0.9564481973648071,
+          "mean_predictive_std": 0.16646689176559448,
+          "uncertainty_abs_error_correlation": 0.6575417151894811
+        }
+      ],
+      "validation_nrmse": 0.2042412981390953,
+      "validation_boundary_nrmse": 0.231937475502491,
+      "validation_predictive_nll": -0.40235166251659393,
+      "validation_coverage_90": 0.9497239887714386,
+      "validation_coverage_95": 0.9628203213214874,
+      "validation_mean_predictive_std": 0.1661643236875534,
+      "validation_uncertainty_abs_error_correlation": 0.5135893811169386
+    },
+    {
+      "model": "shared_neural_cp_plus_learned_kernel_gp",
+      "mean_architecture": "GeometryConditionedNeuralFunctionalCP_rank24_hidden64",
+      "residual_kernel": "mixture",
+      "inference": "joint_neural_mean_and_full_cov_q(u)_mini_batch_ELBO_SGD",
+      "observed_entries": 593,
+      "best_negative_objective_per_observation": -0.684941291809082,
+      "learned_mixture_weights": {
+        "matern_resolvent": 0.3207953870296478,
+        "heat_diffusion": 0.2959977686405182,
+        "geodesic_rbf": 0.2605457901954651,
+        "euclidean_rbf": 0.12266101688146591
+      },
+      "optimization_trace": [
+        {
+          "step": 50,
+          "negative_objective_per_observation": 0.1851634979248047,
+          "kl": 19.55097770690918,
+          "noise_std_normalized": 0.2537907361984253,
+          "mixture_weights": {
+            "matern_resolvent": 0.29372960329055786,
+            "heat_diffusion": 0.2977294921875,
+            "geodesic_rbf": 0.23723246157169342,
+            "euclidean_rbf": 0.17130844295024872
+          }
+        },
+        {
+          "step": 100,
+          "negative_objective_per_observation": 0.0186783354729414,
+          "kl": 23.45165252685547,
+          "noise_std_normalized": 0.2598750591278076,
+          "mixture_weights": {
+            "matern_resolvent": 0.29724955558776855,
+            "heat_diffusion": 0.29425108432769775,
+            "geodesic_rbf": 0.24907135963439941,
+            "euclidean_rbf": 0.15942801535129547
+          }
+        },
+        {
+          "step": 150,
+          "negative_objective_per_observation": -0.09780222922563553,
+          "kl": 26.819610595703125,
+          "noise_std_normalized": 0.2484409511089325,
+          "mixture_weights": {
+            "matern_resolvent": 0.2984841763973236,
+            "heat_diffusion": 0.2895839810371399,
+            "geodesic_rbf": 0.2596997618675232,
+            "euclidean_rbf": 0.1522321105003357
+          }
+        },
+        {
+          "step": 200,
+          "negative_objective_per_observation": -0.19546115398406982,
+          "kl": 30.35727310180664,
+          "noise_std_normalized": 0.22974464297294617,
+          "mixture_weights": {
+            "matern_resolvent": 0.30096864700317383,
+            "heat_diffusion": 0.2895866632461548,
+            "geodesic_rbf": 0.26358118653297424,
+            "euclidean_rbf": 0.14586350321769714
+          }
+        },
+        {
+          "step": 250,
+          "negative_objective_per_observation": -0.30195507407188416,
+          "kl": 33.900962829589844,
+          "noise_std_normalized": 0.20783022046089172,
+          "mixture_weights": {
+            "matern_resolvent": 0.3027460277080536,
+            "heat_diffusion": 0.29064926505088806,
+            "geodesic_rbf": 0.2668694257736206,
+            "euclidean_rbf": 0.13973523676395416
+          }
+        },
+        {
+          "step": 300,
+          "negative_objective_per_observation": -0.40269139409065247,
+          "kl": 37.544219970703125,
+          "noise_std_normalized": 0.18365146219730377,
+          "mixture_weights": {
+            "matern_resolvent": 0.30343949794769287,
+            "heat_diffusion": 0.29112672805786133,
+            "geodesic_rbf": 0.27117210626602173,
+            "euclidean_rbf": 0.13426168262958527
+          }
+        },
+        {
+          "step": 350,
+          "negative_objective_per_observation": -0.6006249189376831,
+          "kl": 41.73517608642578,
+          "noise_std_normalized": 0.15816806256771088,
+          "mixture_weights": {
+            "matern_resolvent": 0.3056985139846802,
+            "heat_diffusion": 0.29295992851257324,
+            "geodesic_rbf": 0.27235567569732666,
+            "euclidean_rbf": 0.1289859116077423
+          }
+        },
+        {
+          "step": 400,
+          "negative_objective_per_observation": -0.684941291809082,
+          "kl": 46.12480926513672,
+          "noise_std_normalized": 0.13618308305740356,
+          "mixture_weights": {
+            "matern_resolvent": 0.3207953870296478,
+            "heat_diffusion": 0.2959977686405182,
+            "geodesic_rbf": 0.2605457901954651,
+            "euclidean_rbf": 0.12266101688146591
+          }
+        }
+      ],
+      "case_metrics": [
+        {
+          "case": "dumbbell_r32",
+          "nrmse": 0.20210520923137665,
+          "boundary_nrmse": 0.2218894213438034,
+          "predictive_nll": -0.5427776575088501,
+          "coverage_90": 0.9384652376174927,
+          "coverage_95": 0.9607062339782715,
+          "mean_predictive_std": 0.13274312019348145,
+          "uncertainty_abs_error_correlation": 0.6031864208879842
+        },
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.2431560456752777,
+          "boundary_nrmse": 0.2793193459510803,
+          "predictive_nll": -0.6201204061508179,
+          "coverage_90": 0.9054585099220276,
+          "coverage_95": 0.9345954656600952,
+          "mean_predictive_std": 0.13256587088108063,
+          "uncertainty_abs_error_correlation": 0.7878280124850786
+        }
+      ],
+      "validation_nrmse": 0.22263062745332718,
+      "validation_boundary_nrmse": 0.25060438364744186,
+      "validation_predictive_nll": -0.581449031829834,
+      "validation_coverage_90": 0.9219618737697601,
+      "validation_coverage_95": 0.9476508498191833,
+      "validation_mean_predictive_std": 0.13265449553728104,
+      "validation_uncertainty_abs_error_correlation": 0.6955072166865315
+    }
+  ]
+}

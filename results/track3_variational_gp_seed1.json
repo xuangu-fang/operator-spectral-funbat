@@ -1,0 +1,416 @@
+{
+  "experiment_id": "TRACK3-VARIATIONAL-DOMAIN-GP-SEED1",
+  "status": "VALIDATION_ONLY_EXPLICIT_GP_ELBO_POC",
+  "protocol": {
+    "train_geometries": [
+      "l_shape",
+      "u_notch",
+      "wavy_three_lobe",
+      "dumbbell"
+    ],
+    "validation_geometries": [
+      "slanted_channel"
+    ],
+    "test_geometries_read": [],
+    "train_resolution": 24,
+    "validation_resolution": 32,
+    "observation_ratio": 0.01,
+    "mask": "entry_random_train_only",
+    "validation_target_used_for_checkpointing": false,
+    "checkpoint_metric": "full_observed_training_negative_ELBO",
+    "posterior": "q(u)=N(m,LL^T), full covariance",
+    "prior": "p(u)=N(0,I), whitened finite spectral coefficients",
+    "likelihood": "Gaussian with learned homoscedastic noise",
+    "objective": "mini-batch SGD ELBO with N/B likelihood scaling"
+  },
+  "config": {
+    "data": "data/irregular_boundary_elliptic",
+    "split": "experiments/dataset_splits/irregular_boundary_wave_smoke.json",
+    "ratio": 0.01,
+    "seed": 1,
+    "steps": 500,
+    "batch_size": 256,
+    "checkpoint_every": 25,
+    "modes": 48,
+    "learning_rate": 0.02,
+    "output": "papers/four_tracks/results/track3_variational_gp_seed1.json"
+  },
+  "observed_counts": {
+    "l_shape_r24": 203,
+    "u_notch_r24": 231,
+    "wavy_three_lobe_r24": 159,
+    "dumbbell_r24": 132
+  },
+  "rows": [
+    {
+      "model": "intrinsic_finite_feature_variational_gp",
+      "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+      "kernel": "intrinsic",
+      "finite_feature_dimension": 35,
+      "observed_entries": 725,
+      "learned_noise_std_normalized": 0.41592592000961304,
+      "best_negative_elbo_per_observation": 0.5505731105804443,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.32681506872177124,
+          "boundary_nrmse": 0.36102744936943054,
+          "predictive_nll": 0.19518640637397766,
+          "coverage_90": 0.9682812094688416,
+          "coverage_95": 0.9778705835342407,
+          "mean_predictive_std": 0.3844733238220215,
+          "uncertainty_abs_error_correlation": 0.5800156976953099
+        }
+      ],
+      "inference_comparison": [
+        {
+          "case": "slanted_channel_r32",
+          "variational_exact_mean_rmse_normalized": 0.11134456843137741,
+          "variational_exact_variance_relative_l1": 0.01918785646557808
+        }
+      ],
+      "optimization_trace": [
+        {
+          "step": 25,
+          "negative_elbo_per_observation": 2.7849156856536865,
+          "kl": 6.985288619995117,
+          "noise_std_normalized": 0.23602238297462463
+        },
+        {
+          "step": 50,
+          "negative_elbo_per_observation": 1.2090113162994385,
+          "kl": 9.918415069580078,
+          "noise_std_normalized": 0.29775968194007874
+        },
+        {
+          "step": 75,
+          "negative_elbo_per_observation": 0.8833280801773071,
+          "kl": 11.12158203125,
+          "noise_std_normalized": 0.3312743604183197
+        },
+        {
+          "step": 100,
+          "negative_elbo_per_observation": 0.7540830373764038,
+          "kl": 12.3908109664917,
+          "noise_std_normalized": 0.35502979159355164
+        },
+        {
+          "step": 125,
+          "negative_elbo_per_observation": 0.6877795457839966,
+          "kl": 13.395669937133789,
+          "noise_std_normalized": 0.373017817735672
+        },
+        {
+          "step": 150,
+          "negative_elbo_per_observation": 0.6507331728935242,
+          "kl": 14.13688850402832,
+          "noise_std_normalized": 0.38616475462913513
+        },
+        {
+          "step": 175,
+          "negative_elbo_per_observation": 0.6318345069885254,
+          "kl": 14.939763069152832,
+          "noise_std_normalized": 0.39904212951660156
+        },
+        {
+          "step": 200,
+          "negative_elbo_per_observation": 0.6117031574249268,
+          "kl": 15.50240707397461,
+          "noise_std_normalized": 0.4088089168071747
+        },
+        {
+          "step": 225,
+          "negative_elbo_per_observation": 0.6097917556762695,
+          "kl": 15.983721733093262,
+          "noise_std_normalized": 0.41241657733917236
+        },
+        {
+          "step": 250,
+          "negative_elbo_per_observation": 0.5972810387611389,
+          "kl": 16.460628509521484,
+          "noise_std_normalized": 0.4163091480731964
+        },
+        {
+          "step": 275,
+          "negative_elbo_per_observation": 0.5884124040603638,
+          "kl": 16.969423294067383,
+          "noise_std_normalized": 0.41795259714126587
+        },
+        {
+          "step": 300,
+          "negative_elbo_per_observation": 0.5806587934494019,
+          "kl": 17.58338165283203,
+          "noise_std_normalized": 0.42094382643699646
+        },
+        {
+          "step": 325,
+          "negative_elbo_per_observation": 0.5763524174690247,
+          "kl": 18.005264282226562,
+          "noise_std_normalized": 0.4207533001899719
+        },
+        {
+          "step": 350,
+          "negative_elbo_per_observation": 0.5732804536819458,
+          "kl": 18.462556838989258,
+          "noise_std_normalized": 0.4209681451320648
+        },
+        {
+          "step": 375,
+          "negative_elbo_per_observation": 0.5673221945762634,
+          "kl": 18.851200103759766,
+          "noise_std_normalized": 0.4211849868297577
+        },
+        {
+          "step": 400,
+          "negative_elbo_per_observation": 0.5637694597244263,
+          "kl": 19.38732147216797,
+          "noise_std_normalized": 0.41996797919273376
+        },
+        {
+          "step": 425,
+          "negative_elbo_per_observation": 0.5579032897949219,
+          "kl": 19.729440689086914,
+          "noise_std_normalized": 0.42001625895500183
+        },
+        {
+          "step": 450,
+          "negative_elbo_per_observation": 0.5566648840904236,
+          "kl": 20.280202865600586,
+          "noise_std_normalized": 0.41863614320755005
+        },
+        {
+          "step": 475,
+          "negative_elbo_per_observation": 0.5505731105804443,
+          "kl": 20.54378890991211,
+          "noise_std_normalized": 0.41592592000961304
+        },
+        {
+          "step": 500,
+          "negative_elbo_per_observation": 0.5512635707855225,
+          "kl": 20.776830673217773,
+          "noise_std_normalized": 0.4074951112270355
+        }
+      ],
+      "elapsed_seconds": 2.2226072349585593,
+      "validation_nrmse": 0.32681506872177124,
+      "validation_boundary_nrmse": 0.36102744936943054,
+      "validation_predictive_nll": 0.19518640637397766,
+      "validation_coverage_90": 0.9682812094688416,
+      "validation_coverage_95": 0.9778705835342407,
+      "validation_mean_predictive_std": 0.3844733238220215,
+      "validation_uncertainty_abs_error_correlation": 0.5800156976953099
+    },
+    {
+      "model": "intrinsic_exact_finite_gp_control",
+      "inference": "closed_form_exact_posterior_same_kernel_and_noise",
+      "kernel": "intrinsic",
+      "finite_feature_dimension": 35,
+      "observed_entries": 725,
+      "learned_noise_std_normalized": 0.41592592000961304,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.30818459391593933,
+          "boundary_nrmse": 0.35443946719169617,
+          "predictive_nll": 0.16841016709804535,
+          "coverage_90": 0.9664678573608398,
+          "coverage_95": 0.9752888679504395,
+          "mean_predictive_std": 0.38090214133262634,
+          "uncertainty_abs_error_correlation": 0.643370436434303
+        }
+      ],
+      "validation_nrmse": 0.30818459391593933,
+      "validation_boundary_nrmse": 0.35443946719169617,
+      "validation_predictive_nll": 0.16841016709804535,
+      "validation_coverage_90": 0.9664678573608398,
+      "validation_coverage_95": 0.9752888679504395,
+      "validation_mean_predictive_std": 0.38090214133262634,
+      "validation_uncertainty_abs_error_correlation": 0.643370436434303
+    },
+    {
+      "model": "euclidean_finite_feature_variational_gp",
+      "inference": "full_covariance_q(u)_mini_batch_ELBO_SGD",
+      "kernel": "euclidean",
+      "finite_feature_dimension": 35,
+      "observed_entries": 725,
+      "learned_noise_std_normalized": 0.3197624385356903,
+      "best_negative_elbo_per_observation": 0.28824737668037415,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.311622679233551,
+          "boundary_nrmse": 0.3135116994380951,
+          "predictive_nll": 0.05294075235724449,
+          "coverage_90": 0.9510080814361572,
+          "coverage_95": 0.9686193466186523,
+          "mean_predictive_std": 0.29878631234169006,
+          "uncertainty_abs_error_correlation": 0.380660037158799
+        }
+      ],
+      "inference_comparison": [
+        {
+          "case": "slanted_channel_r32",
+          "variational_exact_mean_rmse_normalized": 0.08592765033245087,
+          "variational_exact_variance_relative_l1": 0.03735395148396492
+        }
+      ],
+      "optimization_trace": [
+        {
+          "step": 25,
+          "negative_elbo_per_observation": 2.7918190956115723,
+          "kl": 7.559421539306641,
+          "noise_std_normalized": 0.23699969053268433
+        },
+        {
+          "step": 50,
+          "negative_elbo_per_observation": 0.9668704271316528,
+          "kl": 11.378461837768555,
+          "noise_std_normalized": 0.29605814814567566
+        },
+        {
+          "step": 75,
+          "negative_elbo_per_observation": 0.656277060508728,
+          "kl": 13.395249366760254,
+          "noise_std_normalized": 0.3222357928752899
+        },
+        {
+          "step": 100,
+          "negative_elbo_per_observation": 0.543539822101593,
+          "kl": 14.994595527648926,
+          "noise_std_normalized": 0.3373768627643585
+        },
+        {
+          "step": 125,
+          "negative_elbo_per_observation": 0.48549288511276245,
+          "kl": 16.36377716064453,
+          "noise_std_normalized": 0.34726282954216003
+        },
+        {
+          "step": 150,
+          "negative_elbo_per_observation": 0.4469132423400879,
+          "kl": 17.459300994873047,
+          "noise_std_normalized": 0.3516227900981903
+        },
+        {
+          "step": 175,
+          "negative_elbo_per_observation": 0.42122676968574524,
+          "kl": 18.63456916809082,
+          "noise_std_normalized": 0.3568631112575531
+        },
+        {
+          "step": 200,
+          "negative_elbo_per_observation": 0.39699864387512207,
+          "kl": 19.591772079467773,
+          "noise_std_normalized": 0.3580417335033417
+        },
+        {
+          "step": 225,
+          "negative_elbo_per_observation": 0.37919315695762634,
+          "kl": 20.38641929626465,
+          "noise_std_normalized": 0.35412365198135376
+        },
+        {
+          "step": 250,
+          "negative_elbo_per_observation": 0.3652895390987396,
+          "kl": 21.301616668701172,
+          "noise_std_normalized": 0.349824994802475
+        },
+        {
+          "step": 275,
+          "negative_elbo_per_observation": 0.3572571873664856,
+          "kl": 22.28693962097168,
+          "noise_std_normalized": 0.34560850262641907
+        },
+        {
+          "step": 300,
+          "negative_elbo_per_observation": 0.33752280473709106,
+          "kl": 23.241304397583008,
+          "noise_std_normalized": 0.34203943610191345
+        },
+        {
+          "step": 325,
+          "negative_elbo_per_observation": 0.3288174569606781,
+          "kl": 24.05313491821289,
+          "noise_std_normalized": 0.33663037419319153
+        },
+        {
+          "step": 350,
+          "negative_elbo_per_observation": 0.3168976604938507,
+          "kl": 24.89960479736328,
+          "noise_std_normalized": 0.3338049650192261
+        },
+        {
+          "step": 375,
+          "negative_elbo_per_observation": 0.3125312328338623,
+          "kl": 25.70998191833496,
+          "noise_std_normalized": 0.3300093710422516
+        },
+        {
+          "step": 400,
+          "negative_elbo_per_observation": 0.30381473898887634,
+          "kl": 26.517518997192383,
+          "noise_std_normalized": 0.3275851607322693
+        },
+        {
+          "step": 425,
+          "negative_elbo_per_observation": 0.29901885986328125,
+          "kl": 27.2044677734375,
+          "noise_std_normalized": 0.3252169191837311
+        },
+        {
+          "step": 450,
+          "negative_elbo_per_observation": 0.29746878147125244,
+          "kl": 27.923622131347656,
+          "noise_std_normalized": 0.3231743574142456
+        },
+        {
+          "step": 475,
+          "negative_elbo_per_observation": 0.28824737668037415,
+          "kl": 28.474525451660156,
+          "noise_std_normalized": 0.3197624385356903
+        },
+        {
+          "step": 500,
+          "negative_elbo_per_observation": 0.28922733664512634,
+          "kl": 29.0046329498291,
+          "noise_std_normalized": 0.3142181634902954
+        }
+      ],
+      "elapsed_seconds": 1.9315693574026227,
+      "validation_nrmse": 0.311622679233551,
+      "validation_boundary_nrmse": 0.3135116994380951,
+      "validation_predictive_nll": 0.05294075235724449,
+      "validation_coverage_90": 0.9510080814361572,
+      "validation_coverage_95": 0.9686193466186523,
+      "validation_mean_predictive_std": 0.29878631234169006,
+      "validation_uncertainty_abs_error_correlation": 0.380660037158799
+    },
+    {
+      "model": "euclidean_exact_finite_gp_control",
+      "inference": "closed_form_exact_posterior_same_kernel_and_noise",
+      "kernel": "euclidean",
+      "finite_feature_dimension": 35,
+      "observed_entries": 725,
+      "learned_noise_std_normalized": 0.3197624385356903,
+      "case_metrics": [
+        {
+          "case": "slanted_channel_r32",
+          "nrmse": 0.2992056906223297,
+          "boundary_nrmse": 0.29253217577934265,
+          "predictive_nll": 0.04132050648331642,
+          "coverage_90": 0.9519301056861877,
+          "coverage_95": 0.9696335792541504,
+          "mean_predictive_std": 0.29374510049819946,
+          "uncertainty_abs_error_correlation": 0.2731881461717536
+        }
+      ],
+      "validation_nrmse": 0.2992056906223297,
+      "validation_boundary_nrmse": 0.29253217577934265,
+      "validation_predictive_nll": 0.04132050648331642,
+      "validation_coverage_90": 0.9519301056861877,
+      "validation_coverage_95": 0.9696335792541504,
+      "validation_mean_predictive_std": 0.29374510049819946,
+      "validation_uncertainty_abs_error_correlation": 0.2731881461717536
+    }
+  ]
+}
