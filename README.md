@@ -11,23 +11,28 @@ The dictionary is a tested optimization and identifiability scaffold, not the fi
 
 ## Current POC result
 
-The complete operator-spectrum chain is now implemented with a finite Fourier
-variational posterior and Gaussian ELBO. On a planted 24³ tensor, per-mode/rank
-routing improves held-out NRMSE over one global dictionary at 1% observations
-(`0.482` vs `0.593`) and matches the oracle by 5% (`0.0325` vs `0.0326`). Atom
-top-1 recovery remains poor, so the project does **not** claim kernel discovery.
+The submission confirmation uses a bank-size-independent, collapsed spectral
+mixture posterior, five untouched seeds (201--205), 2% observations and a fixed
+400-step budget.  On the mathematically matched anisotropic-diffusion case,
+operator per-mode/rank kernels reach `0.118±0.058` NRMSE versus
+`0.157±0.099` for generic per-mode/rank kernels (5/5 paired wins), while matching
+the oracle mean.  Induced-spectrum cosine improves from `0.926` to `0.977`.
 
-Rank-4 nonnegative separation reconstructs diffusion/advection/wave joint spectra
-with relative errors `0.0028 / 0.0325 / 0.1079`. A wrong spectral-support prior
-fails (`0.631` NRMSE), while adding generic dictionary atoms restores performance
-(`0.068`). The recommended method is therefore an operator-derived kernel bank
-with a generic misspecification escape route.
+The strict audit identifies a second, narrower contribution.  A free generic
+dictionary is not a support guarantee; reserving a fixed 25% generic spectral
+floor repairs a deleted-support prior from `0.615` to `0.130` NRMSE on
+anisotropic diffusion (5/5 wins), with a matched-prior cost of about `0.012`.
+This is a robustness--specificity tradeoff, not automatic kernel discovery.
+Full signed-grid separation still exposes tilted advection coupling (rank-4
+error about `0.18`, versus `0.0043` for anisotropic diffusion); advection is a
+limitation, not the main example. Historical expanded-feature results remain
+separate in `results/advanced_poc_r1_r5/`.
 
-![routing phase](results/advanced_poc_r1_r5/r1_r2_routing_phase.png)
+![submission confirmation](results/submission_confirmation/submission_confirmation_nrmse.png)
 
 ## Target formulation
 
-For `L u = w`, construct `S_phys(omega) = |L_hat(omega)|^-2 S_w(omega)` and approximate it as a nonnegative sum of separable spectra. The inverse Fourier factors define valid one-dimensional GP kernels for the functional Tucker factors. ELBO+SGD jointly learns the variational posterior, tensor parameters, and constrained mode/rank routing weights.
+For `L u = w`, construct `S_phys(omega) = |L_hat(omega)|^-2 S_w(omega)` and approximate its even/magnitude component as a nonnegative sum of separable spectra. The inverse Fourier factors define valid one-dimensional GP kernels for the functional tensor factors. ELBO+SGD jointly learns the coefficient posterior, tensor parameters, and optional mode/rank routing weights. The current real-feature implementation does not represent full signed cross-mode phase.
 
 ## Repository map
 
@@ -35,8 +40,9 @@ For `L u = w`, construct `S_phys(omega) = |L_hat(omega)|^-2 S_w(omega)` and appr
 - `src/geoaware/variational_domain_gp.py`: explicit finite-feature variational GP.
 - `experiments/track3_*`: migrated dictionary and residual experiments.
 - `results/`: migrated kernel-dictionary evidence.
-- `docs/TECHNICAL_REPORT.md`: complete technical baseline.
+- `docs/PAPER_TECHNICAL_REPORT_ZH.md`: paper-level Chinese Introduction, positioning, Method and confirmation report.
+- `docs/TECHNICAL_REPORT.md`: historical expanded POC and earlier domain-kernel baseline.
 - `docs/ITERATIONS.md`: advanced-POC research diary.
 - `docs/SHARED_PROTOCOL.md`: hub-level evaluation discipline.
 
-Matched/operator-friendly data must always be labeled as mechanism sanity. A publishable claim requires mode-assignment recovery, kernel-swap controls, and a mismatched PDE layer.
+Matched/operator-friendly data is labeled as mechanism sanity. The next publication gate requires a PDE solution dataset not sampled directly from the same finite atom family.

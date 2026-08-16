@@ -1,5 +1,7 @@
 # 方向 3 技术报告：Operator-Spectral FunBaT
 
+> 论文级的简洁 Introduction + Related Work + Method 已独立整理在 [`PAPER_TECHNICAL_REPORT_ZH.md`](PAPER_TECHNICAL_REPORT_ZH.md)。本文件保留 2026-08-15 expanded-feature POC 和更早 domain-kernel 支线的完整历史，不能与新的 collapsed 公平确认结果混表。
+
 > 独立仓库高级 POC 状态（2026-08-15）：青基申请书中的“算子联合功率谱 → 非负可分离谱 → 各 mode/rank GP 核 → functional tensor likelihood”已完整实现，并完成 3 seeds、400 steps、1%/2%/5% 观测率的五轮机制实验。结论是 **数学链条与预测机制成立，但从极稀疏数据恢复具体 kernel atom 并不可识别**。最合理的新方法不是放弃已有 kernel dictionary，而是将 operator-derived atoms 与通用 dictionary 组成带安全兜底的混合先验。
 
 ## A. 当前最简故事

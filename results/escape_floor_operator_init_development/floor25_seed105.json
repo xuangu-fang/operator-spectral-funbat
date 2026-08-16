@@ -1,0 +1,604 @@
+{
+  "case": "reference_advection",
+  "operator_config": {
+    "operator": "advection",
+    "source_scale": 0.12,
+    "advection_diffusivity": [
+      0.18,
+      0.252
+    ],
+    "advection_velocity": [
+      0.9,
+      -0.55
+    ],
+    "advection_reaction": 0.6
+  },
+  "operator_separation": {
+    "config": {
+      "operator": "advection",
+      "source_scale": 0.12,
+      "advection_diffusivity": [
+        0.18,
+        0.252
+      ],
+      "advection_velocity": [
+        0.9,
+        -0.55
+      ],
+      "advection_reaction": 0.6
+    },
+    "separation_rank": 4,
+    "relative_error": 0.032319996217935826,
+    "component_weights": [
+      0.11766090244054794,
+      0.11770662665367126,
+      0.11680110543966293,
+      0.11741145700216293
+    ]
+  },
+  "seed": 105,
+  "observation_ratio": 0.02,
+  "observed_count": 276,
+  "grid_shape": [
+    24,
+    24,
+    24
+  ],
+  "training_noise_std": 0.05,
+  "protocol": {
+    "steps": 400,
+    "tensor_rank": 2,
+    "frequency_support": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "operator_atoms": 4,
+    "generic_escape_atoms": 4,
+    "generic_escape_floor_total": 0.25,
+    "robust_route_initialization": "operator logits 0; generic logits -2; fixed generic floor",
+    "mixture_parameterization": "collapsed",
+    "split": "fixed random observed mask; every other entry held out; no validation/early stopping",
+    "test_use": "metrics only after all 400 updates; never used by optimizer or selection"
+  },
+  "models": {
+    "operator_per_mode_rank": {
+      "test_nrmse": 0.051969170570373535,
+      "observed_clean_nrmse": 0.04826963692903519,
+      "induced_spectrum": {
+        "cosine": 0.8374251127243042,
+        "relative_l2": 0.552067756652832
+      },
+      "uq": {
+        "predictive_coverage_95": 0.98046875,
+        "predictive_nll_mc": -1.1935231685638428,
+        "mean_interval_width_95": 0.3422834277153015,
+        "points": 1024,
+        "posterior_samples": 64,
+        "target": "independently noised held-out observations",
+        "exact_vs_mc_latent_mean_mae": 0.0034931860864162445,
+        "mean_exact_latent_variance": 0.0015786942094564438
+      },
+      "noise_std": 0.0841355174779892,
+      "routing_weights": [
+        [
+          [
+            0.6001331806182861,
+            0.39535802602767944,
+            0.001904226723127067,
+            0.0026045781560242176
+          ],
+          [
+            0.6987453103065491,
+            0.2991653382778168,
+            0.0008881071698851883,
+            0.0012012090301141143
+          ]
+        ],
+        [
+          [
+            0.12002865970134735,
+            0.09781888872385025,
+            0.38721513748168945,
+            0.39493730664253235
+          ],
+          [
+            0.15335190296173096,
+            0.12475719302892685,
+            0.3514055907726288,
+            0.3704853355884552
+          ]
+        ],
+        [
+          [
+            0.029314443469047546,
+            0.0480213388800621,
+            0.17489059269428253,
+            0.7477735877037048
+          ],
+          [
+            0.07045463472604752,
+            0.8113808631896973,
+            0.015674041584134102,
+            0.1024903953075409
+          ]
+        ]
+      ],
+      "trainable_parameter_count": 183,
+      "variational_coefficient_parameter_count": 156,
+      "loss_trace": [
+        {
+          "step": 1,
+          "negative_elbo_per_observation": 95.86335754394531,
+          "kl": 159.70419311523438,
+          "noise_std": 0.07999999821186066
+        },
+        {
+          "step": 100,
+          "negative_elbo_per_observation": 0.3392772078514099,
+          "kl": 94.49132537841797,
+          "noise_std": 0.2505330443382263
+        },
+        {
+          "step": 200,
+          "negative_elbo_per_observation": -0.1059863343834877,
+          "kl": 100.21005249023438,
+          "noise_std": 0.19100970029830933
+        },
+        {
+          "step": 300,
+          "negative_elbo_per_observation": -0.49283909797668457,
+          "kl": 114.13922119140625,
+          "noise_std": 0.12618353962898254
+        },
+        {
+          "step": 400,
+          "negative_elbo_per_observation": -0.8319556713104248,
+          "kl": 129.06224060058594,
+          "noise_std": 0.08434473723173141
+        }
+      ]
+    },
+    "generic_per_mode_rank": {
+      "test_nrmse": 0.03986051306128502,
+      "observed_clean_nrmse": 0.03684581443667412,
+      "induced_spectrum": {
+        "cosine": 0.8512777090072632,
+        "relative_l2": 0.6503839492797852
+      },
+      "uq": {
+        "predictive_coverage_95": 0.9921875,
+        "predictive_nll_mc": -1.219438910484314,
+        "mean_interval_width_95": 0.3550308346748352,
+        "points": 1024,
+        "posterior_samples": 64,
+        "target": "independently noised held-out observations",
+        "exact_vs_mc_latent_mean_mae": 0.003680984955281019,
+        "mean_exact_latent_variance": 0.0017180792056024075
+      },
+      "noise_std": 0.08725220710039139,
+      "routing_weights": [
+        [
+          [
+            0.978132963180542,
+            0.012553727254271507,
+            0.0050235954113304615,
+            0.004289690405130386
+          ],
+          [
+            0.993847668170929,
+            0.00292043830268085,
+            0.0018191058188676834,
+            0.001412790734320879
+          ]
+        ],
+        [
+          [
+            0.7961162328720093,
+            0.18676194548606873,
+            0.010167192667722702,
+            0.006954624783247709
+          ],
+          [
+            0.9968535304069519,
+            0.0025346921756863594,
+            0.0003500267630442977,
+            0.0002616603742353618
+          ]
+        ],
+        [
+          [
+            0.35607460141181946,
+            0.5521230101585388,
+            0.05967998504638672,
+            0.03212243691086769
+          ],
+          [
+            0.9981051683425903,
+            0.0010516589973121881,
+            0.0004643176216632128,
+            0.00037889720988459885
+          ]
+        ]
+      ],
+      "trainable_parameter_count": 183,
+      "variational_coefficient_parameter_count": 156,
+      "loss_trace": [
+        {
+          "step": 1,
+          "negative_elbo_per_observation": 95.92345428466797,
+          "kl": 159.70419311523438,
+          "noise_std": 0.07999999821186066
+        },
+        {
+          "step": 100,
+          "negative_elbo_per_observation": 0.30046311020851135,
+          "kl": 136.78749084472656,
+          "noise_std": 0.25702154636383057
+        },
+        {
+          "step": 200,
+          "negative_elbo_per_observation": -0.0314980112016201,
+          "kl": 132.9458465576172,
+          "noise_std": 0.18838724493980408
+        },
+        {
+          "step": 300,
+          "negative_elbo_per_observation": -0.38433125615119934,
+          "kl": 140.93869018554688,
+          "noise_std": 0.12790217995643616
+        },
+        {
+          "step": 400,
+          "negative_elbo_per_observation": -0.6322751641273499,
+          "kl": 157.86834716796875,
+          "noise_std": 0.08752251416444778
+        }
+      ]
+    },
+    "robust_per_mode_rank": {
+      "test_nrmse": 0.05237599462270737,
+      "observed_clean_nrmse": 0.050227466970682144,
+      "induced_spectrum": {
+        "cosine": 0.8301331400871277,
+        "relative_l2": 0.5754395723342896
+      },
+      "uq": {
+        "predictive_coverage_95": 0.98828125,
+        "predictive_nll_mc": -1.1616885662078857,
+        "mean_interval_width_95": 0.3645817041397095,
+        "points": 1024,
+        "posterior_samples": 64,
+        "target": "independently noised held-out observations",
+        "exact_vs_mc_latent_mean_mae": 0.003967734053730965,
+        "mean_exact_latent_variance": 0.0021681273356080055
+      },
+      "noise_std": 0.0877496749162674,
+      "routing_weights": [
+        [
+          [
+            0.36244437098503113,
+            0.3603348731994629,
+            0.010430973954498768,
+            0.011376335285604,
+            0.06404533982276917,
+            0.06386654078960419,
+            0.06383877247571945,
+            0.06366284191608429
+          ],
+          [
+            0.3634617328643799,
+            0.36112019419670105,
+            0.008116875775158405,
+            0.00990520790219307,
+            0.06399551779031754,
+            0.06389615684747696,
+            0.06515674293041229,
+            0.0643475204706192
+          ]
+        ],
+        [
+          [
+            0.0419272817671299,
+            0.040667854249477386,
+            0.302489310503006,
+            0.333207905292511,
+            0.08649963140487671,
+            0.06672406941652298,
+            0.06456289440393448,
+            0.0639210045337677
+          ],
+          [
+            0.08168763667345047,
+            0.0649021714925766,
+            0.19565430283546448,
+            0.26347604393959045,
+            0.19568684697151184,
+            0.06637192517518997,
+            0.06629601120948792,
+            0.06592501699924469
+          ]
+        ],
+        [
+          [
+            0.04361919313669205,
+            0.09322524070739746,
+            0.05904114246368408,
+            0.5054296255111694,
+            0.0665484294295311,
+            0.074630968272686,
+            0.08479133993387222,
+            0.07271399348974228
+          ],
+          [
+            0.04438057169318199,
+            0.6844642162322998,
+            0.0036858210805803537,
+            0.015605678781867027,
+            0.0630735233426094,
+            0.06284589320421219,
+            0.0631580799818039,
+            0.06278622150421143
+          ]
+        ]
+      ],
+      "trainable_parameter_count": 207,
+      "variational_coefficient_parameter_count": 156,
+      "loss_trace": [
+        {
+          "step": 1,
+          "negative_elbo_per_observation": 95.87718963623047,
+          "kl": 159.70419311523438,
+          "noise_std": 0.07999999821186066
+        },
+        {
+          "step": 100,
+          "negative_elbo_per_observation": 0.2951025664806366,
+          "kl": 134.92718505859375,
+          "noise_std": 0.24089986085891724
+        },
+        {
+          "step": 200,
+          "negative_elbo_per_observation": 0.049283016473054886,
+          "kl": 147.91595458984375,
+          "noise_std": 0.18045708537101746
+        },
+        {
+          "step": 300,
+          "negative_elbo_per_observation": -0.25003233551979065,
+          "kl": 167.42640686035156,
+          "noise_std": 0.12586387991905212
+        },
+        {
+          "step": 400,
+          "negative_elbo_per_observation": -0.5029758214950562,
+          "kl": 191.65628051757812,
+          "noise_std": 0.0879792869091034
+        }
+      ]
+    },
+    "wrong_support_operator": {
+      "test_nrmse": 0.6423542499542236,
+      "observed_clean_nrmse": 0.6096909046173096,
+      "induced_spectrum": {
+        "cosine": 0.8126060366630554,
+        "relative_l2": 0.7043799161911011
+      },
+      "uq": {
+        "predictive_coverage_95": 0.8544921875,
+        "predictive_nll_mc": 0.9925144910812378,
+        "mean_interval_width_95": 1.8877363204956055,
+        "points": 1024,
+        "posterior_samples": 64,
+        "target": "independently noised held-out observations",
+        "exact_vs_mc_latent_mean_mae": 0.010746214538812637,
+        "mean_exact_latent_variance": 0.014147168956696987
+      },
+      "noise_std": 0.5,
+      "routing_weights": [
+        [
+          [
+            0.47875532507896423,
+            0.4804229140281677,
+            0.019729800522327423,
+            0.02109193056821823
+          ],
+          [
+            0.45522183179855347,
+            0.4554484486579895,
+            0.04424910619854927,
+            0.04508061707019806
+          ]
+        ],
+        [
+          [
+            0.08919816464185715,
+            0.08760564029216766,
+            0.40199291706085205,
+            0.4212033152580261
+          ],
+          [
+            0.1444515436887741,
+            0.14117227494716644,
+            0.35121065378189087,
+            0.3631654679775238
+          ]
+        ],
+        [
+          [
+            0.1105395182967186,
+            0.44018906354904175,
+            0.03148922696709633,
+            0.417782187461853
+          ],
+          [
+            0.2564866840839386,
+            0.23247216641902924,
+            0.27582070231437683,
+            0.23522040247917175
+          ]
+        ]
+      ],
+      "trainable_parameter_count": 183,
+      "variational_coefficient_parameter_count": 156,
+      "loss_trace": [
+        {
+          "step": 1,
+          "negative_elbo_per_observation": 95.83920288085938,
+          "kl": 159.70419311523438,
+          "noise_std": 0.07999999821186066
+        },
+        {
+          "step": 100,
+          "negative_elbo_per_observation": 1.3955262899398804,
+          "kl": 40.73447036743164,
+          "noise_std": 0.47450748085975647
+        },
+        {
+          "step": 200,
+          "negative_elbo_per_observation": 1.325675129890442,
+          "kl": 35.55611038208008,
+          "noise_std": 0.5
+        },
+        {
+          "step": 300,
+          "negative_elbo_per_observation": 1.321886658668518,
+          "kl": 34.426849365234375,
+          "noise_std": 0.5
+        },
+        {
+          "step": 400,
+          "negative_elbo_per_observation": 1.3170139789581299,
+          "kl": 33.72853088378906,
+          "noise_std": 0.5
+        }
+      ]
+    },
+    "wrong_support_robust": {
+      "test_nrmse": 0.05437461659312248,
+      "observed_clean_nrmse": 0.05224845930933952,
+      "induced_spectrum": {
+        "cosine": 0.8530296683311462,
+        "relative_l2": 0.5287001132965088
+      },
+      "uq": {
+        "predictive_coverage_95": 0.98828125,
+        "predictive_nll_mc": -1.1343796253204346,
+        "mean_interval_width_95": 0.37755268812179565,
+        "points": 1024,
+        "posterior_samples": 64,
+        "target": "independently noised held-out observations",
+        "exact_vs_mc_latent_mean_mae": 0.004134301096200943,
+        "mean_exact_latent_variance": 0.0023318445309996605
+      },
+      "noise_std": 0.09081395715475082,
+      "routing_weights": [
+        [
+          [
+            0.3593195378780365,
+            0.35993990302085876,
+            0.012445662170648575,
+            0.013019232079386711,
+            0.06405125558376312,
+            0.06383253633975983,
+            0.06377414613962173,
+            0.0636177808046341
+          ],
+          [
+            0.3589323163032532,
+            0.3596034348011017,
+            0.01259880792349577,
+            0.012044047936797142,
+            0.06380841135978699,
+            0.06390414386987686,
+            0.06485527008771896,
+            0.06425358355045319
+          ]
+        ],
+        [
+          [
+            0.050520896911621094,
+            0.052102409303188324,
+            0.16567757725715637,
+            0.15617252886295319,
+            0.3372367322444916,
+            0.10453328490257263,
+            0.06439276039600372,
+            0.06936383992433548
+          ],
+          [
+            0.05612291395664215,
+            0.05203857272863388,
+            0.17502477765083313,
+            0.204635351896286,
+            0.27710679173469543,
+            0.0993763729929924,
+            0.06559935212135315,
+            0.07009589672088623
+          ]
+        ],
+        [
+          [
+            0.11377765238285065,
+            0.18611988425254822,
+            0.06914417445659637,
+            0.17619504034519196,
+            0.07555937021970749,
+            0.10320339351892471,
+            0.1514064371585846,
+            0.12459404766559601
+          ],
+          [
+            0.014834867790341377,
+            0.5317960381507874,
+            0.004674345254898071,
+            0.19638165831565857,
+            0.06302139908075333,
+            0.0628589391708374,
+            0.06357140839099884,
+            0.06286130100488663
+          ]
+        ]
+      ],
+      "trainable_parameter_count": 207,
+      "variational_coefficient_parameter_count": 156,
+      "loss_trace": [
+        {
+          "step": 1,
+          "negative_elbo_per_observation": 95.8614730834961,
+          "kl": 159.70419311523438,
+          "noise_std": 0.07999999821186066
+        },
+        {
+          "step": 100,
+          "negative_elbo_per_observation": 0.3096388578414917,
+          "kl": 134.9932098388672,
+          "noise_std": 0.2510935962200165
+        },
+        {
+          "step": 200,
+          "negative_elbo_per_observation": 0.08132854849100113,
+          "kl": 148.8759765625,
+          "noise_std": 0.18731214106082916
+        },
+        {
+          "step": 300,
+          "negative_elbo_per_observation": -0.2217416614294052,
+          "kl": 169.61920166015625,
+          "noise_std": 0.13080403208732605
+        },
+        {
+          "step": 400,
+          "negative_elbo_per_observation": -0.47242283821105957,
+          "kl": 194.94717407226562,
+          "noise_std": 0.09105678647756577
+        }
+      ]
+    }
+  },
+  "strict_support_basis_fix": "Rerun after replacing atom-derived Fourier basis with an analytic, atom-independent real basis; all other protocol fields frozen."
+}

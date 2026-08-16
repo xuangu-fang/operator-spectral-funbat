@@ -1,0 +1,245 @@
+{
+  "reason": "Rerun only strict-support controls after fixing atom-dependent basis loss.",
+  "records": [
+    {
+      "case": "reference_advection",
+      "seed": 101,
+      "before_invalid": {
+        "wrong_support_operator": 0.2529739439487457,
+        "wrong_support_robust": 0.25371474027633667
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.25297388434410095,
+        "wrong_support_robust": 0.03849581629037857
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 102,
+      "before_invalid": {
+        "wrong_support_operator": 0.5423857569694519,
+        "wrong_support_robust": 0.5425489544868469
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.5423857569694519,
+        "wrong_support_robust": 0.050149887800216675
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 103,
+      "before_invalid": {
+        "wrong_support_operator": 0.8580653667449951,
+        "wrong_support_robust": 0.8619692325592041
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.8580653667449951,
+        "wrong_support_robust": 0.057856157422065735
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 104,
+      "before_invalid": {
+        "wrong_support_operator": 0.801486074924469,
+        "wrong_support_robust": 0.807275116443634
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.8014861345291138,
+        "wrong_support_robust": 0.039191748946905136
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 105,
+      "before_invalid": {
+        "wrong_support_operator": 0.6423542499542236,
+        "wrong_support_robust": 0.644501268863678
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.6423542499542236,
+        "wrong_support_robust": 0.05437461659312248
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 201,
+      "before_invalid": {
+        "wrong_support_operator": 0.7322302460670471,
+        "wrong_support_robust": 0.7330262064933777
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.7322302460670471,
+        "wrong_support_robust": 0.035835180431604385
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 202,
+      "before_invalid": {
+        "wrong_support_operator": 0.9166321754455566,
+        "wrong_support_robust": 0.9175621271133423
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.9166321754455566,
+        "wrong_support_robust": 0.04554406926035881
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 203,
+      "before_invalid": {
+        "wrong_support_operator": 0.6022797226905823,
+        "wrong_support_robust": 0.6023521423339844
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.6022796034812927,
+        "wrong_support_robust": 0.05190350487828255
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 204,
+      "before_invalid": {
+        "wrong_support_operator": 0.7699499130249023,
+        "wrong_support_robust": 0.7731558680534363
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.7699499130249023,
+        "wrong_support_robust": 0.04367174208164215
+      }
+    },
+    {
+      "case": "reference_advection",
+      "seed": 205,
+      "before_invalid": {
+        "wrong_support_operator": 0.340406209230423,
+        "wrong_support_robust": 0.34140506386756897
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.340406209230423,
+        "wrong_support_robust": 0.02403559722006321
+      }
+    },
+    {
+      "case": "shifted_advection",
+      "seed": 201,
+      "before_invalid": {
+        "wrong_support_operator": 0.7469748258590698,
+        "wrong_support_robust": 0.7492150068283081
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.7469748258590698,
+        "wrong_support_robust": 0.03710628300905228
+      }
+    },
+    {
+      "case": "shifted_advection",
+      "seed": 202,
+      "before_invalid": {
+        "wrong_support_operator": 0.60063236951828,
+        "wrong_support_robust": 0.6014925241470337
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.60063236951828,
+        "wrong_support_robust": 0.09852102398872375
+      }
+    },
+    {
+      "case": "shifted_advection",
+      "seed": 203,
+      "before_invalid": {
+        "wrong_support_operator": 0.6161324381828308,
+        "wrong_support_robust": 0.6053519248962402
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.6161324381828308,
+        "wrong_support_robust": 0.10458299517631531
+      }
+    },
+    {
+      "case": "shifted_advection",
+      "seed": 204,
+      "before_invalid": {
+        "wrong_support_operator": 0.7029592990875244,
+        "wrong_support_robust": 0.7044091820716858
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.7029593586921692,
+        "wrong_support_robust": 0.14459292590618134
+      }
+    },
+    {
+      "case": "shifted_advection",
+      "seed": 205,
+      "before_invalid": {
+        "wrong_support_operator": 0.4922970235347748,
+        "wrong_support_robust": 0.49309995770454407
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.4922969937324524,
+        "wrong_support_robust": 0.038590557873249054
+      }
+    },
+    {
+      "case": "anisotropic_diffusion",
+      "seed": 201,
+      "before_invalid": {
+        "wrong_support_operator": 0.7926138043403625,
+        "wrong_support_robust": 0.7939401268959045
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.7926139235496521,
+        "wrong_support_robust": 0.07985386997461319
+      }
+    },
+    {
+      "case": "anisotropic_diffusion",
+      "seed": 202,
+      "before_invalid": {
+        "wrong_support_operator": 0.551095187664032,
+        "wrong_support_robust": 0.5534427165985107
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.551095187664032,
+        "wrong_support_robust": 0.03471578657627106
+      }
+    },
+    {
+      "case": "anisotropic_diffusion",
+      "seed": 203,
+      "before_invalid": {
+        "wrong_support_operator": 0.8486828207969666,
+        "wrong_support_robust": 0.8490725755691528
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.8486828207969666,
+        "wrong_support_robust": 0.18862220644950867
+      }
+    },
+    {
+      "case": "anisotropic_diffusion",
+      "seed": 204,
+      "before_invalid": {
+        "wrong_support_operator": 0.367155522108078,
+        "wrong_support_robust": 0.3688819110393524
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.3671555519104004,
+        "wrong_support_robust": 0.1879802942276001
+      }
+    },
+    {
+      "case": "anisotropic_diffusion",
+      "seed": 205,
+      "before_invalid": {
+        "wrong_support_operator": 0.5149319767951965,
+        "wrong_support_robust": 0.516780436038971
+      },
+      "after_fixed": {
+        "wrong_support_operator": 0.5149321556091309,
+        "wrong_support_robust": 0.15939311683177948
+      }
+    }
+  ]
+}

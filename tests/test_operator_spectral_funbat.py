@@ -54,3 +54,105 @@ def test_hierarchical_route_shares_rank_and_shrinks_deviation():
     with torch.no_grad():
         model.mode_deviation[0, 0] = 1.0
     assert model.kl_to_prior() > base_kl
+
+
+def test_collapsed_mixture_has_bank_independent_coefficient_budget_and_psd_spectrum():
+    _, base = generic_spectral_dictionary(3)
+    coords = tuple(torch.linspace(0, 1, 8)[:-1] for _ in range(3))
+    four_atom = base[None].expand(3, -1, -1).clone()
+    eight_atom = torch.cat((four_atom, four_atom), dim=1)
+    small = ModeAdaptiveVariationalCP(
+        coords, four_atom, rank=2, mixture_parameterization="collapsed",
+    )
+    large = ModeAdaptiveVariationalCP(
+        coords, eight_atom, rank=2, mixture_parameterization="collapsed",
+    )
+    assert small.variational_mean.shape == large.variational_mean.shape == (3, 2, 7)
+    assert torch.all(small.induced_spectra() >= 0)
+    assert torch.allclose(
+        small.induced_spectra()[..., :1]
+        + 2 * small.induced_spectra()[..., 1:].sum(-1, keepdim=True),
+        torch.ones(3, 2, 1),
+    )
+
+
+def test_exact_posterior_moments_match_monte_carlo_for_collapsed_model():
+    _, base = generic_spectral_dictionary(3)
+    coords = tuple(torch.linspace(0, 1, 8)[:-1] for _ in range(3))
+    model = ModeAdaptiveVariationalCP(
+        coords, base[None].expand(3, -1, -1).clone(), rank=2,
+        mixture_parameterization="collapsed",
+    )
+    indices = all_grid_indices((7, 7, 7))[:5]
+    mean, variance = model.posterior_moments(indices)
+    generator = torch.Generator().manual_seed(123)
+    samples = model.posterior_predictive_samples(
+        indices, samples=4000, generator=generator, include_noise=False,
+    )
+    assert torch.allclose(samples.mean(0), mean, atol=0.04, rtol=0.12)
+    assert torch.allclose(samples.var(0), variance, atol=0.04, rtol=0.18)
+
+
+def test_collapsed_routing_gradient_is_finite_with_strict_zero_support():
+    _, base = generic_spectral_dictionary(3)
+    spectra = base[None].expand(3, -1, -1).clone()
+    spectra[..., 2:] = 0
+    # Preserve exact zero high-frequency support after variance normalization.
+    from geoaware.operator_spectral_funbat import normalize_spectrum
+    spectra = normalize_spectrum(spectra)
+    coords = tuple(torch.linspace(0, 1, 8)[:-1] for _ in range(3))
+    model = ModeAdaptiveVariationalCP(
+        coords, spectra, rank=2, mixture_parameterization="collapsed",
+    )
+    indices = all_grid_indices((7, 7, 7))[:31]
+    loss, _ = model.negative_elbo(
+        indices, torch.randn(len(indices)), total_count=len(indices), samples=2,
+    )
+    loss.backward()
+    assert torch.isfinite(loss)
+    assert torch.isfinite(model.routing_logits.grad).all()
+
+
+def test_generic_escape_floor_is_preserved_by_routing():
+    _, base = generic_spectral_dictionary(3)
+    spectra = torch.cat((base, base))[None].expand(3, -1, -1).clone()
+    coords = tuple(torch.linspace(0, 1, 8)[:-1] for _ in range(3))
+    floor = torch.cat((torch.zeros(4), torch.full((4,), 0.25 / 4)))
+    model = ModeAdaptiveVariationalCP(
+        coords, spectra, rank=2, mixture_parameterization="collapsed",
+        routing_floor=floor,
+    )
+    with torch.no_grad():
+        model.routing_logits[..., :4] = 20
+        model.routing_logits[..., 4:] = -20
+    weights = model.routing_weights()
+    assert torch.all(weights[..., 4:] >= floor[4:])
+    assert torch.allclose(weights.sum(-1), torch.ones(3, 2))
+
+
+def test_generic_floor_restores_features_missing_from_first_atom_support():
+    _, generic = generic_spectral_dictionary(3)
+    wrong = generic.clone()
+    wrong[..., 2:] = 0
+    from geoaware.operator_spectral_funbat import normalize_spectrum
+    wrong = normalize_spectrum(wrong)
+    spectra = torch.cat((wrong, generic))[None].expand(3, -1, -1).clone()
+    coords = tuple(torch.linspace(0, 1, 8)[:-1] for _ in range(3))
+    floor = torch.cat((torch.zeros(4), torch.full((4,), 0.25 / 4)))
+    model = ModeAdaptiveVariationalCP(
+        coords, spectra, rank=2, mixture_parameterization="collapsed",
+        routing_floor=floor,
+    )
+    features = model._collapsed_features(0, torch.arange(7))
+    # k=2 cosine/sine columns must remain active via the generic floor even
+    # though the first four operator atoms have strict zero support there.
+    assert features[..., 2].abs().max() > 1e-3
+    assert features[..., 5].abs().max() > 1e-3
+    kernel = features[:, 0] @ features[:, 0].T
+    assert torch.linalg.eigvalsh(kernel).min() > -1e-5
+    indices = all_grid_indices((7, 7, 7))[:31]
+    loss, _ = model.negative_elbo(
+        indices, torch.randn(len(indices)), total_count=len(indices), samples=2,
+    )
+    loss.backward()
+    assert torch.isfinite(model.routing_logits.grad).all()

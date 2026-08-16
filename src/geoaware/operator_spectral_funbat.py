@@ -60,16 +60,30 @@ def fourier_features(coordinate: torch.Tensor, spectrum: torch.Tensor) -> torch.
     if coordinate.ndim != 1:
         raise ValueError("coordinate must be one-dimensional")
     spectrum = normalize_spectrum(spectrum.float())
-    frequency = torch.arange(spectrum.shape[-1], device=coordinate.device,
-                             dtype=coordinate.dtype)
-    phase = 2 * math.pi * coordinate[:, None] * frequency[None]
     leading = spectrum.shape[:-1]
     root = spectrum.sqrt()
     constant = root[..., :1].unsqueeze(-2).expand(*leading, len(coordinate), 1)
     scale = (2 * spectrum[..., 1:]).sqrt().unsqueeze(-2)
-    cosine = torch.cos(phase[:, 1:]).reshape(*(1 for _ in leading), len(coordinate), -1)
-    sine = torch.sin(phase[:, 1:]).reshape(*(1 for _ in leading), len(coordinate), -1)
+    frequency = torch.arange(1, spectrum.shape[-1], device=coordinate.device,
+                             dtype=coordinate.dtype)
+    phase = 2 * math.pi * coordinate[:, None] * frequency[None]
+    cosine = torch.cos(phase).reshape(*(1 for _ in leading), len(coordinate), -1)
+    sine = torch.sin(phase).reshape(*(1 for _ in leading), len(coordinate), -1)
     return torch.cat((constant, scale * cosine, scale * sine), dim=-1)
+
+
+def real_fourier_basis(coordinate: torch.Tensor, frequency_bins: int) -> torch.Tensor:
+    """Atom-independent ``[1,sqrt(2)cos,sqrt(2)sin]`` feature basis."""
+    if coordinate.ndim != 1 or frequency_bins < 2:
+        raise ValueError("coordinate/frequency_bins are invalid")
+    frequency = torch.arange(1, frequency_bins, device=coordinate.device,
+                             dtype=coordinate.dtype)
+    phase = 2 * math.pi * coordinate[:, None] * frequency[None]
+    return torch.cat((
+        torch.ones(len(coordinate), 1, device=coordinate.device, dtype=coordinate.dtype),
+        math.sqrt(2) * torch.cos(phase),
+        math.sqrt(2) * torch.sin(phase),
+    ), dim=-1)
 
 
 def operator_joint_spectrum(
@@ -77,6 +91,11 @@ def operator_joint_spectrum(
     frequencies: torch.Tensor,
     *,
     source_scale: float = 0.12,
+    reaction: float = 0.8,
+    diffusion_coefficients: tuple[float, float, float] = (0.35, 1.1, 0.55),
+    advection_diffusivity: tuple[float, float] = (0.18, 0.252),
+    advection_velocity: tuple[float, float] = (0.9, -0.55),
+    advection_reaction: float = 0.6,
 ) -> torch.Tensor:
     """Construct ``|L_hat|^-2 S_w`` on a three-dimensional frequency grid.
 
@@ -89,14 +108,23 @@ def operator_joint_spectrum(
         raise ValueError("frequencies must be a nontrivial one-dimensional grid")
     wx, wy, wt = torch.meshgrid(frequencies, frequencies, frequencies, indexing="ij")
     source = torch.exp(-source_scale * (wx.square() + wy.square() + wt.square()))
+    positive_parameters = (
+        source_scale, reaction, *diffusion_coefficients,
+        *advection_diffusivity, advection_reaction,
+    )
+    if any(value <= 0 for value in positive_parameters):
+        raise ValueError("source, reaction and diffusivity parameters must be positive")
     if operator == "diffusion":
-        response_sq = (0.8 + 0.35 * wx.square() + 1.1 * wy.square() + 0.55 * wt.square()).square()
+        dx, dy, dt = diffusion_coefficients
+        response_sq = (reaction + dx * wx.square() + dy * wy.square() + dt * wt.square()).square()
     elif operator == "wave":
         dispersion = 1.35 * (wx.square() + 0.65 * wy.square()) - wt.square()
         response_sq = dispersion.square() + (0.45 + 0.18 * wt.abs()).square()
     elif operator == "advection":
-        dissipative = 0.6 + 0.18 * (wx.square() + 1.4 * wy.square())
-        transport = wt + 0.9 * wx - 0.55 * wy
+        dx, dy = advection_diffusivity
+        vx, vy = advection_velocity
+        dissipative = advection_reaction + dx * wx.square() + dy * wy.square()
+        transport = wt + vx * wx + vy * wy
         response_sq = dissipative.square() + transport.square()
     else:
         raise ValueError(f"unknown operator: {operator}")
@@ -120,7 +148,7 @@ def nonnegative_cp_spectrum(
     seed: int = 0,
     eps: float = 1e-10,
 ) -> SpectrumCP:
-    """Nonnegative CP decomposition by multiplicative KL-divergence updates.
+    """Nonnegative CP decomposition by multiplicative Euclidean-loss updates.
 
     The output factors are normalized as one-sided spectra.  Their positive
     weights retain component scale.  This routine is intentionally small and
@@ -188,27 +216,51 @@ class ModeAdaptiveVariationalCP(nn.Module):
         fixed_routing: torch.Tensor | None = None,
         noise_std: float = 0.08,
         mode_deviation_std: float = 0.35,
+        mixture_parameterization: Literal["expanded", "collapsed"] = "expanded",
+        routing_floor: torch.Tensor | None = None,
     ):
         super().__init__()
         if spectra.ndim != 3 or spectra.shape[0] != 3:
             raise ValueError("spectra must have shape [3,family,frequency]")
         if rank < 1 or routing not in {"global", "per_mode", "per_mode_rank", "hierarchical", "fixed"}:
             raise ValueError("invalid rank or routing")
+        if mixture_parameterization not in {"expanded", "collapsed"}:
+            raise ValueError("mixture_parameterization must be expanded or collapsed")
         if mode_deviation_std <= 0:
             raise ValueError("mode_deviation_std must be positive")
         self.rank = rank
         self.family_count = spectra.shape[1]
         self.routing = routing
+        self.mixture_parameterization = mixture_parameterization
         self.mode_deviation_std = float(mode_deviation_std)
         features = [fourier_features(coordinates[d], spectra[d]) for d in range(3)]
         feature_size = features[0].shape[-1]
         if any(value.shape[-1] != feature_size for value in features):
             raise ValueError("all modes must use the same frequency budget")
         self.feature_size = feature_size
+        self.register_buffer("spectra", normalize_spectrum(spectra.float()))
+        if routing_floor is None:
+            floor = torch.zeros(self.family_count, dtype=spectra.dtype, device=spectra.device)
+        else:
+            floor = routing_floor.to(device=spectra.device, dtype=spectra.dtype)
+            if floor.shape != (self.family_count,) or torch.any(floor < 0) or floor.sum() >= 1:
+                raise ValueError("routing_floor must be nonnegative [family] with sum < 1")
+        self.register_buffer("routing_floor", floor)
         for mode, value in enumerate(features):
             self.register_buffer(f"features_{mode}", value)
+            self.register_buffer(
+                f"fourier_basis_{mode}",
+                real_fourier_basis(coordinates[mode], spectra.shape[-1]),
+            )
 
-        shape = (3, rank, self.family_count, feature_size)
+        # ``expanded`` preserves the first POC exactly: every atom owns an
+        # independent coefficient vector.  ``collapsed`` uses the canonical
+        # finite representation of a spectral-mixture GP: first form
+        # S_mix=sum_q pi_q S_q, then use one coefficient vector.  The latter
+        # makes the variational coefficient budget independent of bank size.
+        shape = ((3, rank, self.family_count, feature_size)
+                 if mixture_parameterization == "expanded"
+                 else (3, rank, feature_size))
         self.variational_mean = nn.Parameter(0.12 * torch.randn(shape))
         self.raw_variational_std = nn.Parameter(torch.full(shape, -2.5))
         self.core = nn.Parameter(torch.ones(rank) / math.sqrt(rank))
@@ -243,13 +295,16 @@ class ModeAdaptiveVariationalCP(nn.Module):
     def routing_weights(self) -> torch.Tensor:
         if self.routing == "fixed":
             return self.fixed_routing
-        weights = torch.softmax(self.routing_logits, dim=-1)
+        def add_floor(value: torch.Tensor) -> torch.Tensor:
+            return self.routing_floor + (1 - self.routing_floor.sum()) * value
+
+        weights = add_floor(torch.softmax(self.routing_logits, dim=-1))
         if self.routing == "global":
             return weights.expand(3, self.rank, -1)
         if self.routing == "hierarchical":
-            weights = torch.softmax(
-                self.routing_logits[None] + self.mode_deviation, dim=-1
-            )
+            weights = add_floor(torch.softmax(
+                self.routing_logits[None] + self.mode_deviation, dim=-1,
+            ))
             return weights[:, None].expand(-1, self.rank, -1)
         if self.routing == "per_mode":
             return weights[:, None].expand(-1, self.rank, -1)
@@ -257,6 +312,22 @@ class ModeAdaptiveVariationalCP(nn.Module):
 
     def variational_std(self) -> torch.Tensor:
         return F.softplus(self.raw_variational_std) + 1e-4
+
+    def induced_spectra(self) -> torch.Tensor:
+        """Return the routed one-sided prior spectrum for every mode/rank."""
+        return torch.einsum("drq,dqk->drk", self.routing_weights(), self.spectra)
+
+    def _collapsed_features(self, mode: int, node_index: torch.Tensor) -> torch.Tensor:
+        """Canonical features of the routed mixture, shaped [entry,rank,feature]."""
+        mixed = self.induced_spectra()[mode]
+        # Exact zero support is allowed (and is required by the strict
+        # mismatch control), but sqrt has an infinite derivative at zero.
+        # Clamping only for the feature construction keeps the intended zero
+        # covariance to numerical precision and prevents NaN routing gradients.
+        root = mixed.clamp_min(1e-12).sqrt()
+        amplitude = torch.cat((root[:, :1], root[:, 1:], root[:, 1:]), dim=-1)
+        basis = getattr(self, f"fourier_basis_{mode}")
+        return basis[node_index.long(), None, :] * amplitude[None]
 
     def kl_to_prior(self) -> torch.Tensor:
         mean, std = self.variational_mean, self.variational_std()
@@ -268,19 +339,78 @@ class ModeAdaptiveVariationalCP(nn.Module):
     def _prediction_from_coefficients(self, indices: torch.Tensor, coefficients: torch.Tensor) -> torch.Tensor:
         if indices.ndim != 2 or indices.shape[1] != 3:
             raise ValueError("indices must have shape [entry,3]")
-        weights = self.routing_weights().sqrt()
         factors = []
         for mode in range(3):
-            feature = getattr(self, f"features_{mode}")[:, indices[:, mode].long(), :]
-            # [family,entry,feature] x [rank,family,feature] -> [entry,rank]
-            value = torch.einsum(
-                "qnf,rqf,rq->nr", feature, coefficients[mode], weights[mode]
-            )
+            if self.mixture_parameterization == "expanded":
+                feature = getattr(self, f"features_{mode}")[:, indices[:, mode].long(), :]
+                value = torch.einsum(
+                    "qnf,rqf,rq->nr", feature, coefficients[mode],
+                    self.routing_weights()[mode].sqrt(),
+                )
+            else:
+                feature = self._collapsed_features(mode, indices[:, mode])
+                value = torch.einsum("nrf,rf->nr", feature, coefficients[mode])
             factors.append(value)
         return torch.einsum("nr,nr,nr,r->n", *factors, self.core)
 
     def posterior_mean(self, indices: torch.Tensor) -> torch.Tensor:
         return self._prediction_from_coefficients(indices, self.variational_mean)
+
+    def posterior_moments(self, indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Exact marginal latent mean/variance under the mean-field posterior."""
+        factor_means, factor_variances = [], []
+        std = self.variational_std()
+        for mode in range(3):
+            if self.mixture_parameterization == "expanded":
+                feature = getattr(self, f"features_{mode}")[:, indices[:, mode].long(), :]
+                weighted = feature[None] * self.routing_weights()[mode, :, :, None, None].sqrt()
+                weighted = weighted.permute(0, 2, 1, 3)
+                mean = torch.einsum("rnqf,rqf->nr", weighted, self.variational_mean[mode])
+                variance = torch.einsum("rnqf,rqf->nr", weighted.square(), std[mode].square())
+            else:
+                feature = self._collapsed_features(mode, indices[:, mode])
+                mean = torch.einsum("nrf,rf->nr", feature, self.variational_mean[mode])
+                variance = torch.einsum("nrf,rf->nr", feature.square(), std[mode].square())
+            factor_means.append(mean)
+            factor_variances.append(variance)
+        product_mean = factor_means[0] * factor_means[1] * factor_means[2]
+        product_second = torch.ones_like(product_mean)
+        for mean, variance in zip(factor_means, factor_variances):
+            product_second = product_second * (mean.square() + variance)
+        mean = torch.einsum("nr,r->n", product_mean, self.core)
+        variance = torch.einsum(
+            "nr,r->n", (product_second - product_mean.square()).clamp_min(0),
+            self.core.square(),
+        )
+        return mean, variance.clamp_min(1e-12)
+
+    def posterior_predictive_samples(
+        self,
+        indices: torch.Tensor,
+        *,
+        samples: int,
+        generator: torch.Generator,
+        include_noise: bool = True,
+    ) -> torch.Tensor:
+        """Monte-Carlo samples from q(f) or q(f)p(y|f)."""
+        if samples < 1:
+            raise ValueError("samples must be positive")
+        std = self.variational_std()
+        draws = []
+        for _ in range(samples):
+            epsilon = torch.randn(
+                std.shape, generator=generator, device=std.device, dtype=std.dtype,
+            )
+            value = self._prediction_from_coefficients(
+                indices, self.variational_mean + std * epsilon,
+            )
+            if include_noise:
+                value = value + self.noise_std * torch.randn(
+                    value.shape, generator=generator, device=value.device,
+                    dtype=value.dtype,
+                )
+            draws.append(value)
+        return torch.stack(draws)
 
     def negative_elbo(
         self,
