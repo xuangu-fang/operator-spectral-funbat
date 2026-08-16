@@ -363,6 +363,8 @@ robust 在 matched case 0/5 战胜 operator-only，平均代价为 `+0.0071` NRM
 | shifted advection | 0.1006±0.0586 | 0.0995±0.0590 | **0.0892±0.0369** | 0.2312±0.2580 | 0.1042±0.1041 |
 | anisotropic diffusion | 0.1212±0.0606 | **0.1183±0.0582** | 0.3761±0.5235 | 0.1567±0.0990 | 0.1183±0.0588 |
 
+![2% 观测下的 frozen confirmation](../results/submission_confirmation/submission_confirmation_nrmse.png)
+
 最清楚的确认信号来自数学上与 real separable spectrum 匹配的 anisotropic diffusion：operator per-mode/rank 相对参数匹配的 generic per-mode/rank 平均 NRMSE 降低约 24.5%，5/5 paired wins，并追平 oracle mean。相对 operator-global 只有约 2.4% 均值改善和 3/5 wins。因此当前证据强烈支持 **operator-derived mode kernels**，但不足以把自由 per-rank routing 单独包装成第二个主要贡献。
 
 advection 两个 setting 不形成均值上的一致 winner。reference case 中 operator per-mode/rank 虽对 global 和 generic per-mode/rank 都有 4/5 paired wins，但 seed 203 出现 `0.111` 的优化 outlier，使均值反转；shifted case 的 generic-global 均值最好。结合 full signed-spectrum audit，这两个结果更适合作为“当前 even/magnitude kernel 对倾斜输运不完整”的边界证据。
@@ -387,6 +389,10 @@ strict support 的确认结果为：
 | anisotropic diffusion | 0.6149±0.1798 | **0.1301±0.0621** | 5/5 |
 
 在 matched anisotropic diffusion 上 robust 为 `0.1308±0.0624`，比 operator-only `0.1183±0.0582` 差约 0.0124；在 prior 被删频时却恢复到几乎相同的 `0.1301`。这正是固定 support floor 的预期行为。
+
+下图把 positive-octant 与完整 signed grid 分开。它直观说明：advection 在单个 octant 上看起来可分，但对称扩展后仍有无法被当前逐轴实 kernels 表示的耦合；anisotropic diffusion 则没有这个缺口。
+
+![positive octant 与 full signed spectrum 分离误差](../results/signed_spectrum_audit/signed_vs_octant_separability.png)
 
 ### 8.3 投稿 gate 判断
 
