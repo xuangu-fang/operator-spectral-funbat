@@ -1,57 +1,53 @@
 \section{Method}
 \label{sec:method}
 
-The method has two components.  \textbf{M1} maps the \emph{form} of a governing
-PDE to a valid GP kernel for each tensor mode; \textbf{M2} fits a functional
-Tucker model whose factors carry those kernels.  Nothing else is claimed: the
-inference machinery is standard and is described only to make the comparison
-reproducible.
+Given the \emph{form} of the governing equation, the kernel for every mode of
+the tensor decomposition follows without any fitting.  The construction is three
+lines of mathematics and has no learnable kernel parameters; \Cref{sec:experiments}
+reports the ablation showing that adding a learnable dictionary on top of it
+changes nothing.
 
-\subsection{M1: from a PDE form to per-mode kernels}
+\subsection{From a PDE form to per-mode kernels}
 
-\paragraph{Operator to joint spectrum.}
-For a stationary operator driven by noise, $\Lop u = w$, the solution is a
-stationary Gaussian process with spectral density
+\paragraph{Step 1: the operator gives the joint spectrum.}
+A stationary operator driven by noise, $\Lop u = w$, has a stationary Gaussian
+solution with spectral density
 \begin{equation}
-  \Sop(\wvec;\theta) = \bigl|\Lhat_\theta(\wvec)\bigr|^{-2}\, \Sw(\wvec).
+  \Sop(\wvec) = \bigl|\Lhat_\theta(\wvec)\bigr|^{-2}\, \Sw(\wvec).
   \label{eq:joint-spectrum}
 \end{equation}
-Only the functional form of $\Lhat$ is assumed known; $\theta$ is set to nominal
-values, and \Cref{sec:experiments} measures how little that choice matters.
+Only the functional form of $\Lhat$ is used; $\theta$ is set to nominal values.
 
-\paragraph{Nonnegative separation.}
-$\Sop$ is not separable across modes, whereas a functional tensor needs a
-one-dimensional function per mode.  We therefore project it,
+\paragraph{Step 2: marginalise to one spectrum per mode.}
+$\Sop$ couples the axes, whereas a functional tensor needs one function per mode,
+so we take the per-axis marginals
 \begin{equation}
-  \min_{\lambda_q \ge 0,\; s_{dq} \ge 0}
-  \Bigl\| \Sop - \sum_{q} \lambda_q\, s_{1q} \circ \cdots \circ s_{Dq} \Bigr\|_F^2 ,
-  \label{eq:nncp}
+  s_d(k) \;\propto\; \sum_{\text{other axes}} \Sop(\wvec)\Big|_{\omega_d = k}.
+  \label{eq:marginal}
 \end{equation}
-and report the relative separation error as an \emph{a priori} applicability
-diagnostic, computed before any data is seen.
+A nonnegative low-rank separation of $\Sop$ is the more elaborate alternative and
+is reported as an ablation; it does not improve on \Cref{eq:marginal}.
 
-\paragraph{The eigenbasis depends on the boundary condition.}
-A stationary operator's eigenbasis is fixed by its boundary condition, not by
-its symbol alone.  On a periodic domain it is the complex exponential pair; on a
-no-flux domain the Laplacian eigenfunctions are cosines,
-$\psi_k(x) = \sqrt{2}\cos(\pi k x)$ with eigenvalues $(\pi k)^2$.  This matters
-in practice rather than in principle: initial-value data is not periodic in
-time, and forcing $f(0) = f(1)$ is a large unphysical constraint.
-\todo{cite the 1.30 -> 1.08 measurement}
-
-\paragraph{Validity.}
-For any nonnegative spectrum $s$ and either basis,
+\paragraph{Step 3: the spectrum is the kernel.}
+With $\psi_k$ the operator's eigenfunctions under the relevant boundary condition,
 \begin{equation}
-  k_s(x,x') = \sum_k s(k)\, \psi_k(x)\, \psi_k(x')
+  k_d(x,x') = \sum_k s_d(k)\, \psi_k(x)\, \psi_k(x')
   \label{eq:psd}
 \end{equation}
-is positive semi-definite, being a nonnegatively weighted sum of outer products;
-so is any nonnegative combination of such spectra.  Every step from the
-nonnegative separation to the final kernel therefore preserves validity.  In the
-cosine basis the pointwise variance is not constant, which is correct: on a
-bounded domain the covariance genuinely is non-stationary near the edges.
+is positive semi-definite for any nonnegative $s_d$, being a nonnegatively
+weighted sum of outer products.
 
-\subsection{M2: functional Tucker host}
+\paragraph{The eigenbasis follows the boundary condition.}
+This is where the construction meets reality rather than convention.  Periodic
+domains give complex exponentials; no-flux boundaries give
+$\psi_k(x) = \sqrt{2}\cos(\pi k x)$ with eigenvalues $(\pi k)^2$.  Initial-value
+data is not periodic along time, and imposing $f(0) = f(1)$ there is a large
+unphysical constraint. \todo{cite the 1.30 -> 1.08 measurement}  In the cosine
+basis the pointwise variance is not constant, which is correct: on a bounded
+domain the covariance is genuinely non-stationary near the edges.
+
+\subsection{Host model}
+The kernels are used by the factors of a functional Tucker decomposition,
 \begin{equation}
   u(x_1,x_2,x_3) = \sum_{r_1,r_2,r_3} G_{r_1 r_2 r_3}\,
   f_{1 r_1}(x_1) f_{2 r_2}(x_2) f_{3 r_3}(x_3),
@@ -59,16 +55,15 @@ bounded domain the covariance genuinely is non-stationary near the edges.
   f_{d r}(x) = \phi_{s_d}(x)^\top a_{dr},
   \label{eq:tucker}
 \end{equation}
-with per-mode ranks chosen independently.  A CP host is not sufficient: real
-two-dimensional fields are fields of blobs, which are not $x \otimes y$
-separable at any rank sparse observations could identify, even though their
-multilinear rank is small.  Per-mode ranks matter concretely -- a field of
-multilinear rank $[2,11,11]$ needs a $242$-entry core, while an equal rank of
-$11$ would need $1331$.
+with per-mode ranks chosen independently and $\phi_{s_d}$ the finite feature map
+of \Cref{eq:psd}.  A CP host is not sufficient: real two-dimensional fields are
+fields of blobs, not outer products, and are not low CP-rank at any rank sparse
+observations could identify, even though their multilinear rank is small.  Ranks
+must differ per mode for the same practical reason -- a field of multilinear rank
+$[2,11,11]$ needs a $242$-entry core where an equal rank of $11$ would need
+$1331$.
 
-Coefficients carry a mean-field Gaussian posterior, $q(a_{dr}) = \Norm(\mu_{dr},
-\diag(\sigma_{dr}^2))$ against $p(a_{dr}) = \Norm(0,I)$, and the core, noise and
-any routing weights are point estimates.  Training maximises the usual ELBO.
-The coefficient budget is $2\sum_d R_d F$, independent of how many spectra a
-bank contains, so comparisons between banks of different sizes are not
-confounded by parameter count.
+Coefficients carry a mean-field Gaussian posterior against an $\Norm(0,I)$ prior;
+the core and noise are point estimates; training maximises the usual ELBO.  None
+of this is specific to our kernels, which is the point: the same host runs every
+arm in \Cref{sec:experiments}, so the only variable is where the spectra come from.
