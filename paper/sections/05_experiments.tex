@@ -86,11 +86,16 @@ $0.1\times$ and $10\times$, an isotropic version of the right form, wrong operat
 families, generic banks at matched and doubled size, and global versus
 per-mode/rank routing.
 
-One result is worth stating in the main text because it simplifies the method: a
-single fixed marginal spectrum per mode, with no learnable kernel parameters at
-all, matches the rank-4 separation with learned routing ($0.4631$ versus
-$0.4613$ over five seeds, against a seed-to-seed spread of $0.025$).  The
-dictionary and routing machinery can therefore be removed entirely.
+Two arms fix the method's design.  Under the routing the method actually uses,
+the nonnegative separation into four atoms scores $0.4383$ against $0.4631$ for
+simply marginalising the joint spectrum, so the separation is worth keeping.  And
+per-mode/rank routing scores $0.4613$, over-fitting by $0.023$ relative to the
+global mixture, so the mixture is deliberately global.
+
+Both numbers must be read at each arm's own routing.  Comparing the separation
+against the marginal spectrum \emph{both} under per-mode/rank routing shows them
+tied ($0.4613$ versus $0.4631$), because that setting degrades both, which would
+have led us to discard the separation.
 
 \subsection{A derived kernel versus a tuned one}
 \todo{no\_routing\_summary.json}

@@ -5,9 +5,9 @@ that one piece of information is almost always available even when the solution
 is not --- the \emph{form} of the partial differential equation the field obeys
 --- and that it is enough.  From the form alone, with coefficients set to
 nominal values, the operator's symbol gives the solution's joint power spectrum;
-projecting that spectrum nonnegatively onto per-axis factors yields a valid
-positive semi-definite GP kernel for every mode of a functional tensor
-decomposition, with no kernel parameters left to learn.
+projecting that spectrum nonnegatively onto a handful of per-axis factors yields
+valid positive semi-definite GP kernels for every mode of a functional tensor
+decomposition, leaving four mixture weights to learn instead of a whole kernel.
 
 The construction is a prior, not a model: it replaces the generic kernels in an
 existing functional tensor method, so model, capacity and optimisation budget

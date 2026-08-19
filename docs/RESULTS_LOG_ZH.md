@@ -77,24 +77,26 @@
 
 **公平版带来的一个新事实**：global routing 下 operator 在**三个观测率上都赢**（13/15、14/15、13/15），而不像旧表那样只在 1% 处明显。去掉 routing 过拟合后两边都更稳定，趋势也更干净。
 
-### 3.1 方法可以简化到只剩一个固定核（5 seeds，1% 观测）
+### 3.1 非负分离是有用的（一次被推翻的简化结论）
+
+同一协议（1200 steps，5 seeds，1% 观测）下直接测得：
 
 | arm | mean | std |
 |---|---:|---:|
-| operator，rank-4 非负分离 + per-mode/rank routing | 0.4613 | 0.0282 |
-| **operator，单个固定边缘谱、零可学 kernel 参数** | **0.4631** | 0.0250 |
-| generic 字典 + routing | 0.5008 | 0.0215 |
-| generic 字典 + global routing | 0.5008 | 0.0215 |
+| **operator 分离（4 atoms）+ global routing** | **0.4383** | 0.0299 |
+| generic 字典 + global routing | 0.4584 | 0.0326 |
+| operator 分离 + per-mode/rank routing | 0.4613 | 0.0282 |
+| operator 单个边缘谱（1 atom，routing 无效） | 0.4631 | 0.0250 |
 
-**结论**：分离 + routing 与单个固定核**持平**（差 0.0018，远小于 seed 间 std 0.025–0.028）。因此**字典、routing、support floor 这套机器可以从主方法中整体删除**，不损失精度。
+**非负低秩分离带来 0.025 的改进**（0.4383 vs 0.4631），5 个 seed 中赢 3 个。
 
-主方法收缩为：
+> ⚠ **已撤回的错误结论**：此处原写"分离 + routing 与单个固定核持平（0.4613 vs 0.4631），因此字典、routing、support floor 可以从主方法整体删除，方法收缩为零可学 kernel 参数"。
+>
+> 那个比较是在 **per-mode/rank routing** 下做的，而该设置让两个 arm 都被 routing 过拟合拖累，差异因此被抹平。换到正确的 **global routing**，分离的价值显现（0.4383 vs 0.4631）。
+>
+> **这与主表那次不公平比较是同一类错误**：在一个对双方都不利的共同设置下比较，得出了错误的方法层结论。教训——**做方法层的取舍时，每个候选都必须在它自己的最优设置下评估。**
 
-> 从 PDE 形式算出联合谱 $\lvert\widehat{\mathcal L}\rvert^{-2}S_w$，逐维边缘化得到每个 mode 的一维非负谱，即该 mode 因子的 GP 核。**没有任何 kernel 参数需要学。**
-
-> ⚠ 记录一次过早的判断：在单个 seed（seed 0）上固定核得 `0.4219` 而 routing 版得 `0.4622`，一度被读成"更简单的版本更好"。扩到 5 个 seed 后两者持平。单 seed 差异不足以支撑方法层面的结论。
-
-> ⚠ **已撤回的错误结论**：此处原写"generic 的 routing 与 global 结果完全相同（0.5008/0.5008），过拟合混淆已消失"。**那是临时检查脚本的 bug**——解包了 routing 参数却没有传给 `train()`，两个 arm 实际都跑了 `per_mode_rank`。正式消融显示两者相差 **0.042**，混淆真实存在。见 §3.2。
+**因此方法的正确陈述**：把算子联合谱非负分离成 $Q=4$ 个逐维原子，再学**一个全局混合权重**（4 个 logit，所有 mode 与 rank 共享）。**可学 kernel 参数是 4 个，不是 0 个。** per-mode/rank routing 在 1% 观测下过拟合，不采用。
 
 ### 3.2 routing 粒度才是最大的单一因素（5 seeds，1% 观测，`ablation_fixed_summary.json`）
 

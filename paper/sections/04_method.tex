@@ -1,11 +1,12 @@
 \section{Method}
 \label{sec:method}
 
-Given the \emph{form} of the governing equation, the kernel for every mode of
-the tensor decomposition follows without any fitting.  The construction is three
-lines of mathematics and has no learnable kernel parameters; \Cref{sec:experiments}
-reports the ablation showing that adding a learnable dictionary on top of it
-changes nothing.
+Given the \emph{form} of the governing equation, the kernel for every mode of the
+tensor decomposition follows up to four mixture weights.  \Cref{sec:experiments}
+reports the ablation fixing both design choices: the nonnegative separation is
+worth $0.025$ over using the marginal spectrum directly, and the mixture must be
+\emph{global} rather than per-mode/rank, which over-fits by $0.023$ at $1\%$
+observed.
 
 \subsection{From a PDE form to per-mode kernels}
 
@@ -18,15 +19,17 @@ solution with spectral density
 \end{equation}
 Only the functional form of $\Lhat$ is used; $\theta$ is set to nominal values.
 
-\paragraph{Step 2: marginalise to one spectrum per mode.}
+\paragraph{Step 2: separate into per-mode atoms.}
 $\Sop$ couples the axes, whereas a functional tensor needs one function per mode,
-so we take the per-axis marginals
+so we project it onto $Q$ nonnegative separable components,
 \begin{equation}
-  s_d(k) \;\propto\; \sum_{\text{other axes}} \Sop(\wvec)\Big|_{\omega_d = k}.
-  \label{eq:marginal}
+  \min_{\lambda_q \ge 0,\; s_{dq} \ge 0}
+  \Bigl\| \Sop - \sum_{q=1}^{Q} \lambda_q\, s_{1q} \circ \cdots \circ s_{Dq} \Bigr\|_F^2 ,
+  \label{eq:nncp}
 \end{equation}
-A nonnegative low-rank separation of $\Sop$ is the more elaborate alternative and
-is reported as an ablation; it does not improve on \Cref{eq:marginal}.
+and learn a single global mixture $\route \in \Delta^{Q-1}$ over them, shared by
+every mode and rank, so that mode $d$ uses $s_d = \sum_q \route_q s_{dq}$.  Simply
+marginalising $\Sop$ per axis is the cheaper alternative and is $0.025$ worse.
 
 \paragraph{Step 3: the spectrum is the kernel.}
 With $\psi_k$ the operator's eigenfunctions under the relevant boundary condition,

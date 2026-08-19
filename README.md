@@ -2,7 +2,7 @@
 
 **Given only the *form* of the PDE a field obeys -- not its coefficients, not its
 solution -- derive a valid GP kernel for every mode of a functional tensor
-decomposition, with no kernel parameters left to learn.**
+decomposition, leaving four numbers to learn instead of a whole kernel.**
 
 ## Headline result
 
@@ -40,15 +40,17 @@ stop mattering once it does.
 
 1. The operator's symbol gives the solution's joint spectrum,
    `S_op(w) = |L_hat(w)|^-2 S_w(w)`, using the form with nominal coefficients.
-2. Marginalise per axis to get one nonnegative 1-D spectrum per mode.
-3. That spectrum *is* the kernel: `k(x,x') = sum_k s(k) psi_k(x) psi_k(x')` is PSD
-   for any nonnegative `s`, where `psi_k` are the operator's eigenfunctions under
-   the relevant boundary condition.
+2. Project it onto `Q = 4` nonnegative separable atoms per mode.
+3. Learn a *single global* mixture weight over those atoms -- four logits shared
+   by every mode and rank -- and the resulting spectrum *is* the kernel:
+   `k(x,x') = sum_k s(k) psi_k(x) psi_k(x')` is PSD for any nonnegative `s`,
+   where `psi_k` are the operator's eigenfunctions under the relevant boundary
+   condition.
 
-Nothing about the kernel is learned.  An ablation shows that adding a nonnegative
-low-rank separation with learned routing on top changes nothing (0.4613 vs
-0.4631 across seeds, against a seed spread of 0.025), so that machinery was
-removed from the method.
+Four learnable numbers, not a kernel.  Both the separation and the restriction to
+*global* routing are load-bearing: at 1% observed, separation buys 0.025 over
+using the marginal spectrum directly (0.4383 vs 0.4631) and per-mode/rank routing
+costs 0.023 by over-fitting (0.4613).
 
 ## Two details that turned out to be load-bearing
 

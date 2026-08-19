@@ -31,10 +31,12 @@
 ## 3. 方法（最终形态，比开始时简单得多）
 
 1. 由算子符号得联合谱 $S_{\mathrm{op}}=\lvert\widehat{\mathcal L}\rvert^{-2}S_w$，**只用形式，系数取 nominal**；
-2. 逐轴边缘化，得每个 mode 一个一维非负谱；
-3. 该谱**就是**核：$k(x,x')=\sum_k s(k)\psi_k(x)\psi_k(x')$，对任意非负 $s$ 均 PSD。
+2. **非负低秩分离**成 $Q=4$ 个逐维原子 $s_{dq}$；
+3. 学一个**全局混合权重**（4 个 logit，所有 mode 与 rank 共享），得每个 mode 的谱；该谱**就是**核：$k(x,x')=\sum_k s(k)\psi_k(x)\psi_k(x')$，对任意非负 $s$ 均 PSD。
 
-**没有任何 kernel 参数需要学。** 消融证明在其上加非负低秩分离 + 学习 routing 不带来任何改变（0.4613 vs 0.4631，seed 间散布 0.025），因此字典、routing、support floor 已从方法中整体删除。
+**可学 kernel 参数只有 4 个。** per-mode/rank routing 在 1% 观测下过拟合（+0.023），不采用。
+
+> ⚠ 会话中期曾错误地认为"单个边缘谱即可，分离和 routing 可全部删除"。那是在 per-mode/rank 下比较得出的，该设置拖累了两个 arm。同一协议下 global routing 的正确结果：分离 `0.4383` vs 单个边缘谱 `0.4631`，**分离确实有用**。
 
 ---
 
