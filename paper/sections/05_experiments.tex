@@ -71,7 +71,25 @@ give each arm the routing that is best for it, which is global for both.
 \end{figure}
 
 \subsection{Baselines}
-\todo{table from baselines\_summary.json on corrected forcing}
+
+\begin{table}[t]
+  \centering
+  \caption{Baselines on identical fields, masks and noise, five seeds.  The
+  kernel-ridge column is starred because its length scale is chosen against the
+  test set.}
+  \label{tab:baselines}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    Observed & ours & generic & global mean & CP (EM) & Tucker (EM) & KRR$^\star$ \\
+    \midrule
+    $1\%$ & \textbf{0.4217} & 0.4464 & 1.0013 & 0.9848 & 1.0073 & 0.4887 \\
+    $2\%$ & \textbf{0.3478} & 0.3581 & 1.0003 & 0.9434 & 0.9644 & 0.3921 \\
+    $5\%$ & \textbf{0.2969} & 0.2993 & 1.0002 & 0.6717 & 0.6669 & 0.3093 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 Discrete low-rank completion (CP and Tucker with EM imputation) does not beat
 predicting the mean below $2\%$ observed, which is the evidence that continuous
 function factors are necessary rather than decorative.  The strongest competitor
@@ -113,7 +131,46 @@ spectrum, which is what the construction uses.  The boundary is the signed phase
 structure, not the name of the operator family.
 
 \subsection{Where the gain comes from}
-\todo{ablation table from ablation\_fixed\_summary.json}
+
+\begin{table}[t]
+  \centering
+  \caption{Ablation at $1\%$ observed, five seeds.  Every arm shares the field,
+  mask, noise, host, ranks, optimiser and budget; only the spectral bank or the
+  routing changes.}
+  \label{tab:ablation}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    & held-out NRMSE & wins vs.\ per-mode/rank operator \\
+    \midrule
+    \textbf{operator bank, global mixture}   & \textbf{0.4383 $\pm$ 0.0299} & 5/5 \\
+    right form, coefficients $\times 3$      & 0.4500 $\pm$ 0.0269 & 5/5 \\
+    right form, made isotropic               & 0.4532 $\pm$ 0.0292 & 4/5 \\
+    right form, coefficients $\times 10$     & 0.4549 $\pm$ 0.0207 & 3/5 \\
+    generic dictionary, global mixture       & 0.4584 $\pm$ 0.0326 & 2/5 \\
+    operator bank, per-mode/rank routing     & 0.4613 $\pm$ 0.0282 & --- \\
+    marginal spectrum, no separation         & 0.4631 $\pm$ 0.0250 & 2/5 \\
+    right form, coefficients $\times 0.3$    & 0.4720 $\pm$ 0.0269 & 1/5 \\
+    wrong family: advection                  & 0.4723 $\pm$ 0.0175 & 2/5 \\
+    wrong family: damped wave                & 0.4777 $\pm$ 0.0274 & 2/5 \\
+    operator bank $+$ 25\% generic floor     & 0.4872 $\pm$ 0.0331 & 1/5 \\
+    right form, coefficients $\times 0.1$    & 0.4901 $\pm$ 0.0415 & 1/5 \\
+    generic dictionary, per-mode/rank        & 0.5008 $\pm$ 0.0215 & 0/5 \\
+    generic dictionary, doubled atom count   & 0.5112 $\pm$ 0.0275 & 0/5 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Three readings matter.  Wrong operator families are clearly worse than the right
+one ($0.472$ and $0.478$ against $0.438$), so the identity of the operator is
+doing work rather than mere smoothness.  Coefficient error is tolerated
+asymmetrically: scaling the diffusivities up is nearly free ($\times 3$ and
+$\times 10$ stay near the nominal value) while scaling them down is not
+($\times 0.3$ and $\times 0.1$ degrade markedly), which matches the physics --
+under-estimating diffusion makes the prior too rough, over-estimating it merely
+over-smooths.  And doubling the generic atom count makes things worse, so the
+dictionary's disadvantage is not a lack of capacity.
+
 The arms vary only the spectral bank or the routing: the exact operator spectrum
 without any low-rank projection, the right form with coefficients scaled between
 $0.1\times$ and $10\times$, an isotropic version of the right form, wrong operator
