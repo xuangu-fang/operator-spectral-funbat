@@ -1,0 +1,17 @@
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{enumerate}
+  \item Synthetic fields are drawn from the same finite operator atom family used by the model;
+        this is a mechanism sanity check, not external evidence.
+  \item Real axis-wise Fourier features represent only even, axis-separable covariance
+        components.  Tilted advection retains cross-sign coupling that the current model
+        cannot express (\Cref{tab:signed}).
+  \item Per-rank routing is a weak signal (3/5 paired wins, $\approx 2.4\%$ mean improvement)
+        and is reported as an ablation, not as a contribution.
+  \item Routing weights are point estimates; the reported uncertainty does not include
+        kernel-routing uncertainty.
+  \item The mean-field posterior ignores posterior correlation between CP factors, and the
+        periodic Fourier prior handles neither boundary conditions nor non-stationary coefficients.
+  \item The tensor rank is fixed at $2$; we do not compete directly with rank-learning methods.
+\end{enumerate}

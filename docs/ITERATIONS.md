@@ -1,5 +1,12 @@
 # Iteration log
 
+## 工程记录（非实验轮次）— 文稿与 LaTeX 基础设施（2026-08-19）
+
+- 没有重跑任何实验，没有改动 `src/` 或 `experiments/`；所有数值口径仍是 2026-08-16 投稿确认版。
+- 重写 `docs/PAPER_TECHNICAL_REPORT_ZH.md`：补符号表、把三个算子 symbol 表格化、把 signed-vs-octant 审计和 paired-win 汇总提升为独立小节、新增附录 A 完整数值表（含 spectrum cosine / rel. L2 / coverage / NLL）。
+- 修复公式渲染：两份技术报告的 `\[ \]` / `\( \)` 全部改为 GitHub 支持的 `$$ $$` / `$ $`，`\rm` 统一为 `\mathrm`，math 内的中文字符移出。全部公式已用 pdflatex 编译验证通过。
+- 本机安装 TeX Live（latexmk / pdflatex / xelatex / biber）与 CJK 字体；新增 `paper/` LaTeX 工程（`make` 编译论文，`make report-zh` 把中文报告渲染成 PDF）。
+
 ## R9 — atom-independent Fourier basis 与 strict-support 最终确认（2026-08-16）
 
 - 最终代码审查发现 collapsed 公共 Fourier basis 错误地从第一个 atom 反除得到；第一个 operator atom 被严格删频时，高频 basis 也被置零，导致 generic floor 实际无法产生高频 feature。

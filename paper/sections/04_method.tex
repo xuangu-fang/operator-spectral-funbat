@@ -1,0 +1,62 @@
+\section{Method}
+\label{sec:method}
+
+\subsection{From the operator to a joint solution spectrum}
+For a periodic constant-coefficient operator, $\widehat{u}(\wvec) = \widehat{w}(\wvec)/\Lhat(\wvec)$, so
+\begin{equation}
+  \Sop(\wvec) = \bigl|\Lhat(\wvec)\bigr|^{-2}\, \Sw(\wvec).
+  \label{eq:joint-spectrum}
+\end{equation}
+\todo{table of the three implemented symbols (anisotropic diffusion / advection--diffusion / damped wave)}
+
+\subsection{Nonnegative low-rank spectral separation}
+\begin{equation}
+  \min_{\lambda_q \ge 0,\; s_{dq} \ge 0}
+  \Bigl\| \Sop - \sum_{q=1}^{\Qop} \lambda_q\, s_{1q} \circ \cdots \circ s_{Dq} \Bigr\|_F^2 .
+  \label{eq:nncp}
+\end{equation}
+The relative separation error $e_Q = \|\Sop - \widehat{S}_Q\|_F / \|\Sop\|_F$ is reported as an
+\emph{a priori applicability diagnostic}, separately on the positive octant and on the full
+signed grid.
+
+\subsection{Why nonnegative spectra give valid kernels}
+For any nonnegative one-sided spectrum $s(k)$ on a periodic grid, define
+\begin{equation}
+  \phi_s(x) = \Bigl[\, \sqrt{s(0)},\;
+  \bigl\{\sqrt{2s(k)}\cos(2\pi k x)\bigr\}_{k=1}^{K},\;
+  \bigl\{\sqrt{2s(k)}\sin(2\pi k x)\bigr\}_{k=1}^{K} \,\Bigr].
+  \label{eq:features}
+\end{equation}
+Then $k_s(x,x') = \phi_s(x)^\top \phi_s(x') = s(0) + 2\sum_{k\ge1} s(k)\cos\bigl(2\pi k (x-x')\bigr)$
+is PSD by construction, and so is any nonnegative convex combination
+$s_{dr} = \sum_q \route_{drq} s_{dq}$.
+
+\paragraph{Scope of the hypothesis class.} Real Fourier features pair $+k$ with $-k$, so the
+represented covariance components are \emph{axis-wise even and separable}.  Anisotropic
+diffusion matches this exactly; tilted advection does not. \todo{make this a boxed remark, not a footnote}
+
+\subsection{Operator bank and a fixed generic support floor}
+\begin{equation}
+  \bank_d = \{s^{\mathrm{op}}_{d1},\dots,s^{\mathrm{op}}_{d\Qop}\} \cup
+            \{s^{\mathrm{gen}}_{1},\dots,s^{\mathrm{gen}}_{\Qgen}\},
+  \qquad
+  \route_{drq} = \floorw_q + \Bigl(1 - \sum_j \floorw_j\Bigr)\softmax(\alpha_{dr})_q ,
+  \label{eq:floor}
+\end{equation}
+with $\floorw_q = 0$ for operator atoms and a total of $25\%$ mass split evenly across the
+generic atoms.
+
+\subsection{Collapsed spectral mixture and variational inference}
+\begin{equation}
+  f_{dr}(x) = \phi_{s_{dr}}(x)^\top a_{dr},
+  \qquad q(a_{dr}) = \Norm\bigl(\mu_{dr}, \diag(\sigma_{dr}^2)\bigr),
+  \qquad p(a_{dr}) = \Norm(0, I),
+  \label{eq:collapsed}
+\end{equation}
+so the variational coefficient budget is $2DR(1+2K)$ \emph{independent of bank size}.  Training
+maximises
+\begin{equation}
+  \mathcal{F} = \Exp_q\Bigl[\textstyle\sum_{i\in\Obs}\log p(y_i \mid f, c, \sigma_y)\Bigr]
+  - \sum_{d,r}\KL\bigl[q(a_{dr}) \,\|\, p(a_{dr})\bigr].
+  \label{eq:elbo}
+\end{equation}

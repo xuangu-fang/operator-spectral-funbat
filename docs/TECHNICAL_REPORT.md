@@ -1,6 +1,8 @@
 # 方向 3 技术报告：Operator-Spectral FunBaT
 
-> 论文级的简洁 Introduction + Related Work + Method 已独立整理在 [`PAPER_TECHNICAL_REPORT_ZH.md`](PAPER_TECHNICAL_REPORT_ZH.md)。本文件保留 2026-08-15 expanded-feature POC 和更早 domain-kernel 支线的完整历史，不能与新的 collapsed 公平确认结果混表。
+> **本文件是历史档案，不是当前投稿口径。** 论文级的 Introduction + Related Work + Method + 冻结确认结果见 [`PAPER_TECHNICAL_REPORT_ZH.md`](PAPER_TECHNICAL_REPORT_ZH.md)。
+> 本文件保留 2026-08-15 expanded-feature POC 与更早 domain-kernel dictionary 支线的完整历史。**其数值使用 expanded 参数化（每个 atom 一套独立系数），与新的 collapsed 公平确认结果不可混表。**
+> 公式已于 2026-08-19 统一为 `$ ... $` / `$$ ... $$`，可在 GitHub 网页端渲染。
 
 > 独立仓库高级 POC 状态（2026-08-15）：青基申请书中的“算子联合功率谱 → 非负可分离谱 → 各 mode/rank GP 核 → functional tensor likelihood”已完整实现，并完成 3 seeds、400 steps、1%/2%/5% 观测率的五轮机制实验。结论是 **数学链条与预测机制成立，但从极稀疏数据恢复具体 kernel atom 并不可识别**。最合理的新方法不是放弃已有 kernel dictionary，而是将 operator-derived atoms 与通用 dictionary 组成带安全兜底的混合先验。
 
@@ -8,39 +10,39 @@
 
 普通 FunBaT 为每个连续 mode 的因子指定通用 Matérn/RBF GP。青基本子的关键提升是：如果物理场满足
 
-\[
+$$
 \mathcal L u=w,
-\]
+$$
 
 先由算子频率响应构造联合物理谱
 
-\[
-S_{\rm phys}(\omega_x,\omega_y,\omega_t)
+$$
+S_{\mathrm{phys}}(\omega_x,\omega_y,\omega_t)
 =|\widehat{\mathcal L}(\boldsymbol\omega)|^{-2}S_w(\boldsymbol\omega),
-\]
+$$
 
 再作非负低秩分离
 
-\[
-S_{\rm phys}\approx
+$$
+S_{\mathrm{phys}}\approx
 \sum_{q=1}^{Q}\lambda_q
 s_{xq}(\omega_x)s_{yq}(\omega_y)s_{tq}(\omega_t),
 \qquad \lambda_q,s_{dq}\geq0.
-\]
+$$
 
 每个非负一维谱通过 Wiener--Khinchin 对应一个合法 GP kernel。不同 tensor mode/rank 再选择不同 kernel：
 
-\[
+$$
 k_{dr}=\sum_q \pi_{drq}k_{dq},\qquad
 \pi_{drq}\geq0,\quad\sum_q\pi_{drq}=1.
-\]
+$$
 
 最后使用 functional CP likelihood：
 
-\[
+$$
 y(x,y,t)=\sum_{r=1}^{R}c_r
 f_{xr}(x)f_{yr}(y)f_{tr}(t)+\epsilon.
-\]
+$$
 
 当前先采用 CP 而不是 dense Tucker core，因为它能最直接地判断收益是否来自 mode-wise kernel，而不是额外 core 参数。若该机制在更真实数据上成立，再替换为小 Tucker core 并不困难。
 
@@ -52,28 +54,28 @@ f_{xr}(x)f_{yr}(y)f_{tr}(t)+\epsilon.
 2. `nonnegative_cp_spectrum` 用非负 CP 将三维联合谱投影为一维 mode spectra。
 3. `fourier_features` 将每个非负单边谱 $s_q$ 转换成
 
-   \[
+   $$
    \phi_q(x)=\left[\sqrt{s_q(0)},
    \sqrt{2s_q(k)}\cos 2\pi kx,
    \sqrt{2s_q(k)}\sin 2\pi kx\right]_{k=1}^{K}.
-   \]
+   $$
 
    因而 $k_q(x,x')=\phi_q(x)^\top\phi_q(x')$ 必然半正定。混合特征使用 $\sqrt{\pi_{drq}}\phi_q$，所以任意学习到的 routing 也保持 PSD。
 4. 每个 Fourier coefficient 使用 mean-field Gaussian $q(a)=\mathcal N(\mu,\operatorname{diag}\sigma^2)$；训练目标是 Monte-Carlo Gaussian ELBO：
 
-   \[
+   $$
    \mathcal L=\mathbb E_q[\log p(y\mid f_x,f_y,f_t,c)]
    -\sum_{d,r}\operatorname{KL}[q(a_{dr})\|\mathcal N(0,I)].
-   \]
+   $$
 
 5. `global`、`per_mode`、`per_mode_rank`、`oracle`、`swap` 使用完全相同的 feature budget、rank、噪声、mask 和 400-step 预算。
 
 层级折中版本使用
 
-\[
+$$
 \pi_{dq}=\operatorname{softmax}(g_q+\Delta_{dq}),
 \qquad \Delta_{dq}\sim\mathcal N(0,0.35^2),
-\]
+$$
 
 并把前 100 steps 固定为 global warm start、后 300 steps 才释放 mode deviation。它是“简单字典与高级 routing”的最小桥，而不是额外网络。
 
@@ -206,15 +208,15 @@ hybrid 有小幅最好均值，但优势不足以单独构成论文证据。层�
 
 令第 $c$ 个物理域为 $\Omega_c\subset\mathbb R^d$，它可以有不规则外边界和内部孔洞。一个观测写作
 
-\[
-\mathcal D=\{(c_i,s_i,a_i,x_i,y_i)\}_{i=1}^{N_{\rm obs}},
-\]
+$$
+\mathcal D=\{(c_i,s_i,a_i,x_i,y_i)\}_{i=1}^{N_{\mathrm{obs}}},
+$$
 
 其中：
 
-- (s_i\in\Omega_{c_i})：源位置或激励位置；
-- (a_i\in\mathcal A)：扩散系数、频率、Reynolds number 等工况参数；
-- (x_i\in\Omega_{c_i})：查询点；
+- $s_i\in\Omega_{c_i}$：源位置或激励位置；
+- $a_i\in\mathcal A$：扩散系数、频率、Reynolds number 等工况参数；
+- $x_i\in\Omega_{c_i}$：查询点；
 - (y_i=u_{c_i}(s_i,a_i,x_i)+\epsilon_i)：物理场值；
 - $\epsilon_i\sim\mathcal N(0,\sigma^2)$。
 
@@ -240,20 +242,20 @@ hybrid 有小幅最好均值，但优势不足以单独构成论文证据。层�
 
 ### 3.1 域上的 Matérn-like covariance
 
-令 (L_{\Omega_c}) 为带指定边界条件的正半定 Laplacian，特征对满足
+令 $L_{\Omega_c}$ 为带指定边界条件的正半定 Laplacian，特征对满足
 
-\[
+$$
 L_{\Omega_c}\phi_{cj}=\lambda_{cj}\phi_{cj}.
-\]
+$$
 
 一个谱截断的 domain Matérn covariance 可写为
 
-\[
+$$
 k_{\Omega_c}(x,x';\kappa,\nu)
 =\sigma_f^2\sum_{j=0}^{J-1}
 (\kappa^2+\lambda_{cj})^{-(\nu+d/2)}
 \phi_{cj}(x)\phi_{cj}(x').
-\]
+$$
 
 因为 covariance 使用 $\phi_j(x)\phi_j(x')$，单个 eigenvector 的任意正负翻转不会改变 kernel。孔洞和凹边界通过 $L_{\Omega_c}$ 改变传播关系；欧氏距离很近、但隔着孔洞或墙面的点，不再必然高度相关。
 
@@ -263,30 +265,30 @@ k_{\Omega_c}(x,x';\kappa,\nu)
 
 最干净的三模模型是
 
-\[
+$$
 u_c(s,a,x)
 =\sum_{p=1}^{R_s}\sum_{q=1}^{R_a}\sum_{r=1}^{R_x}
 G_{pqr}\,F^{(s)}_{cp}(s)\,F^{(a)}_q(a)\,F^{(x)}_{cr}(x).
-\]
+$$
 
 为 source 和 spatial 因子使用同一个域 kernel：
 
-\[
+$$
 F^{(s)}_{cp}\sim\operatorname{GP}(m^{(s)}_{\theta,p},k_{\Omega_c}),\qquad
 F^{(x)}_{cr}\sim\operatorname{GP}(m^{(x)}_{\theta,r},k_{\Omega_c}),
-\]
+$$
 
 参数因子可采用一维 Matérn/RBF GP：
 
-\[
+$$
 F^{(a)}_q\sim\operatorname{GP}(m^{(a)}_{\theta,q},k_a).
-\]
+$$
 
 小 core 使用
 
-\[
+$$
 \operatorname{vec}(G)\sim\mathcal N(0,\tau_G^{-1}I).
-\]
+$$
 
 共享 mean (m_\theta(c,x)) 由纯几何输入（坐标、SDF、工况和允许的 domain descriptor）产生。它承担 zero-shot transfer；domain GP residual 承担新域 few-shot adaptation、局部几何平滑和 uncertainty。若去掉共享 mean，不同域的 GP 独立，则测试域零观测时 posterior mean 为零，这是模型性质而不是训练技巧能解决的问题。
 
@@ -294,9 +296,9 @@ F^{(a)}_q\sim\operatorname{GP}(m^{(a)}_{\theta,q},k_a).
 
 当前 POC 把 $k_{\Omega}(x,s)$、$x$、$s$ 一起送入一个 spatial MLP，因此严格说不是 source × parameter × space 的三模 Tucker。投稿模型应把 source factor 与 query factor 分开。对于线性 elliptic PDE，其 Green function 本身就有谱展开
 
-\[
+$$
 G_\Omega(x,s)\approx\sum_j \rho_j\phi_j(x)\phi_j(s),
-\]
+$$
 
 所以用共享 domain kernel prior 分别约束 source 和 spatial factors 既更符合张量故事，也更便于解释孔洞为何起作用。
 
@@ -313,11 +315,11 @@ G_\Omega(x,s)\approx\sum_j \rho_j\phi_j(x)\phi_j(s),
 
 当前 intrinsic section 为
 
-\[
+$$
 z_{\Omega,q}(x,s)=\operatorname{RMSNorm}\left[
 \frac1J\sum_{j=0}^{J-1}\phi_j(x)\phi_j(s)
 (1+\alpha_q\lambda_j)^{-p}\right],
-\]
+$$
 
 其中 $J=48$、$\alpha_q\in\{0.03,0.1,0.3,1,3\}$、$p=1.5$。eigenvalue 先除以该图第一个正 eigenvalue，basis 又做 empirical-$L^2$ normalization，最后每个 section channel 按其自身 RMS 标准化。
 
@@ -325,16 +327,16 @@ z_{\Omega,q}(x,s)=\operatorname{RMSNorm}\left[
 
 点预测模型是
 
-\[
+$$
 \widehat y=\sum_{g,p,r} C_{gpr}
 A_g(d_{\Omega}) B_p([\log a,a]) H_r(z),
-\]
+$$
 
 其中 (d_\Omega\in\mathbb R^7) 是手工 domain descriptor；纯 kernel 版本令 (z=z_\Omega(x,s))，当前默认版本令
 
-\[
+$$
 z=[z_\Omega(x,s),x,\operatorname{SDF}_\Omega(x),s,\|x-s\|,1].
-\]
+$$
 
 $A,B,H$ 都是两层 GELU MLP，使用 AdamW 训练。这个模型有显式 Tucker core，但它是**确定性 neural functional Tucker**。普通 weight decay 不是显式 GP coefficient prior；当前没有 posterior distribution。
 
@@ -342,11 +344,11 @@ $A,B,H$ 都是两层 GELU MLP，使用 AdamW 训练。这个模型有显式 Tuck
 
 当前代码只是把 intrinsic sections 与局部坐标/SDF **拼接后送入非线性 MLP**。这不等于
 
-\[
-k_{\rm composite}=k_\Omega+k_{\rm local}
-\quad\text{或}\quad
-k_\Omega k_{\rm local}.
-\]
+$$
+k_{\mathrm{composite}}=k_\Omega+k_{\mathrm{local}}
+\qquad\text{or}\qquad
+k_{\mathrm{composite}}=k_\Omega\, k_{\mathrm{local}}.
+$$
 
 本报告以后称它为 `intrinsic_plus_local_inputs`，而不是 additive/composite GP kernel。真正的 composite kernel 必须直接构造 PSD covariance，并在 GP/KRR posterior 中使用。
 
@@ -375,24 +377,24 @@ k_\Omega k_{\rm local}.
 
 给定确定性 factor features，单个 observation 对 core 是线性的。令
 
-\[
+$$
 a_i=F^{(s)}(s_i)\otimes F^{(a)}(a_i)\otimes F^{(x)}(x_i),
-\]
+$$
 
 则
 
-\[
+$$
 y_i=a_i^\top g+\epsilon_i,
 \quad g=\operatorname{vec}(G).
-\]
+$$
 
 Gaussian prior 下可精确计算
 
-\[
+$$
 \Sigma_g^{-1}=\tau_G I+\sigma^{-2}A^\top A,
 \qquad
 \mu_g=\sigma^{-2}\Sigma_g A^\top y.
-\]
+$$
 
 这一步可以快速提供“conditional-on-features”的 uncertainty，但不是完整 GP uncertainty。它适合做推断单元测试，也可作为方向 1 与方向 3 之间的桥梁。
 
@@ -400,26 +402,26 @@ Gaussian prior 下可精确计算
 
 先只随机化 spatial factor：
 
-\[
+$$
 F^{(x)}_{cr}(x)=m_{\theta,r}(c,x)
 +\Phi_c(x)\operatorname{diag}(\rho_c^{1/2})w_{cr},
 \quad w_{cr}\sim\mathcal N(0,I),
-\]
+$$
 
 使用 whitened variational posterior
 
-\[
+$$
 q(w_{cr})=\mathcal N(\mu_{cr},S_{cr}).
-\]
+$$
 
 优化
 
-\[
+$$
 \mathcal L=
 \sum_{i\in\mathcal O}\mathbb E_q[\log p(y_i\mid F,G)]
 -\sum_{c,r}\operatorname{KL}[q(w_{cr})\|p(w_{cr})]
 -\operatorname{KL}[q(G)\|p(G)].
-\]
+$$
 
 先用 diagonal (S)，通过 reparameterization Monte Carlo 训练。只有 Stage 2 完成后，代码才能诚实称为 approximate GP factor posterior。
 
@@ -427,54 +429,54 @@ q(w_{cr})=\mathcal N(\mu_{cr},S_{cr}).
 
 为了先把推理定义做对，本轮采用比 Stage 2 更小、可与 exact posterior 对齐的模型。对每个 observation 构造
 
-\[
+$$
 \phi(s,a,x)=D^{-1/2}\,z_\Omega(s,x)\otimes\psi(a)\in\mathbb R^{35},
-\]
+$$
 
-其中 \(z_\Omega\) 是 5 个 intrinsic Matérn sections 或参数完全匹配的 5 个 Euclidean RBF sections，\(\psi\) 是 7 个固定参数 RBF features。它定义合法有限秩 kernel
+其中 $z_\Omega$ 是 5 个 intrinsic Matérn sections 或参数完全匹配的 5 个 Euclidean RBF sections，$\psi$ 是 7 个固定参数 RBF features。它定义合法有限秩 kernel
 
-\[
+$$
 k(\xi,\xi')=\phi(\xi)^\top\phi(\xi').
-\]
+$$
 
 白化的 inter-domain inducing coefficients 为
 
-\[
+$$
 p(u)=\mathcal N(0,I),\qquad
 q(u)=\mathcal N(m,LL^\top).
-\]
+$$
 
-likelihood 为 \(p(y_i\mid u)=\mathcal N(\phi_i^\top u,\sigma_n^2)\)，训练目标是
+likelihood 为 $p(y_i\mid u)=\mathcal N(\phi_i^\top u,\sigma_n^2)$，训练目标是
 
-\[
+$$
 \mathcal L=
 \frac{N}{|B|}\sum_{i\in B}
 \mathbb E_{q(u)}\log p(y_i\mid u)
 -\operatorname{KL}[q(u)\|p(u)].
-\]
+$$
 
 Gaussian expected log-likelihood 和 KL 都解析计算；使用 Adam mini-batch SGD，500 steps。因为只有 35 个 latent coefficients，还同时计算同一 kernel、同一 learned noise 下的闭式 exact posterior。这一实现可以严格称为 finite-feature variational GP，但还没有 Tucker core，也没有 neural mean。
 
-严格地说，这里的 GP covariance 是 **domain-kernel sections 的 inner-product kernel**，不是直接把原始 \(k_\Omega(x,x')\) 当作 observation covariance。sections 自身由域 Laplacian 谱构造，因此 geometry 进入了 prior；但论文不能把二者写成完全相同的 kernel。
+严格地说，这里的 GP covariance 是 **domain-kernel sections 的 inner-product kernel**，不是直接把原始 $k_\Omega(x,x')$ 当作 observation covariance。sections 自身由域 Laplacian 谱构造，因此 geometry 进入了 prior；但论文不能把二者写成完全相同的 kernel。
 
 ### 本轮 R3：共享 neural mean + GP residual
 
-令共享 neural CP mean 为 \(m_\theta(c,s,a,x)\)，则 R3 模型为
+令共享 neural CP mean 为 $m_\theta(c,s,a,x)$，则 R3 模型为
 
-\[
+$$
 y_i=m_\theta(\xi_i)+\phi_\Omega(\xi_i)^\top u+\epsilon_i.
-\]
+$$
 
-mean 与 full-covariance \(q(u)\) 从头联合训练，目标仍是
+mean 与 full-covariance $q(u)$ 从头联合训练，目标仍是
 
-\[
+$$
 \frac{N}{|B|}\sum_{i\in B}
 \mathbb E_q\log\mathcal N(y_i\mid
 m_\theta(\xi_i)+\phi_i^\top u,\sigma_n^2)
 -\mathrm{KL}[q(u)\|p(u)].
-\]
+$$
 
-`mean-only` 使用同一个 rank-24、hidden-64 geometry-conditioned neural CP、相同初始化、mask、mini-batch sequence、500 steps 和 learning rates；它只去掉 residual \(u\) 与 KL。intrinsic/Euclidean residual 的 latent dimension 都是 35，唯一差别是 kernel sections。
+`mean-only` 使用同一个 rank-24、hidden-64 geometry-conditioned neural CP、相同初始化、mask、mini-batch sequence、500 steps 和 learning rates；它只去掉 residual $u$ 与 KL。intrinsic/Euclidean residual 的 latent dimension 都是 35，唯一差别是 kernel sections。
 
 ### Stage 3：source + space 双 domain-GP factor
 
@@ -490,10 +492,9 @@ m_\theta(\xi_i)+\phi_i^\top u,\sigma_n^2)
 
 若每个域节点很多，使用 inducing variables $u=f(Z)$ 和
 
-\[
+$$
 q(f,u)=p(f\mid u)q(u)
-
-\]
+$$
 
 的 sparse variational GP。复杂度可从 dense GP 的 (O(N^3)) 降到典型的 (O(NM^2))。在不同域之间无法直接共享 inducing coordinates 时，可共享 kernel hyperparameters 和 mean network，同时为每个域选择 geodesic farthest-point inducing nodes。
 
@@ -501,10 +502,9 @@ q(f,u)=p(f\mid u)q(u)
 
 数据由 `simulate_screened_elliptic` 独立求解
 
-\[
-(\operatorname{diag}(r(x,a))+aL_{\rm physics})u=f_{s,a}
-
-\]
+$$
+(\operatorname{diag}(r(x,a))+aL_{\mathrm{physics}})u=f_{s,a}
+$$
 
 得到，边界条件是所有外边界和孔洞边界上的 reflecting zero-flux。训练 learner 看到的是 unweighted geometry operator，而 simulator 使用由 material speed 加权的 physics operator，因此不是把 solver 的精确 diagonalization basis 直接交给模型。
 
@@ -533,12 +533,11 @@ q(f,u)=p(f\mid u)q(u)
 
 当前
 
-\[
-\operatorname{NRMSE}_{\rm boundary}=
+$$
+\operatorname{NRMSE}_{\mathrm{boundary}}=
 \frac{\operatorname{RMSE}_{x\in\partial\Omega_h}}
 {\operatorname{Std}(y_{x\in\partial\Omega_h})}
-
-\]
+$$
 
 只取一层离散 boundary nodes。需要补充：
 
@@ -853,27 +852,27 @@ GINO、Geo-FNO、DAFNO/相关 arbitrary-domain operator 并非 Bayesian tensor b
 
 | Family | section / covariance | 它提取的几何信息 |
 |---|---|---|
-| `matern_resolvent` | \((I+\alpha L_\Omega)^{-3/2}\) | 多尺度低频平滑、边界条件和 topology 改变的全局谱结构 |
-| `heat_diffusion` | \(\exp(-tL_\Omega)\) | 在给定 diffusion time 内沿合法域路径传播的可达性 |
-| `geodesic_rbf` | \(\exp[-d_{G_\Omega}(x,s)^2/(2\ell^2)]\) | mesh graph 内最短路径；不会穿过墙或孔洞 shortcut |
-| `euclidean_rbf` | \(\exp[-\|x-s\|^2/(2\ell^2)]\) | ambient proximity control；不知道墙和孔洞 |
+| `matern_resolvent` | $(I+\alpha L_\Omega)^{-3/2}$ | 多尺度低频平滑、边界条件和 topology 改变的全局谱结构 |
+| `heat_diffusion` | $\exp(-tL_\Omega)$ | 在给定 diffusion time 内沿合法域路径传播的可达性 |
+| `geodesic_rbf` | $\exp[-d_{G_\Omega}(x,s)^2/(2\ell^2)]$ | mesh graph 内最短路径；不会穿过墙或孔洞 shortcut |
+| `euclidean_rbf` | $\exp[-\|x-s\|^2/(2\ell^2)]$ | ambient proximity control；不知道墙和孔洞 |
 
 所有 family 都输出 5 个 source-centred sections，再与 5 个固定 parameter RBF features 做 tensor product，因此单 kernel 都是 25 维。这里的 heat kernel 是 graph Laplacian 的有限谱近似；Matérn/resolvent 是同一算子的另一种 spectral response。两者不是改名后的同一个 kernel。
 
 四个 kernel 通过一个严格 PSD 的非负 mixture 合并：
 
-\[
+$$
 k_{\mathrm{mix}}=\sum_{q=1}^4 w_q k_q,\qquad
 w=\operatorname{softmax}(\eta),
-\]
+$$
 
 对应 feature map 是
 
-\[
+$$
 \Phi_{\mathrm{mix}}=[\sqrt{w_1}\Phi_1,\ldots,\sqrt{w_4}\Phi_4].
-\]
+$$
 
-whitened coefficients 仍采用 \(u\sim\mathcal N(0,I)\)，full-covariance \(q(u)\) 与 mixture logits \(\eta\) 一起用 mini-batch ELBO+SGD 优化。这样 prior、feature map、PSD 性和 ELBO 都是显式的。它只是连续 evidence-based weighting，不能夸大成自动发现唯一真实物理 kernel。
+whitened coefficients 仍采用 $u\sim\mathcal N(0,I)$，full-covariance $q(u)$ 与 mixture logits $\eta$ 一起用 mini-batch ELBO+SGD 优化。这样 prior、feature map、PSD 性和 ELBO 都是显式的。它只是连续 evidence-based weighting，不能夸大成自动发现唯一真实物理 kernel。
 
 实现位置：
 

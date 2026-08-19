@@ -1,0 +1,71 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Frozen protocol}
+\todo{seeds 101--105 development / 201--205 untouched confirmation; $24^3$ grid; 2\% observations;
+rank 2; $k \le 6$; Adam, 400 steps, 3 ELBO samples; no validation, no early stopping}
+
+\subsection{Main confirmation}
+\todo{Table~\ref{tab:main} + \Cref{fig:main}}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\linewidth]{submission_confirmation_nrmse.png}
+  \caption{Held-out NRMSE on untouched seeds 201--205 at $2\%$ observations.}
+  \label{fig:main}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{Held-out NRMSE (mean $\pm$ std over untouched seeds 201--205).}
+  \label{tab:main}
+  \small
+  \begin{tabular}{lccccc}
+    \toprule
+    Setting & op.\ global & op.\ per-mode/rank & gen.\ global & gen.\ per-mode/rank & oracle route \\
+    \midrule
+    reference advection    & 0.0411\,$\pm$\,0.0144 & 0.0462\,$\pm$\,0.0332 & 0.0474\,$\pm$\,0.0237 & \textbf{0.0343\,$\pm$\,0.0077} & 0.0325\,$\pm$\,0.0106 \\
+    shifted advection      & 0.1006\,$\pm$\,0.0586 & 0.0995\,$\pm$\,0.0590 & \textbf{0.0892\,$\pm$\,0.0369} & 0.2312\,$\pm$\,0.2580 & 0.1042\,$\pm$\,0.1041 \\
+    anisotropic diffusion  & 0.1212\,$\pm$\,0.0606 & \textbf{0.1183\,$\pm$\,0.0582} & 0.3761\,$\pm$\,0.5235 & 0.1567\,$\pm$\,0.0990 & 0.1183\,$\pm$\,0.0588 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Separability audit: positive octant vs.\ full signed grid}
+
+\begin{table}[t]
+  \centering
+  \caption{Rank-4 nonnegative separation error of the joint operator spectrum.}
+  \label{tab:signed}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    Operator & positive octant & full signed grid \\
+    \midrule
+    reference advection   & 0.0323 & 0.1799 \\
+    shifted advection     & 0.0242 & 0.1812 \\
+    anisotropic diffusion & 0.0030 & \textbf{0.0043} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Strict support mismatch}
+
+\begin{table}[t]
+  \centering
+  \caption{Deleting all operator support at $k \ge 2$; $25\%$ generic floor as the escape route.}
+  \label{tab:strict}
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    Setting & wrong-support operator & $25\%$ floor robust & paired wins \\
+    \midrule
+    reference advection   & 0.6723\,$\pm$\,0.1938 & \textbf{0.0402\,$\pm$\,0.0096} & 5/5 \\
+    shifted advection     & 0.6318\,$\pm$\,0.0883 & \textbf{0.0847\,$\pm$\,0.0414} & 5/5 \\
+    anisotropic diffusion & 0.6149\,$\pm$\,0.1798 & \textbf{0.1301\,$\pm$\,0.0621} & 5/5 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Predictive calibration}
+\todo{induced-spectrum cosine / relative L2 / 64-sample posterior predictive NLL and 95\% coverage}

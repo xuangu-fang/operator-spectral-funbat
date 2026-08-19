@@ -1,0 +1,24 @@
+\section{Introduction}
+\label{sec:intro}
+
+\todo{port from docs/PAPER\_TECHNICAL\_REPORT\_ZH.md \S2}
+
+\paragraph{Setting.} \todo{sparse observation of multi-dimensional physical fields; 1--5\% entries}
+
+\paragraph{Why generic GP kernels waste information.} \todo{the operator is often known even when the solution is not}
+
+\paragraph{The structural conflict.} \todo{non-separability vs.\ mode-wise functional factors; free dictionaries degenerate into kernel search}
+
+\paragraph{Contributions.}
+\begin{enumerate}
+  \item A PSD-preserving nonnegative low-rank projection from an operator-induced joint
+        spectrum to per-mode one-dimensional GP kernels (\Cref{sec:method}).
+  \item Per-mode (and optionally per-rank) routing over the resulting operator atom bank.
+  \item A bank-size-independent finite-spectrum variational parameterisation, so that
+        method comparisons are not confounded by coefficient budget.
+  \item A fixed generic support floor that repairs a deleted-support operator prior, with a
+        quantified robustness--specificity tradeoff.
+\end{enumerate}
+
+\paragraph{What we do \emph{not} claim.} We do not claim atom-label identifiability or PDE
+discovery from $2\%$ observations. \todo{cite the top-1 recovery audit}

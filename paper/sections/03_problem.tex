@@ -1,0 +1,20 @@
+\section{Problem Setting}
+\label{sec:problem}
+
+We observe a continuous-indexed order-$D$ field at a sparse index set $\Obs$,
+\begin{equation}
+  y_i = u(x_{i1},\dots,x_{iD}) + \epsilon_i,
+  \qquad \epsilon_i \sim \Norm(0,\sigma^2),
+  \qquad i \in \Obs,
+  \label{eq:likelihood}
+\end{equation}
+with $\Nobs = |\Obs|$ and $\Nobs / N_{\mathrm{full}} \le 5\%$.  We assume access to an
+\emph{approximate} stationary linear operator $\widetilde{\Lop}$, which may differ from the
+true operator in its coefficients or even miss frequency support entirely.
+
+The proof of concept uses an order-three continuous CP model,
+\begin{equation}
+  u(x_1,x_2,x_3) = \sum_{r=1}^{R} c_r\, f_{1r}(x_1) f_{2r}(x_2) f_{3r}(x_3),
+  \label{eq:cp}
+\end{equation}
+chosen over a dense Tucker core specifically to isolate the contribution of the kernel prior.

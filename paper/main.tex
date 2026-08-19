@@ -1,0 +1,64 @@
+% =====================================================================
+% Operator-Spectral FunBaT — paper skeleton
+% Build:  make        (latexmk -pdf main.tex)
+% Switch venue style: replace the \documentclass / style block below.
+%   NeurIPS : \usepackage[preprint]{neurips_2026}
+%   ICML    : \usepackage{icml2026}
+%   ICLR    : \usepackage{iclr2026_conference,times}
+% =====================================================================
+\documentclass[10pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage{cleveref}
+
+\graphicspath{{figures/}{../results/submission_confirmation/}{../results/signed_spectrum_audit/}{../results/advanced_poc_r1_r5/}}
+
+\input{macros}
+
+\title{Operator-Spectral Priors for Functional Bayesian Tensor Completion}
+\author{%
+  Xuangu Fang\\
+  \texttt{xuangufang@gmail.com}
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/00_abstract}
+\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_problem}
+\input{sections/04_method}
+\input{sections/05_experiments}
+\input{sections/06_limitations}
+\input{sections/07_conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\clearpage
+\appendix
+\input{sections/A1_full_tables}
+
+\end{document}
