@@ -45,7 +45,23 @@ datasets (\Cref{sec:limitations}).
   \label{fig:main}
 \end{figure}
 
-\todo{fold in the ten additional seeds at 1\% and report the sign test}
+\paragraph{Pooled over fifteen seeds at $1\%$.}
+PDE-form kernels reach $0.4431 \pm 0.0539$ against $0.4818 \pm 0.0615$ for the
+parameter-matched generic dictionary and $0.5699$ for nearest neighbour, with a
+fully observed Tucker ceiling of $0.1791$.  The paired margin is
+$0.0387 \pm 0.0256$, an $8.0\%$ relative improvement, and it is positive on
+\emph{every} seed; a sign test and a Wilcoxon signed-rank test both give
+$p = 3.1\times 10^{-5}$.  The test is paired because all arms share the field,
+mask and noise within a seed.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figure_headline.png}
+  \caption{Every one of the fifteen seeds falls below the diagonal.  The effect
+  is modest in size and completely consistent in sign, which is the honest
+  characterisation of what a correct prior buys at this sparsity.}
+  \label{fig:headline}
+\end{figure}
 
 \subsection{Baselines}
 \todo{table from baselines\_summary.json on corrected forcing}

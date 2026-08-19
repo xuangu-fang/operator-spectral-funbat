@@ -136,6 +136,50 @@ def figure_no_routing() -> None:
     print("wrote figure_no_routing.png")
 
 
+
+
+def figure_headline() -> None:
+    """Per-seed paired scatter: the claim stands or falls on this one."""
+    data = load("headline_summary.json")
+    if data is None:
+        return
+    rows = []
+    for name in ("main_fixedforcing_summary.json", "main_extraseeds_summary.json"):
+        block = load(name)
+        if block is None:
+            continue
+        rows += [r for r in block["records"] if abs(r["ratio"] - data["ratio"]) < 1e-9]
+    operator = np.array([r["operator"]["test_nrmse"] for r in rows])
+    generic = np.array([r["generic"]["test_nrmse"] for r in rows])
+    figure, axes = plt.subplots(1, 2, figsize=(10.0, 4.2))
+    limits = [min(operator.min(), generic.min()) - 0.02,
+              max(operator.max(), generic.max()) + 0.02]
+    axes[0].plot(limits, limits, color="grey", lw=0.9, ls="--")
+    axes[0].scatter(generic, operator, s=42, color="tab:blue", zorder=3)
+    axes[0].set_xlim(limits); axes[0].set_ylim(limits)
+    axes[0].set_xlabel("generic dictionary, held-out NRMSE")
+    axes[0].set_ylabel("PDE-form kernels, held-out NRMSE")
+    axes[0].set_title(f"Paired, {data['seeds']} seeds at "
+                      f"{100 * data['ratio']:g}% observed ({data['paired_wins']})")
+    axes[0].grid(alpha=0.3)
+    axes[0].text(0.04, 0.93, "below the line = ours wins", transform=axes[0].transAxes,
+                 fontsize=8, color="tab:blue")
+
+    margin = generic - operator
+    axes[1].hist(margin, bins=10, color="tab:blue", alpha=0.85)
+    axes[1].axvline(0, color="black", lw=1.0)
+    axes[1].axvline(margin.mean(), color="tab:red", lw=1.4,
+                    label=f"mean {margin.mean():+.4f}")
+    axes[1].set_xlabel("paired NRMSE reduction")
+    axes[1].set_ylabel("seeds")
+    axes[1].set_title(f"sign test $p$ = {data['sign_test_p']:.1e}")
+    axes[1].legend(fontsize=8); axes[1].grid(axis="y", alpha=0.3)
+    figure.tight_layout()
+    figure.savefig(RESULTS / "figure_headline.png", dpi=160)
+    plt.close(figure)
+    print("wrote figure_headline.png")
+
+
 if __name__ == "__main__":
     tag = sys.argv[1] if len(sys.argv) > 1 else "main_fixedforcing_summary.json"
-    figure_main(tag); figure_baselines(); figure_no_routing()
+    figure_main(tag); figure_baselines(); figure_no_routing(); figure_headline()
