@@ -81,3 +81,28 @@
 3. 消融用修复后的强迫重跑（旧版存在 generic 自由 routing 过拟合的混淆）；
 4. 增加 1% 处的 seed 数以加强统计（当前 5 seeds，符号检验 p≈0.03）；
 5. UQ 表（coverage / NLL）。
+
+---
+
+## 6. 实验脚本索引
+
+| 脚本 | 回答什么 | 输出 |
+|---|---|---|
+| `forced_pde_solver.py` | 独立数值求解器（有限差分 + 指数积分/DCT） | 真值场 |
+| `run_forced_pde_main.py` | 主表：PDE 形式 kernel vs 通用字典 vs 最近邻 | `main_*_summary.json` |
+| `run_forced_pde_baselines.py` | 离散 CP/Tucker（EM 补缺失）、kernel ridge（oracle 调参） | `baselines_summary.json` |
+| `run_no_routing_comparison.py` | **决定性对照**：完全不学的 PDE 核 vs oracle 逐 mode 调参核 | `no_routing_summary.json` |
+| `run_forced_pde_ablation.py` | 增益来自哪里：oracle 谱、系数扰动、错误算子族、floor、routing 粒度 | `ablation_*_summary.json` |
+| `run_forced_pde_operators.py` | 跨算子族的适用性边界 | `operators_summary.json` |
+| `run_anisotropy_sweep.py` | 各向异性是否是机制来源 | `anisotropy_summary.json` |
+| `make_paper_figures.py` | 从 summary JSON 生成论文图 | `figure_*.png` |
+
+---
+
+## 7. 方法论备忘（踩过的坑）
+
+1. **抽点降采样会把结构混叠成白噪声**，必须用块平均。抽点后的 rank95 比例看起来正常，掩盖了问题。
+2. **比较先验之前，先验证数据的谱符合先验族假设的生成机制**。块状强迫的 sinc 谱零点让先验与数据的分歧落在强迫上，结果是任何算子都不好、任何光滑先验都一样平庸。
+3. **等待脚本里的 `pgrep -f "xxx.py"` 会匹配到等待 shell 自身的命令行**，导致队列死锁。顺序脚本不做进程检测更可靠。
+4. **满观测下的低秩天花板必须先测**。若它不明显低于 1，任何 kernel 比较都无意义——这是 PDEBench 与 Kolmogorov 被拒的判据。
+5. **带通谱直觉上"通用核表示不了、应该是我们的强项"，实际恰恰相反**：环形谱是最不可分的，逐轴分离近似会填满方块。
