@@ -1,0 +1,47 @@
+{
+  "config": {
+    "samples": [
+      0
+    ],
+    "ratios": [
+      0.1
+    ],
+    "rank": 10,
+    "atoms": 4,
+    "max_frequency": 6,
+    "time_points": 32,
+    "spatial_stride": 8,
+    "component": 1,
+    "steps": 200,
+    "device": "cuda",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/pdebench_probe"
+  },
+  "nominal_operator": {
+    "diffusivity": [
+      1.0,
+      1.0
+    ],
+    "reaction_rate": 6.0,
+    "damping": 0.4,
+    "source_scale": 0.06
+  },
+  "operator_separation_relative_error": 0.05789955902285735,
+  "records": [
+    {
+      "sample": 0,
+      "ratio": 0.1,
+      "cp_ceiling": 0.32086106603201875,
+      "observed": 819,
+      "operator": {
+        "test_nrmse": 1.4545872211456299,
+        "trainable_parameter_count": 911
+      },
+      "generic": {
+        "test_nrmse": 1.2541950941085815,
+        "trainable_parameter_count": 911
+      },
+      "margin": -0.20039212703704834
+    }
+  ],
+  "operator_wins": "0/1"
+}

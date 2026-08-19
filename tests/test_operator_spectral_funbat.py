@@ -202,3 +202,25 @@ def test_wave_parameter_defaults_reproduce_the_frozen_literals():
     )
     assert not torch.allclose(default, shifted)
     assert torch.all(shifted >= 0)
+
+
+def test_reaction_diffusion_symbol_is_even_and_band_pass():
+    frequency = torch.arange(9, dtype=torch.float32)
+    # A positive reaction rate must create an interior spectral peak: the
+    # Turing wavenumber.  A generic monotone-decaying kernel cannot express it,
+    # which is the whole reason this family is the headline case.
+    banded = operator_joint_spectrum(
+        "reaction_diffusion", frequency,
+        reaction_diffusivity=(1.0, 1.0), reaction_rate=9.0, reaction_damping=0.3,
+    )
+    spatial = banded[:, 0, 0]
+    assert int(spatial.argmax()) not in (0, len(spatial) - 1)
+    # With no reaction the symbol must decay monotonically from the origin.
+    plain = operator_joint_spectrum(
+        "reaction_diffusion", frequency, reaction_rate=0.0,
+    )
+    assert int(plain[:, 0, 0].argmax()) == 0
+    assert torch.all(banded >= 0) and torch.isfinite(banded).all()
+    # Adding it must not perturb any previously frozen operator.
+    for name in ("diffusion", "advection", "wave"):
+        assert torch.isfinite(operator_joint_spectrum(name, frequency)).all()

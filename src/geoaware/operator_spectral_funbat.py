@@ -140,7 +140,7 @@ def real_fourier_basis(coordinate: torch.Tensor, frequency_bins: int) -> torch.T
 
 
 def operator_joint_spectrum(
-    operator: Literal["diffusion", "wave", "advection"],
+    operator: Literal["diffusion", "wave", "advection", "reaction_diffusion"],
     frequencies: torch.Tensor,
     *,
     source_scale: float = 0.12,
@@ -151,6 +151,9 @@ def operator_joint_spectrum(
     advection_reaction: float = 0.6,
     wave_coefficients: tuple[float, float] = (1.35, 0.65),
     wave_damping: tuple[float, float] = (0.45, 0.18),
+    reaction_diffusivity: tuple[float, float] = (1.0, 1.0),
+    reaction_rate: float = 0.0,
+    reaction_damping: float = 0.15,
 ) -> torch.Tensor:
     """Construct ``|L_hat|^-2 S_w`` on a three-dimensional frequency grid.
 
@@ -167,6 +170,7 @@ def operator_joint_spectrum(
         source_scale, reaction, *diffusion_coefficients,
         *advection_diffusivity, advection_reaction,
         *wave_coefficients, *wave_damping,
+        *reaction_diffusivity, reaction_damping,
     )
     if any(value <= 0 for value in positive_parameters):
         raise ValueError("source, reaction and diffusivity parameters must be positive")
@@ -181,6 +185,16 @@ def operator_joint_spectrum(
         gamma0, gamma1 = wave_damping
         dispersion = cx * (wx.square() + cy * wy.square()) - wt.square()
         response_sq = dispersion.square() + (gamma0 + gamma1 * wt.abs()).square()
+    elif operator == "reaction_diffusion":
+        # Parabolic symbol of  d_t u = D grad^2 u + a u  (+ higher-order terms
+        # absorbed into the forcing).  Even in every axis, so the real
+        # axis-wise Fourier representation is exact here rather than an
+        # approximation.  With a > 0 the symbol dips near the Turing wavenumber
+        # D k^2 = a, giving a band-pass spatial spectrum that a generic smooth
+        # kernel cannot express -- the reason this family is the headline case.
+        dx, dy = reaction_diffusivity
+        elliptic = dx * wx.square() + dy * wy.square() - reaction_rate
+        response_sq = wt.square() + elliptic.square() + reaction_damping**2
     elif operator == "advection":
         dx, dy = advection_diffusivity
         vx, vy = advection_velocity
