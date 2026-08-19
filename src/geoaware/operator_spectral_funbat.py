@@ -139,6 +139,47 @@ def real_fourier_basis(coordinate: torch.Tensor, frequency_bins: int) -> torch.T
     ), dim=-1)
 
 
+def real_cosine_basis(coordinate: torch.Tensor, frequency_bins: int) -> torch.Tensor:
+    """Neumann (no-flux) eigenbasis ``[1, sqrt(2) cos(pi k x)]``.
+
+    The eigenbasis of a stationary operator depends on the boundary condition,
+    not only on the symbol.  On a periodic domain it is the complex exponential
+    pair, which :func:`real_fourier_basis` provides; on a no-flux domain the
+    Laplacian eigenfunctions are cosines with eigenvalues ``(pi k)^2``.  Real
+    initial-value data is typically *not* periodic along time -- forcing
+    ``f(0) = f(1)`` there is a large, unphysical constraint -- so this basis is
+    what makes the construction usable outside self-generated periodic data.
+
+    The induced kernel is still PSD for any nonnegative spectrum, because it
+    remains a nonnegatively weighted sum of outer products.  Unlike the
+    periodic case the pointwise variance is not constant, which is correct: a
+    bounded domain genuinely has a non-stationary covariance near its edges.
+    """
+    if coordinate.ndim != 1 or frequency_bins < 2:
+        raise ValueError("coordinate/frequency_bins are invalid")
+    frequency = torch.arange(1, frequency_bins, device=coordinate.device,
+                             dtype=coordinate.dtype)
+    phase = math.pi * coordinate[:, None] * frequency[None]
+    return torch.cat((
+        torch.ones(len(coordinate), 1, device=coordinate.device, dtype=coordinate.dtype),
+        math.sqrt(2) * torch.cos(phase),
+    ), dim=-1)
+
+
+def normalize_spectrum_cosine(spectrum: torch.Tensor, eps: float = 1e-12) -> torch.Tensor:
+    """Normalize to unit *average* marginal variance in the cosine basis.
+
+    Each cosine feature has mean square one over the domain, so the average
+    pointwise variance is ``sum_k s(k)`` rather than the periodic
+    ``s_0 + 2 sum_{k>0} s_k``.
+    """
+    if spectrum.ndim < 1 or spectrum.shape[-1] < 2:
+        raise ValueError("spectrum must have at least two frequency bins")
+    if torch.any(spectrum < 0) or not torch.isfinite(spectrum).all():
+        raise ValueError("spectrum must be finite and nonnegative")
+    return spectrum / spectrum.sum(-1, keepdim=True).clamp_min(eps)
+
+
 def operator_joint_spectrum(
     operator: Literal["diffusion", "wave", "advection", "reaction_diffusion"],
     frequencies: torch.Tensor,
@@ -552,3 +593,216 @@ def sample_planted_tensor(
         core = torch.linspace(1.0, 0.65, rank, device=coordinates[0].device)
     field = torch.einsum("ir,jr,kr,r->ijk", *factors, core)
     return (field - field.mean()) / field.std().clamp_min(1e-6)
+
+
+class ModeAdaptiveVariationalTucker(nn.Module):
+    """Functional Tucker with routed finite-spectrum GP factors and an ELBO.
+
+    Same spectral machinery as :class:`ModeAdaptiveVariationalCP` --- the
+    operator-derived per-mode kernels are unchanged --- but the diagonal CP
+    weight is replaced by a small dense core.  This exists because real
+    two-dimensional physical fields are generally *not* low CP-rank: a Turing
+    pattern is a field of isotropic blobs, which is not ``x`` tensor ``y``
+    separable, yet its multilinear rank is small.  With a CP host no kernel can
+    help, because the model cannot represent the field at all.
+
+    Per-mode ranks are independent on purpose.  A field whose multilinear rank
+    is ``[2, 11, 11]`` needs a ``2*11*11 = 242`` core, whereas forcing an equal
+    rank of 11 would need ``1331`` --- a difference that decides whether the
+    model is identifiable at realistic observation counts.
+    """
+
+    def __init__(
+        self,
+        coordinates: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+        spectra: torch.Tensor,
+        *,
+        ranks: tuple[int, int, int],
+        routing: Literal["global", "per_mode", "per_mode_rank", "fixed"] = "per_mode_rank",
+        fixed_routing: tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None = None,
+        noise_std: float = 0.08,
+        routing_floor: torch.Tensor | None = None,
+        basis: tuple[str, str, str] = ("fourier", "fourier", "fourier"),
+    ):
+        super().__init__()
+        if spectra.ndim != 3 or spectra.shape[0] != 3:
+            raise ValueError("spectra must have shape [3,family,frequency]")
+        if len(ranks) != 3 or any(rank < 1 for rank in ranks):
+            raise ValueError("ranks must be three positive integers")
+        if routing not in {"global", "per_mode", "per_mode_rank", "fixed"}:
+            raise ValueError(f"unknown routing: {routing}")
+        self.ranks = tuple(int(rank) for rank in ranks)
+        self.family_count = spectra.shape[1]
+        self.routing = routing
+        if len(basis) != 3 or any(kind not in {"fourier", "cosine"} for kind in basis):
+            raise ValueError("basis must be three entries from {fourier, cosine}")
+        self.basis = tuple(basis)
+        frequency_bins = spectra.shape[-1]
+        # Each mode normalizes its spectrum for the basis it actually uses.
+        normalized = torch.stack([
+            (normalize_spectrum if self.basis[mode] == "fourier" else normalize_spectrum_cosine)
+            (spectra[mode].float()) for mode in range(3)
+        ])
+        self.register_buffer("spectra", normalized)
+        self.feature_size = 1 + 2 * (frequency_bins - 1)
+        for mode, coordinate in enumerate(coordinates):
+            builder = real_fourier_basis if self.basis[mode] == "fourier" else real_cosine_basis
+            self.register_buffer(f"fourier_basis_{mode}", builder(coordinate, frequency_bins))
+
+        if routing_floor is None:
+            floor = torch.zeros(self.family_count, dtype=torch.float32)
+        else:
+            floor = routing_floor.to(dtype=torch.float32)
+            if floor.shape != (self.family_count,) or torch.any(floor < 0) or floor.sum() >= 1:
+                raise ValueError("routing_floor must be nonnegative [family] with sum < 1")
+        self.register_buffer("routing_floor", floor)
+
+        # One coefficient vector per (mode, mode-rank); the count is independent
+        # of the number of atoms in the bank, exactly as in the CP host, so
+        # banks of different sizes stay comparable.
+        self.feature_sizes = tuple(
+            (1 + 2 * (frequency_bins - 1)) if self.basis[mode] == "fourier" else frequency_bins
+            for mode in range(3)
+        )
+        self.variational_mean = nn.ParameterList([
+            nn.Parameter(0.12 * torch.randn(rank, size))
+            for rank, size in zip(self.ranks, self.feature_sizes)
+        ])
+        self.raw_variational_std = nn.ParameterList([
+            nn.Parameter(torch.full((rank, size), -2.5))
+            for rank, size in zip(self.ranks, self.feature_sizes)
+        ])
+        core = torch.randn(*self.ranks) / math.sqrt(float(np.prod(self.ranks)))
+        self.core = nn.Parameter(core)
+        self.log_noise_std = nn.Parameter(torch.tensor(math.log(noise_std)))
+
+        if routing == "fixed":
+            if fixed_routing is None or len(fixed_routing) != 3:
+                raise ValueError("fixed routing requires three [rank,family] tensors")
+            for mode, value in enumerate(fixed_routing):
+                if value.shape != (self.ranks[mode], self.family_count):
+                    raise ValueError("fixed routing shape mismatch")
+                if torch.any(value < 0) or torch.any(value.sum(-1) <= 0):
+                    raise ValueError("fixed routing must be nonnegative and nonempty")
+                self.register_buffer(
+                    f"fixed_routing_{mode}", value.float() / value.float().sum(-1, keepdim=True),
+                )
+            self.routing_logits = None
+        elif routing == "global":
+            self.routing_logits = nn.Parameter(torch.zeros(self.family_count))
+        elif routing == "per_mode":
+            self.routing_logits = nn.Parameter(torch.zeros(3, self.family_count))
+        else:
+            self.routing_logits = nn.ParameterList([
+                nn.Parameter(torch.zeros(rank, self.family_count)) for rank in self.ranks
+            ])
+
+    @property
+    def noise_std(self) -> torch.Tensor:
+        return self.log_noise_std.clamp(math.log(0.01), math.log(0.5)).exp()
+
+    def _add_floor(self, value: torch.Tensor) -> torch.Tensor:
+        return self.routing_floor + (1 - self.routing_floor.sum()) * value
+
+    def routing_weights(self) -> list[torch.Tensor]:
+        """Per mode, a ``[rank, family]`` simplex of atom weights."""
+        if self.routing == "fixed":
+            return [getattr(self, f"fixed_routing_{mode}") for mode in range(3)]
+        if self.routing == "global":
+            weight = self._add_floor(torch.softmax(self.routing_logits, dim=-1))
+            return [weight[None].expand(rank, -1) for rank in self.ranks]
+        if self.routing == "per_mode":
+            weight = self._add_floor(torch.softmax(self.routing_logits, dim=-1))
+            return [weight[mode][None].expand(self.ranks[mode], -1) for mode in range(3)]
+        return [
+            self._add_floor(torch.softmax(self.routing_logits[mode], dim=-1))
+            for mode in range(3)
+        ]
+
+    def induced_spectra(self) -> list[torch.Tensor]:
+        weights = self.routing_weights()
+        return [weights[mode] @ self.spectra[mode] for mode in range(3)]
+
+    def variational_std(self) -> list[torch.Tensor]:
+        return [F.softplus(raw) + 1e-4 for raw in self.raw_variational_std]
+
+    def _collapsed_features(self, mode: int, node_index: torch.Tensor) -> torch.Tensor:
+        """``[entry, rank, feature]`` features of the routed mixture spectrum."""
+        mixed = self.induced_spectra()[mode]
+        # Exact zero support must stay representable; sqrt has an infinite
+        # derivative there, so clamp only while building features.
+        root = mixed.clamp_min(1e-12).sqrt()
+        if self.basis[mode] == "fourier":
+            amplitude = torch.cat((root[:, :1], root[:, 1:], root[:, 1:]), dim=-1)
+        else:
+            amplitude = root
+        basis = getattr(self, f"fourier_basis_{mode}")
+        return basis[node_index.long(), None, :] * amplitude[None]
+
+    def _factor_values(
+        self, indices: torch.Tensor, coefficients: list[torch.Tensor],
+    ) -> list[torch.Tensor]:
+        if indices.ndim != 2 or indices.shape[1] != 3:
+            raise ValueError("indices must have shape [entry,3]")
+        return [
+            (self._collapsed_features(mode, indices[:, mode]) * coefficients[mode][None]).sum(-1)
+            for mode in range(3)
+        ]
+
+    def _contract(self, factors: list[torch.Tensor]) -> torch.Tensor:
+        partial = torch.einsum("na,abc->nbc", factors[0], self.core)
+        partial = torch.einsum("nb,nbc->nc", factors[1], partial)
+        return (factors[2] * partial).sum(-1)
+
+    def kl_to_prior(self) -> torch.Tensor:
+        total = self.core.new_zeros(())
+        for mean, std in zip(self.variational_mean, self.variational_std()):
+            total = total + 0.5 * (mean.square() + std.square() - 1 - 2 * torch.log(std)).sum()
+        return total
+
+    def posterior_mean(self, indices: torch.Tensor) -> torch.Tensor:
+        return self._contract(self._factor_values(indices, list(self.variational_mean)))
+
+    def posterior_predictive_samples(
+        self, indices: torch.Tensor, *, samples: int,
+        generator: torch.Generator | None = None, include_noise: bool = False,
+    ) -> torch.Tensor:
+        stds = self.variational_std()
+        draws = []
+        for _ in range(samples):
+            coefficients = [
+                mean + std * torch.randn(
+                    mean.shape, generator=generator, device=mean.device, dtype=mean.dtype)
+                for mean, std in zip(self.variational_mean, stds)
+            ]
+            draws.append(self._contract(self._factor_values(indices, coefficients)))
+        stacked = torch.stack(draws)
+        if include_noise:
+            stacked = stacked + self.noise_std * torch.randn(
+                stacked.shape, generator=generator, device=stacked.device, dtype=stacked.dtype)
+        return stacked
+
+    def negative_elbo(
+        self, indices: torch.Tensor, targets: torch.Tensor, *,
+        total_count: int, samples: int = 3,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        if len(indices) != len(targets) or total_count < len(targets):
+            raise ValueError("indices/targets/total_count are inconsistent")
+        stds = self.variational_std()
+        noise = self.noise_std
+        expected = self.core.new_zeros(())
+        for _ in range(samples):
+            coefficients = [
+                mean + std * torch.randn_like(mean) for mean, std in zip(self.variational_mean, stds)
+            ]
+            prediction = self._contract(self._factor_values(indices, coefficients))
+            expected = expected + (
+                -0.5 * math.log(2 * math.pi) - torch.log(noise)
+                - 0.5 * (targets - prediction).square() / noise.square()
+            ).sum()
+        expected = expected / samples * (total_count / len(targets))
+        kl = self.kl_to_prior()
+        loss = (kl - expected) / total_count
+        if not torch.isfinite(loss):
+            raise FloatingPointError("non-finite ELBO")
+        return loss, {"kl": kl.detach(), "noise_std": noise.detach()}

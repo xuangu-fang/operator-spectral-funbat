@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src")); sys.path.insert(0, str(ROOT / "experiments"))
 
 from geoaware.operator_spectral_funbat import (  # noqa: E402
-    ModeAdaptiveVariationalCP, extended_generic_dictionary, nonnegative_cp_spectrum,
+    ModeAdaptiveVariationalTucker, extended_generic_dictionary, nonnegative_cp_spectrum,
     normalize_spectrum, operator_joint_spectrum,
 )
 from pdebench_data import load_field, make_task, nrmse  # noqa: E402
@@ -53,12 +53,13 @@ def operator_atoms(max_frequency: int, atoms: int, nominal: dict) -> tuple[torch
     return normalize_spectrum(torch.stack(separated.factors)), separated.relative_error
 
 
-def train(task, spectra, *, rank, steps, seed, device, floor=None, lr=0.02):
+def train(task, spectra, *, ranks, steps, seed, device, floor=None, lr=0.02,
+          basis=("cosine", "cosine", "cosine")):
     torch.manual_seed(seed + 10_000)
-    model = ModeAdaptiveVariationalCP(
+    model = ModeAdaptiveVariationalTucker(
         tuple(torch.arange(s, device=device) / s for s in task.field.shape),
-        spectra.to(device), rank=rank, routing="per_mode_rank",
-        noise_std=0.08, mixture_parameterization="collapsed", routing_floor=floor,
+        spectra.to(device), ranks=ranks, routing="per_mode_rank",
+        noise_std=0.08, routing_floor=floor, basis=basis,
     ).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     for step in range(steps):
@@ -78,8 +79,31 @@ def train(task, spectra, *, rank, steps, seed, device, floor=None, lr=0.02):
     return {"test_nrmse": error, "trainable_parameter_count": params}
 
 
+def tucker_reference(field: torch.Tensor, ranks: tuple[int, int, int]) -> float:
+    """Fully observed HOSVD error: how much of the gap is the model, not the kernel.
+
+    This is the ceiling the kernel comparison is allowed to be judged against.
+    If it is not comfortably below 1, the host model cannot represent the field
+    and no kernel can rescue it -- which is exactly how the CP host was ruled
+    out.
+    """
+    T = field.double().cpu()
+    factors = []
+    for mode in range(3):
+        unfold = T.movedim(mode, 0).reshape(T.shape[mode], -1)
+        u, _, _ = torch.linalg.svd(unfold, full_matrices=False)
+        factors.append(u[:, :min(ranks[mode], T.shape[mode])])
+    core = T.clone()
+    for mode in range(3):
+        core = torch.tensordot(core, factors[mode], dims=([0], [0]))
+    rec = core
+    for mode in range(3):
+        rec = torch.tensordot(rec, factors[mode].T, dims=([0], [0]))
+    return float((rec - T).norm() / T.norm())
+
+
 def cp_reference(field: torch.Tensor, rank: int, iterations: int = 90) -> float:
-    """Fully observed CP error: how much of the gap is the model, not the kernel."""
+    """Fully observed CP error, kept for the record of why CP was rejected."""
     T = field.double().cpu()
     g = torch.Generator().manual_seed(0)
     F = [torch.randn(s, rank, generator=g, dtype=torch.float64) for s in T.shape]
@@ -97,12 +121,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--samples", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--ratios", type=float, nargs="+", default=[0.05, 0.10, 0.20])
-    parser.add_argument("--rank", type=int, default=10)
+    parser.add_argument("--ranks", type=int, nargs=3, default=[2, 11, 11])
     parser.add_argument("--atoms", type=int, default=4)
     parser.add_argument("--max-frequency", type=int, default=6)
     parser.add_argument("--time-points", type=int, default=32)
     parser.add_argument("--spatial-stride", type=int, default=8)
     parser.add_argument("--component", type=int, default=1)
+    parser.add_argument("--basis", nargs=3, default=["cosine", "cosine", "cosine"],
+                        choices=["fourier", "cosine"])
     parser.add_argument("--steps", type=int, default=600)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--output", type=Path, default=ROOT / "results" / "pdebench_probe")
@@ -119,16 +145,17 @@ def main() -> None:
     for sample in args.samples:
         field = load_field(sample, component=args.component,
                            time_points=args.time_points, spatial_stride=args.spatial_stride)
-        ceiling = cp_reference(field, args.rank)
+        ranks = tuple(args.ranks)
+        ceiling = tucker_reference(field, ranks)
         print(f"\nsample {sample}  shape {tuple(field.shape)}  "
-              f"fully-observed CP{args.rank} error {ceiling:.4f}", flush=True)
+              f"fully-observed Tucker{ranks} error {ceiling:.4f}", flush=True)
         for ratio in args.ratios:
             task = make_task(field, ratio=ratio, seed=sample, device=device)
-            row = {"sample": sample, "ratio": ratio, "cp_ceiling": ceiling,
+            row = {"sample": sample, "ratio": ratio, "tucker_ceiling": ceiling,
                    "observed": int(len(task.observed_targets))}
             for name, bank in (("operator", ops), ("generic", generic)):
-                row[name] = train(task, bank, rank=args.rank, steps=args.steps,
-                                  seed=sample, device=device)
+                row[name] = train(task, bank, ranks=ranks, steps=args.steps,
+                                  seed=sample, device=device, basis=tuple(args.basis))
             row["margin"] = row["generic"]["test_nrmse"] - row["operator"]["test_nrmse"]
             records.append(row)
             print(f"  ratio {ratio:4.2f}  n={row['observed']:5d}  "

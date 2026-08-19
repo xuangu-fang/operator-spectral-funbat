@@ -224,3 +224,65 @@ def test_reaction_diffusion_symbol_is_even_and_band_pass():
     # Adding it must not perturb any previously frozen operator.
     for name in ("diffusion", "advection", "wave"):
         assert torch.isfinite(operator_joint_spectrum(name, frequency)).all()
+
+
+def _tucker(ranks=(2, 5, 5), families=4, floor=None, routing="per_mode_rank"):
+    from geoaware.operator_spectral_funbat import ModeAdaptiveVariationalTucker
+    _, generic = extended_generic_dictionary(families, 6)
+    spectra = generic[None].expand(3, -1, -1).clone()
+    coords = tuple(torch.arange(n) / n for n in (16, 12, 12))
+    return ModeAdaptiveVariationalTucker(
+        coords, spectra, ranks=ranks, routing=routing, routing_floor=floor,
+    )
+
+
+def test_tucker_coefficient_budget_is_independent_of_bank_size():
+    small, large = _tucker(families=4), _tucker(families=12)
+    def coefficients(model):
+        return sum(p.numel() for p in model.variational_mean) + sum(
+            p.numel() for p in model.raw_variational_std)
+    assert coefficients(small) == coefficients(large)
+    # Only the routing logits may grow with the bank, exactly as in the CP host.
+    assert sum(p.numel() for p in large.parameters() if p.requires_grad) > \
+           sum(p.numel() for p in small.parameters() if p.requires_grad)
+
+
+def test_tucker_unequal_ranks_give_the_small_core_that_motivates_it():
+    model = _tucker(ranks=(2, 11, 11))
+    assert tuple(model.core.shape) == (2, 11, 11)
+    assert model.core.numel() == 242            # versus 1331 for an equal rank 11
+    values = model.posterior_mean(torch.zeros(5, 3, dtype=torch.long))
+    assert values.shape == (5,) and torch.isfinite(values).all()
+
+
+def test_tucker_routed_mixture_builds_psd_kernels_per_mode():
+    model = _tucker()
+    for mode in range(3):
+        features = model._collapsed_features(mode, torch.arange(12 if mode else 16))
+        for rank in range(model.ranks[mode]):
+            gram = features[:, rank] @ features[:, rank].T
+            assert torch.linalg.eigvalsh(gram).min() > -1e-5
+
+
+def test_tucker_routing_floor_is_respected_and_gradients_stay_finite():
+    floor = torch.cat((torch.zeros(2), torch.full((2,), 0.25 / 2)))
+    model = _tucker(floor=floor)
+    for mode, weights in enumerate(model.routing_weights()):
+        assert torch.all(weights[:, 2:] >= floor[2:] - 1e-6)
+        assert torch.allclose(weights.sum(-1), torch.ones(model.ranks[mode]), atol=1e-5)
+    indices = torch.zeros(24, 3, dtype=torch.long)
+    loss, _ = model.negative_elbo(indices, torch.randn(24), total_count=24, samples=2)
+    loss.backward()
+    assert all(torch.isfinite(p.grad).all() for p in model.routing_logits)
+
+
+def test_tucker_posterior_mean_matches_large_sample_monte_carlo():
+    model = _tucker(ranks=(2, 3, 3))
+    indices = torch.stack(torch.meshgrid(
+        torch.arange(4), torch.arange(3), torch.arange(3), indexing="ij"), -1).reshape(-1, 3)
+    generator = torch.Generator().manual_seed(0)
+    with torch.no_grad():
+        exact = model.posterior_mean(indices)
+        sampled = model.posterior_predictive_samples(
+            indices, samples=4000, generator=generator).mean(0)
+    assert torch.allclose(exact, sampled, atol=0.05)
