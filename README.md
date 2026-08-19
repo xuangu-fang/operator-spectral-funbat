@@ -43,6 +43,8 @@ For `L u = w`, construct `S_phys(omega) = |L_hat(omega)|^-2 S_w(omega)` and appr
 - `docs/PAPER_TECHNICAL_REPORT_ZH.md`: paper-level Chinese Introduction, positioning, Method and confirmation report (current submission baseline; GitHub-renderable math).
 - `paper/`: LaTeX project for the paper itself (`cd paper && make`); notation macros in `paper/macros.tex` mirror the Chinese report's symbol table.
 - `docs/TECHNICAL_REPORT.md`: historical expanded POC and earlier domain-kernel baseline.
+- `docs/DATASETS_AND_RESOURCES.md`: local/shared data, official PDE resources,
+  operator-spectrum audit fields, external-data baselines, and priority gates.
 - `docs/ITERATIONS.md`: advanced-POC research diary.
 - `docs/SHARED_PROTOCOL.md`: hub-level evaluation discipline.
 
