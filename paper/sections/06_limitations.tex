@@ -1,25 +1,51 @@
-\section{Limitations}
+\section{When this does not work}
 \label{sec:limitations}
 
+The method needs the operator to suppress a large part of the spectrum.  That is
+not an extra assumption layered on top of low-rank tensor completion -- it is the
+same condition, seen from the other side.  An operator that suppresses little
+leaves a broad spectrum, and a field with a broad spectrum is not low rank, so
+the host model fails before any kernel is chosen.  Consequently the failures are
+predictable rather than surprising, and we screen for them before committing to a
+dataset.
+
+\paragraph{Screening criterion.}
+We fit a fully observed low-rank model at the ranks we intend to use and require
+its relative error to be comfortably below $1$.  Below that threshold, sparse
+completion is infeasible for \emph{any} low-rank method and every arm lands near
+the trivial baseline, so a kernel comparison measures nothing.  We report the
+screen including what it rejected.
+
+\paragraph{Rejected: broad-spectrum turbulence.}
+Kolmogorov flow at $\mathrm{Re}=40$ needs $63\%$ of the modes along each spatial
+axis for $95\%$ of the energy, and a fully observed rank-$40$ CP still leaves
+$0.298$ relative error.  \todo{cite table}
+
+\paragraph{Rejected: pattern-forming reaction-diffusion.}
+PDEBench 2D diffusion-reaction shows the same $63\%$ figure, invariant to
+resolution and to whether one strides or block-averages, so it is intrinsic
+rather than an aliasing artefact.  Held-out NRMSE stayed above $1$ for every
+combination of host model, basis, feature budget and observation ratio.
+
+\paragraph{Rejected, and counter-intuitively so: radially band-pass operators.}
+It is tempting to expect the method to shine where a generic monotone kernel
+cannot follow the spectrum at all.  The opposite happens.  A linear
+Swift-Hohenberg operator has its response minimised on a ring $|k| = k_0$, and a
+ring is maximally non-separable: an axis-separable approximation fills the square
+instead of the ring.  At $1\%$ observed the band-pass operator prior scores
+$0.92$ against $0.74$ for a generic dictionary.  Separability, not
+expressiveness, is what the construction requires.
+
+\paragraph{Other limitations.}
 \begin{enumerate}
-  \item \textbf{Same-family synthetic data.} Current fields are drawn from the same finite
-        operator atom family the model uses; this is a mechanism sanity check, not external
-        evidence.  The next gate is PDEBench diffusion, where the solutions do not come from
-        our atom family.
-  \item \textbf{Even, axis-separable covariance only.} Real axis-wise Fourier features cannot
-        express the cross-sign coupling of tilted transport; advection's full signed
-        separation error is still $>0.12$ at rank 6 (\Cref{tab:signed}).  Signed-conjugate,
-        complex, or explicit cross-mode phase factors are required before advection can be
-        readmitted as a headline case.
-  \item \textbf{Degeneracy of the ladder.} A sufficiently wide $\Theta$ makes the pooled bank
-        approach a generic dictionary and the advantage must vanish (\Cref{sec:ladder}, P4).
-  \item \textbf{Routing is a point estimate}; the reported uncertainty excludes
-        kernel-routing uncertainty, and the routing softmax is not a Bayesian model
-        probability.
-  \item \textbf{Mean-field posterior} ignores posterior correlation between CP factors, and
-        the periodic Fourier prior handles neither boundary conditions nor non-stationary
-        coefficients.
-  \item \textbf{Fixed rank $R=2$}; no head-to-head comparison with rank-learning methods.
-  \item \textbf{Nonnegative CP has local optima and component permutation}; we use only
-        reconstruction error and the induced spectrum, never component labels.
+  \item The evidence is on fields from a linear forced PDE.  Nonlinear and
+        variable-coefficient operators are only approximated by a linearised
+        constant-coefficient form, and we do not measure how far that degrades.
+  \item Uncertainty is a mean-field variational posterior over a finite feature
+        basis, not an exact GP posterior.
+  \item The tensor is on a regular grid with a uniform random mask; structured
+        sensor layouts and irregular domains are untested.
+  \item The margin shrinks with observation count and is small by $5\%$ observed,
+        so the method is aimed at the sparse regime and should not be sold
+        outside it.
 \end{enumerate}

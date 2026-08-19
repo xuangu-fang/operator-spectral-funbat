@@ -1,7 +1,15 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-\todo{narrow, defensible summary: nonnegative PSD-preserving projection of a non-separable
-operator spectrum into per-mode GP kernels, plus a fixed generic support floor for
-misspecified priors.  Anisotropic diffusion is the clean example; advection is the stated
-limitation.}
+The form of a governing equation -- not its coefficients, not its solution -- is
+enough to fix the per-mode kernels of a functional tensor decomposition.  The
+construction is three steps, leaves no kernel parameters to learn, and drops into
+an existing model in place of its generic kernels, so it composes with better
+tensor models rather than competing with them.
+
+The advantage is largest where the data is least informative and disappears as
+observations accumulate, which is what a prior should do.  It requires an
+operator that suppresses much of the spectrum -- the same condition that makes
+the field low rank in the first place -- and we give a criterion, measurable
+before training, for deciding in advance whether a given field qualifies, along
+with the cases it rejects.
