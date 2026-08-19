@@ -16,12 +16,18 @@ from scipy.stats import binomtest, wilcoxon
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results" / "forced_pde"
-SOURCES = ["main_fixedforcing_summary.json", "main_extraseeds_summary.json"]
+# Default to the fair comparison, in which each arm runs at the routing that is
+# best for it.  The earlier per-mode/rank sources are kept for the record but
+# are not the headline, because that setting handicaps the generic dictionary
+# roughly twice as much as it handicaps the operator bank.
+SOURCES = ["fair_global_summary.json"]
+LEGACY_SOURCES = ["main_fixedforcing_summary.json", "main_extraseeds_summary.json"]
 
 
-def main(ratio: float = 0.01) -> None:
+def main(ratio: float = 0.01, sources: list[str] | None = None,
+         output: str = "headline_summary.json") -> None:
     rows, used = [], []
-    for name in SOURCES:
+    for name in (sources or SOURCES):
         path = RESULTS / name
         if not path.exists():
             print(f"skip {name}: not found")
@@ -49,10 +55,13 @@ def main(ratio: float = 0.01) -> None:
         "sign_test_p": float(binomtest(wins, len(rows), 0.5, alternative="greater").pvalue),
         "wilcoxon_p": float(wilcoxon(operator, generic, alternative="less").pvalue),
     }
-    (RESULTS / "headline_summary.json").write_text(json.dumps(summary, indent=2))
+    (RESULTS / output).write_text(json.dumps(summary, indent=2))
     for key, value in summary.items():
         print(f"  {key}: {value}")
 
 
 if __name__ == "__main__":
+    print("fair comparison (both arms at global routing):")
     main()
+    print("\nlegacy per-mode/rank comparison, kept for the record:")
+    main(sources=LEGACY_SOURCES, output="headline_legacy_pmr_summary.json")

@@ -1,26 +1,25 @@
 {
   "sources": [
-    "main_fixedforcing_summary.json",
-    "main_extraseeds_summary.json"
+    "fair_global_summary.json"
   ],
   "ratio": 0.01,
   "seeds": 15,
   "operator": {
-    "mean": 0.4431179424126943,
-    "std": 0.053863747383020584
+    "mean": 0.4217113892237345,
+    "std": 0.046961255846811385
   },
   "generic": {
-    "mean": 0.4817852814992269,
-    "std": 0.06149522044944853
+    "mean": 0.446447757879893,
+    "std": 0.05447290747502084
   },
   "nearest_neighbour_mean": 0.5699323773384094,
   "fully_observed_tucker_ceiling_mean": 0.17908570401436405,
   "paired_margin": {
-    "mean": 0.038667339086532596,
-    "std": 0.02556707273758545
+    "mean": 0.02473636865615845,
+    "std": 0.02347189856424154
   },
-  "relative_improvement_percent": 8.025844825771134,
-  "paired_wins": "15/15",
-  "sign_test_p": 3.0517578125e-05,
-  "wilcoxon_p": 3.0517578125e-05
+  "relative_improvement_percent": 5.540708452345554,
+  "paired_wins": "13/15",
+  "sign_test_p": 0.003692626953125,
+  "wilcoxon_p": 0.000579833984375
 }
