@@ -107,10 +107,14 @@ def main() -> None:
                              steps=args.steps, seed=seed, device=device, lr=args.lr,
                              routing=routing)["test_nrmse"]
 
+            # Every arm runs at the routing that is best for it; a shared
+            # setting that is bad for both hides real differences, which is how
+            # the separation was briefly and wrongly declared unnecessary.
+            rows.setdefault("operator_separated_global", []).append(run(separated, "global"))
             rows.setdefault("operator_marginal_fixed", []).append(run(single(marginal)))
             rows.setdefault("operator_separated_routed", []).append(run(separated))
-            rows.setdefault("generic_dictionary_routed", []).append(run(generic))
             rows.setdefault("generic_dictionary_global", []).append(run(generic, "global"))
+            rows.setdefault("generic_dictionary_routed", []).append(run(generic))
             # Oracle-tuned isotropic SE kernel: one length scale shared by all modes.
             shared = {ls: run(single(torch.stack([se[ls]] * 3))) for ls in LENGTH_SCALES}
             best_shared = min(shared, key=shared.get)
@@ -133,9 +137,9 @@ def main() -> None:
         block = {k: {"mean": float(np.mean(v)), "std": float(np.std(v)), "values": v}
                  for k, v in rows.items()}
         block["oracle_length_scales"] = tuned_choices
-        reference = np.array(rows["operator_marginal_fixed"])
+        reference = np.array(rows["operator_separated_global"])
         for name in rows:
-            block[name]["wins_against_operator_marginal"] = int(
+            block[name]["wins_against_method"] = int(
                 (np.array(rows[name]) < reference).sum())
         summary["ratios"][str(ratio)] = block
         print(f"ratio {ratio}: " + "  ".join(
