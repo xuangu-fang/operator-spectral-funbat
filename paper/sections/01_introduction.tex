@@ -1,57 +1,60 @@
 \section{Introduction}
 \label{sec:intro}
 
-\paragraph{Setting.} Multi-dimensional physical fields are often observed at only a handful
-of sensors, times, or operating conditions.  Low-rank CP/Tucker exploits the multi-way
-correlation, and functional tensor models replace discrete factor tables with continuous
-functions so that unobserved coordinates can be interpolated.  At $1$--$5\%$ observation
-rates, however, low-rank structure alone is not enough: the model must still decide how
-smooth each continuous factor is, whether it oscillates, and whether different coordinate
-directions should share a length scale. \todo{tighten}
+\paragraph{The setting.}
+A physical field is measured at a small random subset of grid entries --- a few
+percent or less --- and the rest must be reconstructed.  Low-rank tensor models
+exploit the multi-way correlation, and functional versions replace discrete
+factor tables with continuous functions so unobserved coordinates can be
+interpolated.  At a few percent observed, however, low-rank structure alone does
+not determine the answer.  The model must still decide how smooth each factor is,
+whether it oscillates, and whether different axes share a length scale, and there
+is not enough data to decide those things reliably.
 
-\paragraph{The question we actually ask.} Standard functional Bayesian tensor models answer
-those questions with a generic Mat\'ern or RBF kernel, discarding an information source that
-is almost always available.  We do not ask whether the solution is known --- we ask
-\emph{how much is known about the operator that governs the field}.  That admits a ladder
-(\Cref{tab:ladder}), and the level that matters in practice is not the top one.
+\paragraph{The information that is being left on the table.}
+Standard functional tensor models answer those questions with a generic
+Mat\'ern or RBF kernel, or by learning a kernel from the same scarce data.  Both
+discard something that is almost always known even when the solution is not: the
+\emph{form} of the governing equation.  A practitioner rarely knows the field,
+often does not know the coefficients, and yet usually does know whether they are
+looking at diffusion, transport, or a wave.  We show that the form alone is
+enough to fix the kernel, and that fixing it beats learning it exactly where the
+data is scarcest.
 
-\begin{table}[t]
-  \centering
-  \caption{Operator-knowledge levels.  Prior physics-informed GP work effectively assumes
-  K2; K1 is where most applications sit.}
-  \label{tab:ladder}
-  \small
-  \begin{tabular}{llp{0.42\linewidth}}
-    \toprule
-    Level & What is known & Example \\
-    \midrule
-    K2   & PDE form \emph{and} coefficients & calibrated rig; simulation with visible generator parameters \\
-    K1   & PDE form only, coefficients unknown & known to be anisotropic diffusion, but the medium's diffusion tensor was never measured \\
-    K0   & physics class only & ``roughly diffusion-dominated transport'' \\
-    K$-1$ & nothing & falls back to a generic GP kernel \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\paragraph{A prior, not a model.}
+Our contribution is deliberately narrow.  The construction produces per-mode GP
+spectra that drop into an existing functional tensor decomposition in place of
+its generic kernels; model, capacity, optimiser and step budget are unchanged, so
+every comparison in this paper varies only the origin of the spectra.  This also
+means the result is not in competition with better tensor models --- it composes
+with them.
 
-\noindent The claim K1 licenses is one sentence: \emph{we do not need you to know the
-coefficients, only which equation it is.}
+\paragraph{Two details that turned out to be load-bearing.}
+The eigenbasis of a stationary operator is fixed by its boundary condition, not
+by its symbol alone.  Periodic domains give complex exponentials; no-flux
+boundaries give cosines.  Real initial-value data is not periodic along time, and
+imposing $f(0) = f(1)$ there is a large unphysical constraint
+\todo{cite the measurement}.  Separately, the host model must be a Tucker rather
+than a CP decomposition: real two-dimensional fields are fields of blobs, not
+outer products, and are not low CP-rank at any rank that sparse observations
+could identify, even though their multilinear rank is small.
 
-\paragraph{The structural conflict.} \todo{non-separability of the joint spectrum vs.\
-mode-wise functional factors; a free dictionary degenerates into kernel search}
+\paragraph{When this cannot work, stated first.}
+The method needs the operator to suppress a large part of the spectrum.  That is
+the same condition that makes the field low multilinear rank, so the requirement
+is not an extra assumption but the one that was already there.  Broad-spectrum
+turbulence fails both halves at once, and we report it as a measured failure
+rather than omitting it.  We screen candidate datasets against this criterion
+before committing to them, and report the screen including what it rejected.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-  \item \textbf{A single construction from any knowledge level to valid per-mode GP kernels.}
-        A nonnegative low-rank projection turns the non-separable $D$-dimensional operator
-        spectrum into per-mode kernels, preserving positive semi-definiteness at every step;
-        K1 is realised by pooling atoms over a parameter family (\Cref{sec:method}).
-  \item \textbf{A fixed generic support floor as insurance for descending the ladder.} A
-        convex combination cannot create frequency support that no atom has, so a
-        non-closable fraction of generic spectral mass is reserved, yielding a quantified
-        robustness--specificity tradeoff.
+  \item A construction taking the form of a PDE --- not its coefficients, not its
+        solution --- to a positive semi-definite kernel for each mode of a
+        functional tensor decomposition, with no kernel parameters left to learn.
+  \item Evidence that fixing the kernel this way beats learning it from a generic
+        dictionary precisely in the sparse regime, with the advantage shrinking as
+        observations grow, which is the behaviour the claim predicts.
+  \item An explicit applicability criterion, measurable before training, together
+        with the datasets and operator families it rejects.
 \end{enumerate}
-
-\paragraph{What we do \emph{not} claim.} We do not claim atom-label identifiability, PDE
-discovery, or coefficient recovery from $2\%$ observations.  Routing granularity and the
-collapsed parameterisation are an ablation and a fairness control respectively, not
-contributions. \todo{cite the top-1 recovery audit}
