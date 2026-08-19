@@ -21,3 +21,6 @@ paper/*.toc
 paper/*.run.xml
 paper/*.bcf
 docs/*.pdf
+
+# editable-install metadata
+*.egg-info/

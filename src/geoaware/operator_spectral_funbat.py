@@ -47,6 +47,59 @@ def generic_spectral_dictionary(max_frequency: int = 6) -> tuple[tuple[str, ...]
     return ("smooth", "matern", "oscillatory", "broadband"), normalize_spectrum(spectra)
 
 
+def extended_generic_dictionary(
+    count: int, max_frequency: int = 6,
+) -> tuple[tuple[str, ...], torch.Tensor]:
+    """Return ``count`` generic one-dimensional spectra.
+
+    The first four entries are exactly ``generic_spectral_dictionary`` so that
+    every previously frozen result stays reproducible.  Additional atoms extend
+    the same three families (squared-exponential, Matern-like, oscillatory)
+    with deterministically interleaved parameters.  This exists to build an
+    atom-count-matched generic control for pooled operator banks: without it a
+    larger operator bank could win on bank size rather than on physics.
+    """
+    if count < 1:
+        raise ValueError("count must be positive")
+    names, base = generic_spectral_dictionary(max_frequency)
+    if count <= len(names):
+        return names[:count], base[:count]
+    w = torch.arange(max_frequency + 1, dtype=torch.float32)
+    # Interleaved so that any prefix of the extras stays family-diverse.
+    extras: list[tuple[str, torch.Tensor]] = []
+    smooth_scales = (0.35, 1.40, 0.18)
+    matern_scales = (0.12, 0.80, 0.05)
+    oscillatory_centres = (2.0, 5.0, 3.0, 6.0)
+    broadband_scales = (0.03, 0.20)
+    for index in range(max(len(smooth_scales), len(matern_scales),
+                           len(oscillatory_centres), len(broadband_scales))):
+        if index < len(smooth_scales):
+            scale = smooth_scales[index]
+            extras.append((f"smooth_{scale}", torch.exp(-scale * w.square())))
+        if index < len(matern_scales):
+            scale = matern_scales[index]
+            extras.append((f"matern_{scale}", (1 + scale * w.square()).pow(-1.5)))
+        if index < len(oscillatory_centres):
+            centre = oscillatory_centres[index]
+            extras.append((
+                f"oscillatory_{centre}",
+                torch.exp(-0.5 * ((w - centre) / 0.75).square()) + 0.03,
+            ))
+        if index < len(broadband_scales):
+            scale = broadband_scales[index]
+            extras.append((f"broadband_{scale}", (1 + scale * w.square()).reciprocal()))
+    needed = count - len(names)
+    if needed > len(extras):
+        raise ValueError(
+            f"extended dictionary supports at most {len(names) + len(extras)} atoms"
+        )
+    extra_names = tuple(name for name, _ in extras[:needed])
+    extra_spectra = torch.stack([spectrum for _, spectrum in extras[:needed]])
+    return names + extra_names, normalize_spectrum(
+        torch.cat((base, extra_spectra), dim=0)
+    )
+
+
 def fourier_features(coordinate: torch.Tensor, spectrum: torch.Tensor) -> torch.Tensor:
     """Map one-sided spectra to real features with ``K = Phi Phi^T``.
 
@@ -96,6 +149,8 @@ def operator_joint_spectrum(
     advection_diffusivity: tuple[float, float] = (0.18, 0.252),
     advection_velocity: tuple[float, float] = (0.9, -0.55),
     advection_reaction: float = 0.6,
+    wave_coefficients: tuple[float, float] = (1.35, 0.65),
+    wave_damping: tuple[float, float] = (0.45, 0.18),
 ) -> torch.Tensor:
     """Construct ``|L_hat|^-2 S_w`` on a three-dimensional frequency grid.
 
@@ -111,6 +166,7 @@ def operator_joint_spectrum(
     positive_parameters = (
         source_scale, reaction, *diffusion_coefficients,
         *advection_diffusivity, advection_reaction,
+        *wave_coefficients, *wave_damping,
     )
     if any(value <= 0 for value in positive_parameters):
         raise ValueError("source, reaction and diffusivity parameters must be positive")
@@ -118,8 +174,13 @@ def operator_joint_spectrum(
         dx, dy, dt = diffusion_coefficients
         response_sq = (reaction + dx * wx.square() + dy * wy.square() + dt * wt.square()).square()
     elif operator == "wave":
-        dispersion = 1.35 * (wx.square() + 0.65 * wy.square()) - wt.square()
-        response_sq = dispersion.square() + (0.45 + 0.18 * wt.abs()).square()
+        # Defaults reproduce the original hard-coded literals exactly, so every
+        # frozen result stays reproducible; the arguments exist so that a wave
+        # *family* can be sampled for wrong-family controls.
+        cx, cy = wave_coefficients
+        gamma0, gamma1 = wave_damping
+        dispersion = cx * (wx.square() + cy * wy.square()) - wt.square()
+        response_sq = dispersion.square() + (gamma0 + gamma1 * wt.abs()).square()
     elif operator == "advection":
         dx, dy = advection_diffusivity
         vx, vy = advection_velocity

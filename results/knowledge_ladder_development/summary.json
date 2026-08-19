@@ -1,0 +1,509 @@
+{
+  "status": "DEVELOPMENT ONLY - seeds 101-105 are exposed; never promote to a main table",
+  "protocol": {
+    "seeds": [
+      101,
+      102,
+      103,
+      104,
+      105
+    ],
+    "steps": 400,
+    "observation_ratio": 0.02,
+    "grid": 24,
+    "tensor_rank": 2,
+    "max_frequency": 6,
+    "theta_keys": [
+      "reaction",
+      "D_x",
+      "D_y",
+      "D_t"
+    ],
+    "width_k1": 3.0,
+    "width_k0": 10.0,
+    "draws": 6,
+    "atoms_per_draw": 2,
+    "generic_escape_floor_total": 0.25,
+    "forcing_spectrum": "source_scale assumed known at every level"
+  },
+  "banks": {
+    "theta_star": {
+      "reaction": 0.55,
+      "D_x": 0.12,
+      "D_y": 1.8,
+      "D_t": 0.35
+    },
+    "k2": {
+      "atom_count": 4,
+      "separation_relative_error": 0.0030371395239625998
+    },
+    "k1_single": {
+      "atom_count": 4,
+      "sampled_theta": [
+        0.30256691758273807,
+        0.24940572448779352,
+        0.7384613036731024,
+        0.5031384822842602
+      ],
+      "separation_relative_error": 0.005735088485046036
+    },
+    "k1": {
+      "width": 3.0,
+      "draws": 6,
+      "atoms_per_draw": 2,
+      "atom_count": 12,
+      "sampled_theta": [
+        [
+          0.30256691758273807,
+          0.24940572448779352,
+          0.7384613036731024,
+          0.5031384822842602
+        ],
+        [
+          0.19834711801617272,
+          0.33856242621931176,
+          3.0632663154257096,
+          0.8956307453536249
+        ],
+        [
+          0.9136181612090074,
+          0.12162709455887888,
+          1.7478879797018856,
+          0.18350811384639243
+        ],
+        [
+          0.4460851153611443,
+          0.0710169765416973,
+          5.04613922002701,
+          0.14849310364983762
+        ],
+        [
+          1.431105957517038,
+          0.04999996514324267,
+          2.0848466790633395,
+          0.3090511233617915
+        ],
+        [
+          0.7202409439534879,
+          0.08341466959739641,
+          0.9321859813755914,
+          0.609469344775617
+        ]
+      ],
+      "separation_relative_error_per_draw": [
+        0.01929618469158368,
+        0.009524046767751,
+        0.007122205850888104,
+        0.0042301023859816775,
+        0.005159542842081368,
+        0.010009586953963534
+      ]
+    },
+    "k0": {
+      "width": 10.0,
+      "draws": 6,
+      "atoms_per_draw": 2,
+      "atom_count": 12,
+      "sampled_theta": [
+        [
+          0.05860540373462692,
+          0.023734598770517375,
+          6.270871123875892,
+          0.1015409767196324
+        ],
+        [
+          0.5373861418074865,
+          0.24847815099379048,
+          3.293339036880979,
+          1.4819724042562432
+        ],
+        [
+          0.18267184054656008,
+          0.5679575622962427,
+          0.39000740371522397,
+          0.4745430070001583
+        ],
+        [
+          1.9429860247600115,
+          0.09814332660002865,
+          1.6941574926059462,
+          3.1761908997399604
+        ],
+        [
+          3.9748417608338973,
+          0.4332260918171163,
+          0.19898311757531417,
+          0.045084698372069534
+        ],
+        [
+          0.7921662693194074,
+          0.04177442295515779,
+          11.147424236403571,
+          0.26260795968016565
+        ]
+      ],
+      "separation_relative_error_per_draw": [
+        0.007235876595017454,
+        0.012815058681730006,
+        0.021811351233708465,
+        0.008924401980583498,
+        0.0036244413343107756,
+        0.0024920823838302814
+      ]
+    },
+    "wrong_family": {
+      "width": 3.0,
+      "draws": 6,
+      "atoms_per_draw": 2,
+      "atom_count": 12,
+      "sampled_theta": [
+        [
+          0.33007300099935055,
+          0.3741085867316903,
+          0.10338458251423432,
+          1.2937846687309549,
+          -0.19165444929720127
+        ],
+        [
+          0.21637867419946114,
+          0.5078436393289676,
+          0.42885728415959934,
+          2.3030504880521785,
+          -1.5957674479971333
+        ],
+        [
+          0.9966743576825534,
+          0.18244064183831832,
+          0.244704317158264,
+          0.47187800703358057,
+          -0.5534779116622447
+        ],
+        [
+          0.48663830766670285,
+          0.10652546481254593,
+          0.7064594908037813,
+          0.38183940938529676,
+          -0.4273126715982314
+        ],
+        [
+          1.5612064991094958,
+          0.074999947714864,
+          0.2918785350688675,
+          0.7947028886446068,
+          -0.8446112079900844
+        ],
+        [
+          0.7857173934038049,
+          0.1251220043960946,
+          0.1305060373925828,
+          1.5672068865658724,
+          -0.2998062374836669
+        ]
+      ],
+      "separation_relative_error_per_draw": [
+        0.053288502149705735,
+        0.07695503548275147,
+        0.07888517424285293,
+        0.06557961575386083,
+        0.1046535200674346,
+        0.07345947263820476
+      ]
+    },
+    "generic4": {
+      "atom_count": 4
+    },
+    "generic_matched": {
+      "atom_count": 12
+    },
+    "diversity": {
+      "k2": {
+        "mean_pairwise_cosine": 0.9485204617182413,
+        "max_pairwise_cosine": 0.9893003900845846
+      },
+      "k1_single": {
+        "mean_pairwise_cosine": 0.9586207469304403,
+        "max_pairwise_cosine": 0.9978998899459839
+      },
+      "k1": {
+        "mean_pairwise_cosine": 0.9334910114606222,
+        "max_pairwise_cosine": 0.9999699393908182
+      },
+      "k0": {
+        "mean_pairwise_cosine": 0.896415630976359,
+        "max_pairwise_cosine": 0.9998510082562765
+      },
+      "wrong_family": {
+        "mean_pairwise_cosine": 0.8584533135096232,
+        "max_pairwise_cosine": 1.0
+      },
+      "generic4": {
+        "mean_pairwise_cosine": 0.5414611101150513,
+        "max_pairwise_cosine": 0.9687486290931702
+      },
+      "generic_matched": {
+        "mean_pairwise_cosine": 0.6144914627075195,
+        "max_pairwise_cosine": 0.9987978935241699
+      }
+    }
+  },
+  "methods": {
+    "k2": {
+      "test_nrmse": {
+        "mean": 0.044039462506771085,
+        "std": 0.007342283306043365,
+        "values": [
+          0.056667495518922806,
+          0.041861314326524734,
+          0.04710410162806511,
+          0.038802213966846466,
+          0.03576218709349632
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9806702375411988,
+      "bank_atom_count": 4,
+      "trainable_parameter_count": 183,
+      "variational_coefficient_parameter_count": 156
+    },
+    "k2_floor": {
+      "test_nrmse": {
+        "mean": 0.062257324904203416,
+        "std": 0.01775057733032706,
+        "values": [
+          0.06532160192728043,
+          0.09393932670354843,
+          0.057964686304330826,
+          0.0533604770898819,
+          0.040700532495975494
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9814192295074463,
+      "bank_atom_count": 8,
+      "trainable_parameter_count": 207,
+      "variational_coefficient_parameter_count": 156
+    },
+    "k1_single": {
+      "test_nrmse": {
+        "mean": 0.04397951290011406,
+        "std": 0.007979963325314202,
+        "values": [
+          0.05856412276625633,
+          0.03696828335523605,
+          0.0450468547642231,
+          0.04266420006752014,
+          0.03665410354733467
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9663702487945557,
+      "bank_atom_count": 4,
+      "trainable_parameter_count": 183,
+      "variational_coefficient_parameter_count": 156
+    },
+    "k1_single_floor": {
+      "test_nrmse": {
+        "mean": 0.06246319562196732,
+        "std": 0.017954660668522377,
+        "values": [
+          0.06678927689790726,
+          0.09382610023021698,
+          0.05802273377776146,
+          0.05396457761526108,
+          0.039713289588689804
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9757749080657959,
+      "bank_atom_count": 8,
+      "trainable_parameter_count": 207,
+      "variational_coefficient_parameter_count": 156
+    },
+    "k1": {
+      "test_nrmse": {
+        "mean": 0.043798014521598816,
+        "std": 0.007891986329229174,
+        "values": [
+          0.05918211489915848,
+          0.038947608321905136,
+          0.04335884749889374,
+          0.03894779086112976,
+          0.03855371102690697
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9801774382591247,
+      "bank_atom_count": 12,
+      "trainable_parameter_count": 231,
+      "variational_coefficient_parameter_count": 156
+    },
+    "k1_floor": {
+      "test_nrmse": {
+        "mean": 0.0621908463537693,
+        "std": 0.01772245517939612,
+        "values": [
+          0.06562149524688721,
+          0.09390131384134293,
+          0.05731147155165672,
+          0.05303530767560005,
+          0.041084643453359604
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9789461970329285,
+      "bank_atom_count": 16,
+      "trainable_parameter_count": 255,
+      "variational_coefficient_parameter_count": 156
+    },
+    "k0": {
+      "test_nrmse": {
+        "mean": 0.054969239979982376,
+        "std": 0.016970873642748695,
+        "values": [
+          0.05779489129781723,
+          0.08659715950489044,
+          0.047542523592710495,
+          0.04383925721049309,
+          0.039072368294000626
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9770190358161926,
+      "bank_atom_count": 12,
+      "trainable_parameter_count": 231,
+      "variational_coefficient_parameter_count": 156
+    },
+    "k0_floor": {
+      "test_nrmse": {
+        "mean": 0.061689702421426774,
+        "std": 0.017869077358770438,
+        "values": [
+          0.06606414914131165,
+          0.09365931898355484,
+          0.05430353805422783,
+          0.053594015538692474,
+          0.040827490389347076
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9750001311302186,
+      "bank_atom_count": 16,
+      "trainable_parameter_count": 255,
+      "variational_coefficient_parameter_count": 156
+    },
+    "wrong_family": {
+      "test_nrmse": {
+        "mean": 0.046853166073560715,
+        "std": 0.007432313254643179,
+        "values": [
+          0.059327736496925354,
+          0.03796729817986488,
+          0.04928719252347946,
+          0.04680505394935608,
+          0.040878549218177795
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9699540495872497,
+      "bank_atom_count": 12,
+      "trainable_parameter_count": 231,
+      "variational_coefficient_parameter_count": 156
+    },
+    "wrong_family_floor": {
+      "test_nrmse": {
+        "mean": 0.06269568204879761,
+        "std": 0.016937346476672926,
+        "values": [
+          0.06562497466802597,
+          0.09287478029727936,
+          0.05945943295955658,
+          0.05316165089607239,
+          0.04235757142305374
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9741492748260498,
+      "bank_atom_count": 16,
+      "trainable_parameter_count": 255,
+      "variational_coefficient_parameter_count": 156
+    },
+    "km1_generic4": {
+      "test_nrmse": {
+        "mean": 0.07799032628536225,
+        "std": 0.06445070459370009,
+        "values": [
+          0.2059960961341858,
+          0.038009997457265854,
+          0.05567490682005882,
+          0.05315658077597618,
+          0.03711405023932457
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9196721076965332,
+      "bank_atom_count": 4,
+      "trainable_parameter_count": 183,
+      "variational_coefficient_parameter_count": 156
+    },
+    "km1_generic_matched": {
+      "test_nrmse": {
+        "mean": 0.05086875632405281,
+        "std": 0.007787141334568954,
+        "values": [
+          0.061989109963178635,
+          0.04438236355781555,
+          0.05854042246937752,
+          0.045918773859739304,
+          0.043513111770153046
+        ]
+      },
+      "induced_spectrum_cosine_mean": 0.9428138852119445,
+      "bank_atom_count": 12,
+      "trainable_parameter_count": 231,
+      "variational_coefficient_parameter_count": 156
+    },
+    "oracle_route": {
+      "test_nrmse": {
+        "mean": 0.04312116988003254,
+        "std": 0.013784519835818732,
+        "values": [
+          0.05600275099277496,
+          0.03567051142454147,
+          0.033533718436956406,
+          0.06292032450437546,
+          0.027478544041514397
+        ]
+      },
+      "induced_spectrum_cosine_mean": 1.0,
+      "bank_atom_count": 4,
+      "trainable_parameter_count": 159,
+      "variational_coefficient_parameter_count": 156
+    }
+  },
+  "predictions": {
+    "P1_monotone_k2_k1_k0_km1": {
+      "sequence": [
+        0.044039462506771085,
+        0.043798014521598816,
+        0.054969239979982376,
+        0.07799032628536225
+      ],
+      "monotone_nondecreasing": false
+    },
+    "P2_k1_retains_half_of_k2_gain": {
+      "k2_gain_over_km1": 0.03395086377859116,
+      "k1_gain_over_km1": 0.03419231176376343,
+      "retained_fraction": 1.0071116890205463,
+      "passes": true
+    },
+    "P3_floor_benefit_grows_as_level_drops": {
+      "k2": 0.01821786239743233,
+      "k1": 0.018392831832170484,
+      "k0": 0.006720462441444398
+    },
+    "P4_k0_still_beats_km1": {
+      "wins": 3,
+      "total": 5,
+      "mean_difference": -0.023021086305379867
+    },
+    "P5_k1_beats_atom_matched_generic": {
+      "wins": 5,
+      "total": 5,
+      "mean_difference": -0.007070741802453995
+    },
+    "P6_k1_beats_wrong_family": {
+      "wins": 4,
+      "total": 5,
+      "mean_difference": -0.003055151551961899
+    }
+  }
+}

@@ -4,6 +4,7 @@ from geoaware.operator_spectral_funbat import (
     ModeAdaptiveVariationalCP,
     all_grid_indices,
     fourier_features,
+    extended_generic_dictionary,
     generic_spectral_dictionary,
     nonnegative_cp_spectrum,
     operator_joint_spectrum,
@@ -156,3 +157,48 @@ def test_generic_floor_restores_features_missing_from_first_atom_support():
     )
     loss.backward()
     assert torch.isfinite(model.routing_logits.grad).all()
+
+
+def test_extended_generic_dictionary_extends_without_changing_the_frozen_four():
+    names4, base = generic_spectral_dictionary(6)
+    names12, extended = extended_generic_dictionary(12, 6)
+    # Every previously frozen result must stay reproducible.
+    assert names12[:4] == names4
+    assert torch.allclose(extended[:4], base, atol=1e-6)
+    assert extended.shape == (12, 7)
+    assert len(set(names12)) == 12
+    assert torch.all(extended >= 0)
+    # Unit marginal variance, i.e. s_0 + 2 * sum_{k>0} s_k == 1.
+    mass = extended[:, 0] + 2 * extended[:, 1:].sum(-1)
+    assert torch.allclose(mass, torch.ones(12), atol=1e-5)
+    # The extras must be genuinely distinct directions, otherwise an
+    # atom-count-matched control would be a fake control.
+    normalized = extended / extended.norm(dim=-1, keepdim=True)
+    gram = normalized @ normalized.T
+    off_diagonal = gram - torch.eye(12)
+    assert off_diagonal.max() < 0.9999
+
+
+def test_extended_generic_dictionary_builds_psd_kernels():
+    _, extended = extended_generic_dictionary(10, 6)
+    x = torch.linspace(0, 1, 17)[:-1]
+    phi = fourier_features(x, extended)
+    for index in range(len(extended)):
+        kernel = phi[index] @ phi[index].T
+        assert torch.linalg.eigvalsh(kernel).min() > -1e-5
+
+
+def test_wave_parameter_defaults_reproduce_the_frozen_literals():
+    frequency = torch.arange(7, dtype=torch.float32)
+    default = operator_joint_spectrum("wave", frequency)
+    explicit = operator_joint_spectrum(
+        "wave", frequency, wave_coefficients=(1.35, 0.65), wave_damping=(0.45, 0.18),
+    )
+    assert torch.equal(default, explicit)
+    # The arguments must actually move the spectrum, otherwise a wave-family
+    # sweep would silently be a single repeated atom.
+    shifted = operator_joint_spectrum(
+        "wave", frequency, wave_coefficients=(0.7, 1.4), wave_damping=(0.9, 0.05),
+    )
+    assert not torch.allclose(default, shifted)
+    assert torch.all(shifted >= 0)

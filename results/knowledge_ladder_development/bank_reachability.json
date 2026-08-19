@@ -1,0 +1,44 @@
+{
+  "definition": "mean relative L2 of the best convex combination of bank atoms approximating each frozen (mode, rank) truth spectrum; no training",
+  "truth_route": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      3
+    ]
+  ],
+  "scores": {
+    "k2": 0.003023357354546422,
+    "pooled_w1.5": 0.06521711134944316,
+    "pooled_w3.0": 0.05276044973589177,
+    "pooled_w5.0": 0.053583250756551536,
+    "pooled_w10.0": 0.0517785239261511,
+    "pooled_w20.0": 0.05519264236158874,
+    "k0_seed18": 0.053188406169051024,
+    "wrong_advection": 0.07707950128700967,
+    "wrong_wave": 0.034081007102983736,
+    "generic4": 0.30179028843374445,
+    "generic_matched": 0.17544549790736544
+  },
+  "prior_concentration_definition": "expected relative L2 to the truth spectrum for routing weights drawn from the uniform simplex; measures how typical, not how possible, a good fit is",
+  "prior_concentration": {
+    "k2": 0.29107129746207727,
+    "pooled_w1.5": 0.3013081216885544,
+    "pooled_w3.0": 0.3243115775850012,
+    "pooled_w5.0": 0.34853282603698066,
+    "pooled_w10.0": 0.3814149835031542,
+    "pooled_w20.0": 0.4091813432640012,
+    "k0_seed18": 0.40554887640749254,
+    "wrong_advection": 0.4530621158948461,
+    "wrong_wave": 0.556021152310146,
+    "generic4": 0.6258305883073626,
+    "generic_matched": 0.597985073222988
+  }
+}
