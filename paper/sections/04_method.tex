@@ -1,70 +1,74 @@
 \section{Method}
 \label{sec:method}
 
-The method has exactly two components: \textbf{M1} maps operator knowledge at any level to a
-bank of valid one-dimensional GP kernels; \textbf{M2} mixes that bank under a guaranteed
-support floor.  Everything else --- the CP likelihood, the finite-Fourier variational
-inference, the collapsed parameterisation, the routing granularity --- is model machinery or
-an experimental control, and is deferred to \Cref{sec:inference} and the appendices.
+The method has two components.  \textbf{M1} maps the \emph{form} of a governing
+PDE to a valid GP kernel for each tensor mode; \textbf{M2} fits a functional
+Tucker model whose factors carry those kernels.  Nothing else is claimed: the
+inference machinery is standard and is described only to make the comparison
+reproducible.
 
-\subsection{M1: from operator knowledge to a valid kernel bank}
+\subsection{M1: from a PDE form to per-mode kernels}
 
-\paragraph{M1-a: operator to joint spectrum.}
-For a periodic constant-coefficient operator, $\widehat{u}(\wvec) = \widehat{w}(\wvec)/\Lhat(\wvec)$, so
+\paragraph{Operator to joint spectrum.}
+For a stationary operator driven by noise, $\Lop u = w$, the solution is a
+stationary Gaussian process with spectral density
 \begin{equation}
   \Sop(\wvec;\theta) = \bigl|\Lhat_\theta(\wvec)\bigr|^{-2}\, \Sw(\wvec).
   \label{eq:joint-spectrum}
 \end{equation}
-The headline family is \emph{anisotropic reaction--diffusion}, with
-$|\Lhat_\theta|^2 = (\kappa + D_x\omega_x^2 + D_y\omega_y^2 + D_t\omega_t^2)^2$ and unknown
-$\theta = (\kappa, D_x, D_y, D_t)$ --- physically, ``we know it is diffusion, but the medium
-was never characterised''. \todo{table with advection and wave as stress cases}
+Only the functional form of $\Lhat$ is assumed known; $\theta$ is set to nominal
+values, and \Cref{sec:experiments} measures how little that choice matters.
 
-\paragraph{M1-b: nonnegative low-rank separation.}
+\paragraph{Nonnegative separation.}
+$\Sop$ is not separable across modes, whereas a functional tensor needs a
+one-dimensional function per mode.  We therefore project it,
 \begin{equation}
   \min_{\lambda_q \ge 0,\; s_{dq} \ge 0}
-  \Bigl\| \Sop - \sum_{q} \lambda_q\, s_{1q} \circ \cdots \circ s_{Dq} \Bigr\|_F^2 .
+  \Bigl\| \Sop - \sum_{q} \lambda_q\, s_{1q} \circ \cdots \circ s_{Dq} \Bigr\|_F^2 ,
   \label{eq:nncp}
 \end{equation}
-The relative separation error $e_Q = \|\Sop - \widehat{S}_Q\|_F / \|\Sop\|_F$ is reported as
-an \emph{a priori applicability diagnostic}, separately on the positive octant and on the
-full signed grid.
+and report the relative separation error as an \emph{a priori} applicability
+diagnostic, computed before any data is seen.
 
-\paragraph{M1-c: nonnegative spectra give valid kernels.}
-For any nonnegative one-sided spectrum $s(k)$ on a periodic grid, define
+\paragraph{The eigenbasis depends on the boundary condition.}
+A stationary operator's eigenbasis is fixed by its boundary condition, not by
+its symbol alone.  On a periodic domain it is the complex exponential pair; on a
+no-flux domain the Laplacian eigenfunctions are cosines,
+$\psi_k(x) = \sqrt{2}\cos(\pi k x)$ with eigenvalues $(\pi k)^2$.  This matters
+in practice rather than in principle: initial-value data is not periodic in
+time, and forcing $f(0) = f(1)$ is a large unphysical constraint.
+\todo{cite the 1.30 -> 1.08 measurement}
+
+\paragraph{Validity.}
+For any nonnegative spectrum $s$ and either basis,
 \begin{equation}
-  \phi_s(x) = \Bigl[\, \sqrt{s(0)},\;
-  \bigl\{\sqrt{2s(k)}\cos(2\pi k x)\bigr\}_{k=1}^{K},\;
-  \bigl\{\sqrt{2s(k)}\sin(2\pi k x)\bigr\}_{k=1}^{K} \,\Bigr].
-  \label{eq:features}
+  k_s(x,x') = \sum_k s(k)\, \psi_k(x)\, \psi_k(x')
+  \label{eq:psd}
 \end{equation}
-Then $k_s(x,x') = \phi_s(x)^\top \phi_s(x') = s(0) + 2\sum_{k\ge1} s(k)\cos(2\pi k (x-x'))$
-is PSD by construction, and so is any nonnegative convex combination
-$s_{dr} = \sum_q \route_{drq} s_{dq}$.  Hence nonnegative CP $\to$ parameter pooling $\to$
-routing softmax $\to$ final kernel preserves PSD at every step.
+is positive semi-definite, being a nonnegatively weighted sum of outer products;
+so is any nonnegative combination of such spectra.  Every step from the
+nonnegative separation to the final kernel therefore preserves validity.  In the
+cosine basis the pointwise variance is not constant, which is correct: on a
+bounded domain the covariance genuinely is non-stationary near the edges.
 
-\begin{quote}
-\textbf{Scope, kept in the main text.} $s_{dq}$ is a one-sided magnitude spectrum and real
-Fourier features pair $+k$ with $-k$, so the represented covariance components are
-\emph{axis-wise even and separable}.  The anisotropic-diffusion symbol is a sum of per-axis
-squares and matches this exactly --- that is the \emph{mathematical} reason it is the
-headline family, not merely that its numbers are better.
-\end{quote}
-
-\paragraph{M1-d: building the bank per knowledge level.}
-K2 separates a single $\Sop(\theta^\star)$; K1/K0 draw $M$ parameter settings by Latin
-hypercube from $\Theta_1$/$\Theta_0$, separate each into $Q_1$ atoms, and pool.  All of
-$\Theta_1, \Theta_0, M, Q_1$ and any pruning rule are frozen before any test data is seen.
-Pooling is viable only because the variational coefficient budget is independent of bank size
-(\Cref{app:fairness}); otherwise K1 would win on parameter count alone.
-
-\subsection{M2: mixture under a guaranteed support floor}
+\subsection{M2: functional Tucker host}
 \begin{equation}
-  \route_{drq} = \floorw_q + \Bigl(1 - \sum_j \floorw_j\Bigr)\softmax(\alpha_{dr})_q ,
-  \label{eq:floor}
+  u(x_1,x_2,x_3) = \sum_{r_1,r_2,r_3} G_{r_1 r_2 r_3}\,
+  f_{1 r_1}(x_1) f_{2 r_2}(x_2) f_{3 r_3}(x_3),
+  \qquad
+  f_{d r}(x) = \phi_{s_d}(x)^\top a_{dr},
+  \label{eq:tucker}
 \end{equation}
-with $\floorw_q = 0$ for operator atoms and a total of $25\%$ mass split evenly across the
-generic atoms.  A convex combination cannot create support that no atom has, so without the
-floor a misspecified operator prior is unrecoverable.  The floor trades a little
-matched-prior accuracy for support safety, and its marginal value is predicted to
-\emph{grow as the knowledge level drops}.
+with per-mode ranks chosen independently.  A CP host is not sufficient: real
+two-dimensional fields are fields of blobs, which are not $x \otimes y$
+separable at any rank sparse observations could identify, even though their
+multilinear rank is small.  Per-mode ranks matter concretely -- a field of
+multilinear rank $[2,11,11]$ needs a $242$-entry core, while an equal rank of
+$11$ would need $1331$.
+
+Coefficients carry a mean-field Gaussian posterior, $q(a_{dr}) = \Norm(\mu_{dr},
+\diag(\sigma_{dr}^2))$ against $p(a_{dr}) = \Norm(0,I)$, and the core, noise and
+any routing weights are point estimates.  Training maximises the usual ELBO.
+The coefficient budget is $2\sum_d R_d F$, independent of how many spectra a
+bank contains, so comparisons between banks of different sizes are not
+confounded by parameter count.
