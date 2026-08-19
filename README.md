@@ -1,6 +1,76 @@
-# Operator-Spectral FunBaT
+# Operator-Spectral Priors for Sparse Physical Field Reconstruction
 
-Bayesian functional tensor learning with operator-induced, mode-adaptive Gaussian-process kernels.
+**Given only the *form* of the PDE a field obeys -- not its coefficients, not its
+solution -- derive a valid GP kernel for every mode of a functional tensor
+decomposition, with no kernel parameters left to learn.**
+
+## Headline result
+
+Fifteen seeds, 1% of entries observed, fields from an independent forced-PDE
+solver.  All arms share the field, mask, noise, host model, ranks, optimizer and
+step budget; the only variable is where the per-mode spectra come from.
+
+| | held-out NRMSE |
+|---|---|
+| **PDE-form kernels (ours)** | **0.4431 ± 0.0539** |
+| generic dictionary (parameter-matched) | 0.4818 ± 0.0615 |
+| nearest neighbour | 0.5699 |
+| discrete CP / Tucker completion (EM) | ≥ 0.98 — no better than the mean |
+| kernel ridge, *oracle*-tuned length scale | 0.4887 |
+| fully observed Tucker ceiling (shared by all arms) | 0.1791 |
+
+Paired margin `+0.0387 ± 0.0256` (8.0% relative), **15/15 seeds**, sign test and
+Wilcoxon both `p = 3.1e-05`.
+
+![headline](results/forced_pde/figure_headline.png)
+
+The margin shrinks to 0.003 by 5% observed.  That is the shape the claim
+predicts: a prior should matter where the data does not determine the answer and
+stop mattering once it does.
+
+## The method, in full
+
+1. The operator's symbol gives the solution's joint spectrum,
+   `S_op(w) = |L_hat(w)|^-2 S_w(w)`, using the form with nominal coefficients.
+2. Marginalise per axis to get one nonnegative 1-D spectrum per mode.
+3. That spectrum *is* the kernel: `k(x,x') = sum_k s(k) psi_k(x) psi_k(x')` is PSD
+   for any nonnegative `s`, where `psi_k` are the operator's eigenfunctions under
+   the relevant boundary condition.
+
+Nothing about the kernel is learned.  An ablation shows that adding a nonnegative
+low-rank separation with learned routing on top changes nothing (0.4613 vs
+0.4631 across seeds, against a seed spread of 0.025), so that machinery was
+removed from the method.
+
+## Two details that turned out to be load-bearing
+
+**The eigenbasis follows the boundary condition.**  Periodic domains give complex
+exponentials; no-flux boundaries give cosines.  Real initial-value data is not
+periodic in time -- on one dataset the first-to-last-frame jump was 5.6x a
+typical adjacent step -- and switching the basis moved held-out NRMSE from 1.30
+to 1.08 on an otherwise identical run.
+
+**The host must be Tucker, not CP.**  Real 2-D fields are fields of blobs, not
+outer products; they are not low CP-rank at any rank sparse observations could
+identify, though their multilinear rank is small.
+
+## When this does not work
+
+The method needs an operator that suppresses much of the spectrum, which is the
+same condition that makes the field low rank -- so failures are predictable and
+we screen for them before adopting a dataset.  Rejected, with measurements:
+Kolmogorov turbulence and PDEBench 2-D diffusion-reaction (both need 63% of the
+modes per axis for 95% of the energy), and radially band-pass operators, which
+are the *worst* case rather than the best because a ring is maximally
+non-separable.
+
+See [`docs/RESULTS_LOG_ZH.md`](docs/RESULTS_LOG_ZH.md) for all numbers and
+[`docs/PAPER_TECHNICAL_REPORT_ZH.md`](docs/PAPER_TECHNICAL_REPORT_ZH.md) section
+14 for the formulation revision history.
+
+---
+
+## Repository history
 
 This repository is Track 3 of the [Physics-Informed Tensor Learning Hub](https://github.com/xuangu-fang/Geo-Aware-Tensor). It contains two deliberately separated levels:
 
