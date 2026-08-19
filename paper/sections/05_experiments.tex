@@ -1,78 +1,75 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Mechanism confirmation at level K2}
-All results in this subsection sit at the \emph{top} of the ladder: the generating parameters
-are visible to the bank construction.  They validate the M1/M2 mechanism, not the headline
-claim.
+\subsection{Setup}
+Ground truth comes from an independent finite-difference integration of a
+stochastically forced linear PDE run to statistical steady state, so the field
+carries the operator's true, fully non-separable joint spectrum while the method
+sees only the marginals of a nominal-coefficient version of it.  Nothing is
+sampled from the model's own prior.  The tensor is $[t,x,y]$ at $32^3$; all three
+modes are PDE coordinates, so every kernel comes from the equation and no mode
+needs a fallback.  We observe $1\%$, $2\%$ or $5\%$ of entries uniformly at
+random and reconstruct the rest.
 
-\todo{protocol: development seeds 101--105, untouched confirmation seeds 201--205,
-$24^3$ grid, $2\%$ observations, rank 2, $k \le 6$, Adam, 400 steps, 3 ELBO samples,
-no validation, no early stopping}
+\paragraph{Feasibility is checked before comparing anything.}
+A fully observed Tucker fit at the ranks used reaches $0.17$--$0.21$ relative
+error.  This ceiling is shared by every arm; where it is not comfortably below
+$1$, no kernel can matter, and we use it as the criterion that rejected two
+datasets (\Cref{sec:limitations}).
+
+\subsection{Main result}
+
+\begin{table}[t]
+  \centering
+  \caption{Held-out NRMSE, five seeds, identical fields and masks across arms.}
+  \label{tab:main}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Observed & PDE-form kernels (ours) & generic dictionary & nearest neighbour & paired wins \\
+    \midrule
+    $1\%$ & \textbf{0.4613} & 0.5008 & 0.5840 & 5/5 \\
+    $2\%$ & \textbf{0.3618} & 0.3682 & 0.5027 & 4/5 \\
+    $5\%$ & \textbf{0.2971} & 0.2997 & 0.4153 & 4/5 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.85\linewidth]{submission_confirmation_nrmse.png}
-  \caption{Held-out NRMSE on untouched seeds 201--205 at $2\%$ observations, level K2.}
+  \includegraphics[width=0.92\linewidth]{figure_main.png}
+  \caption{The margin over a parameter-matched generic dictionary falls from
+  $0.040$ at $1\%$ observed to $0.003$ at $5\%$.  A prior should matter where the
+  data does not determine the answer and stop mattering once it does; a large
+  claimed advantage in the right-hand bar would be grounds for suspicion.}
   \label{fig:main}
 \end{figure}
 
-\begin{table}[t]
-  \centering
-  \caption{Held-out NRMSE at level K2 (mean $\pm$ std over untouched seeds 201--205).}
-  \label{tab:k2}
-  \small
-  \begin{tabular}{lccccc}
-    \toprule
-    Setting & op.\ global & op.\ per-mode/rank & gen.\ global & gen.\ per-mode/rank & oracle route \\
-    \midrule
-    reference advection    & 0.0411\,$\pm$\,0.0144 & 0.0462\,$\pm$\,0.0332 & 0.0474\,$\pm$\,0.0237 & \textbf{0.0343\,$\pm$\,0.0077} & 0.0325\,$\pm$\,0.0106 \\
-    shifted advection      & 0.1006\,$\pm$\,0.0586 & 0.0995\,$\pm$\,0.0590 & \textbf{0.0892\,$\pm$\,0.0369} & 0.2312\,$\pm$\,0.2580 & 0.1042\,$\pm$\,0.1041 \\
-    anisotropic diffusion  & 0.1212\,$\pm$\,0.0606 & \textbf{0.1183\,$\pm$\,0.0582} & 0.3761\,$\pm$\,0.5235 & 0.1567\,$\pm$\,0.0990 & 0.1183\,$\pm$\,0.0588 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\todo{fold in the ten additional seeds at 1\% and report the sign test}
 
-On the headline family, operator per-mode/rank kernels beat the parameter-matched generic
-bank by $\approx 24.5\%$ mean NRMSE with 5/5 paired wins, matching the oracle mean.  The two
-advection settings produce no consistent winner and are boundary evidence, consistent with
-the separability audit below.
+\subsection{Baselines}
+\todo{table from baselines\_summary.json on corrected forcing}
+Discrete low-rank completion (CP and Tucker with EM imputation) does not beat
+predicting the mean below $2\%$ observed, which is the evidence that continuous
+function factors are necessary rather than decorative.  The strongest competitor
+is kernel ridge regression whose length scale is selected on held-out error -- an
+advantage no deployable method has.
 
-\subsection{Separability audit: positive octant vs.\ full signed grid}
+\subsection{Where the gain comes from}
+\todo{ablation table from ablation\_fixed\_summary.json}
+The arms vary only the spectral bank or the routing: the exact operator spectrum
+without any low-rank projection, the right form with coefficients scaled between
+$0.1\times$ and $10\times$, an isotropic version of the right form, wrong operator
+families, generic banks at matched and doubled size, and global versus
+per-mode/rank routing.
 
-\begin{table}[t]
-  \centering
-  \caption{Rank-4 nonnegative separation error of the joint operator spectrum.}
-  \label{tab:signed}
-  \small
-  \begin{tabular}{lcc}
-    \toprule
-    Operator & positive octant & full signed grid \\
-    \midrule
-    reference advection   & 0.0323 & 0.1799 \\
-    shifted advection     & 0.0242 & 0.1812 \\
-    anisotropic diffusion & 0.0030 & \textbf{0.0043} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+One result is worth stating in the main text because it simplifies the method: a
+single fixed marginal spectrum per mode, with no learnable kernel parameters at
+all, matches the rank-4 separation with learned routing ($0.4631$ versus
+$0.4613$ over five seeds, against a seed-to-seed spread of $0.025$).  The
+dictionary and routing machinery can therefore be removed entirely.
 
-\subsection{Main experiment: degradation along the knowledge ladder}
-\label{sec:ladder-exp}
-\todo{NOT YET RUN --- design only; see docs/PAPER\_TECHNICAL\_REPORT\_ZH.md \S10}
-
-The same ground-truth fields are reconstructed at every knowledge level, each with and
-without the generic floor, against two fairness controls: an \emph{atom-count-matched}
-generic bank, and a \emph{wrong-family} pooled bank of identical size.  Pre-registered,
-falsifiable predictions:
-
-\begin{enumerate}
-  \item[\textbf{P1}] $\mathrm{NRMSE}(\mathrm{K2}) \le \mathrm{K1} \le \mathrm{K0} \le \mathrm{K}\!-\!1$ in the mean (K2 $\approx$ K1 permitted).
-  \item[\textbf{P2}] K1 retains $\ge 50\%$ of K2's gain over K$-1$.  Below that, the ``form is enough'' claim fails and the paper retreats to a K2 positioning.
-  \item[\textbf{P3}] The floor's marginal benefit \emph{grows} as the level drops.  If it is level-independent, the floor is generic regularisation, not insurance.
-  \item[\textbf{P4}] K0 still measurably beats K$-1$.  If not, the physical origin has already washed out at width $\Theta_0$ --- an upper bound on applicability that must be reported.
-  \item[\textbf{P5}] K1 beats the atom-count-matched generic bank.  If not, the gain is bank capacity, not physics.
-  \item[\textbf{P6}] K1 beats the wrong-family pooled bank.  If not, the correct operator family is doing no work.
-\end{enumerate}
-
-P4, P5 and P6 are the most likely to fail and therefore the most informative.  Confirmation
-uses \emph{fresh} seeds 301--305; seeds 201--205 are already published and count as seen.
+\subsection{A derived kernel versus a tuned one}
+\todo{no\_routing\_summary.json}
+The sharpest form of the question is whether reading the kernel off the equation
+gets you where tuning a kernel on the answer would.
