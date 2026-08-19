@@ -9,7 +9,23 @@ This repository is Track 3 of the [Physics-Informed Tensor Learning Hub](https:/
 
 The dictionary is a tested optimization and identifiability scaffold, not the final novelty claim.
 
-## Current POC result
+## The question this project asks
+
+Not *do you know the solution*, but **how much do you know about the operator that governs
+the field**?  That admits a ladder, and the level that matters in practice is not the top one:
+
+| Level | What is known | Bank construction |
+|---|---|---|
+| K2 | PDE form **and** coefficients | separate a single `S_op(theta*)` |
+| **K1** | **PDE form only, coefficients unknown** | draw `theta_1..theta_M` from a declared range, separate each, pool the atoms |
+| K0 | physics class only | as above, wider prior |
+| K-1 | nothing | generic dictionary |
+
+The claim K1 licenses: *we do not need you to know the coefficients, only which equation it
+is.*  All results below are at **K2** and validate the mechanism; the K1 experiment is
+designed but not yet run (see `docs/PAPER_TECHNICAL_REPORT_ZH.md` section 10).
+
+## Current POC result (level K2)
 
 The submission confirmation uses a bank-size-independent, collapsed spectral
 mixture posterior, five untouched seeds (201--205), 2% observations and a fixed
@@ -32,7 +48,23 @@ separate in `results/advanced_poc_r1_r5/`.
 
 ## Target formulation
 
-For `L u = w`, construct `S_phys(omega) = |L_hat(omega)|^-2 S_w(omega)` and approximate its even/magnitude component as a nonnegative sum of separable spectra. The inverse Fourier factors define valid one-dimensional GP kernels for the functional tensor factors. ELBO+SGD jointly learns the coefficient posterior, tensor parameters, and optional mode/rank routing weights. The current real-feature implementation does not represent full signed cross-mode phase.
+The method has exactly two components.
+
+**M1 — operator knowledge to a valid kernel bank.** For `L u = w`, construct
+`S_op(omega; theta) = |L_hat(omega; theta)|^-2 S_w(omega)` and approximate its even/magnitude
+component as a nonnegative sum of separable spectra. Each one-dimensional nonnegative
+spectrum is a valid PSD stationary kernel, so nonnegative CP -> parameter pooling -> routing
+softmax preserves PSD throughout. The knowledge level only decides *which* `theta` feed this
+chain; the chain itself is unchanged.
+
+**M2 — mixture under a guaranteed support floor.** A convex combination cannot create
+frequency support that no atom has, so a fixed, non-closable fraction of generic spectral
+mass is reserved. It is insurance for descending the ladder.
+
+Everything else (CP likelihood, finite-Fourier ELBO+SGD, the collapsed parameterisation,
+routing granularity) is model machinery or a fairness control, not a claim. The current
+real-feature implementation does not represent full signed cross-mode phase, which is why the
+headline family is anisotropic reaction-diffusion rather than advection.
 
 ## Repository map
 

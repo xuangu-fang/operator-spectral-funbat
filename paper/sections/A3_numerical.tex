@@ -1,0 +1,20 @@
+\section{Numerical and engineering details}
+\label{app:numerical}
+
+\paragraph{Gradients at exactly zero support.} The strict wrong-support control produces
+exactly zero spectral components, and $\sqrt{\cdot}$ has an infinite derivative at zero.  The
+implementation clamps at $10^{-12}$ \emph{only when constructing features}, preserving the
+intended zero covariance to numerical precision while avoiding NaN routing gradients.  Unit
+tests cover this.
+
+\paragraph{A negative result that was later overturned.} The collapsed parameterisation
+initially recovered the shared Fourier basis by dividing the first atom's features by that
+atom's amplitude.  When the first operator atom's $k \ge 2$ support was zeroed, the shared
+high-frequency basis was zeroed with it, so the generic floor carried nonzero spectral mass
+but could not produce high-frequency features --- yielding a spurious negative result.  The
+fix constructs the basis analytically from the coordinates.  Only the two strict controls
+were re-run; the matched main table was not retrained.
+
+\paragraph{Routing granularity (ablation, not a claim).} At K2, per-mode/rank routing beats
+global routing on only 3/5 seeds with a $\approx 2.4\%$ mean improvement, so it is reported
+as an ablation.

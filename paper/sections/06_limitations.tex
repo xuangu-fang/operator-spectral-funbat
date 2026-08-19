@@ -2,16 +2,24 @@
 \label{sec:limitations}
 
 \begin{enumerate}
-  \item Synthetic fields are drawn from the same finite operator atom family used by the model;
-        this is a mechanism sanity check, not external evidence.
-  \item Real axis-wise Fourier features represent only even, axis-separable covariance
-        components.  Tilted advection retains cross-sign coupling that the current model
-        cannot express (\Cref{tab:signed}).
-  \item Per-rank routing is a weak signal (3/5 paired wins, $\approx 2.4\%$ mean improvement)
-        and is reported as an ablation, not as a contribution.
-  \item Routing weights are point estimates; the reported uncertainty does not include
-        kernel-routing uncertainty.
-  \item The mean-field posterior ignores posterior correlation between CP factors, and the
-        periodic Fourier prior handles neither boundary conditions nor non-stationary coefficients.
-  \item The tensor rank is fixed at $2$; we do not compete directly with rank-learning methods.
+  \item \textbf{Same-family synthetic data.} Current fields are drawn from the same finite
+        operator atom family the model uses; this is a mechanism sanity check, not external
+        evidence.  The next gate is PDEBench diffusion, where the solutions do not come from
+        our atom family.
+  \item \textbf{Even, axis-separable covariance only.} Real axis-wise Fourier features cannot
+        express the cross-sign coupling of tilted transport; advection's full signed
+        separation error is still $>0.12$ at rank 6 (\Cref{tab:signed}).  Signed-conjugate,
+        complex, or explicit cross-mode phase factors are required before advection can be
+        readmitted as a headline case.
+  \item \textbf{Degeneracy of the ladder.} A sufficiently wide $\Theta$ makes the pooled bank
+        approach a generic dictionary and the advantage must vanish (\Cref{sec:ladder}, P4).
+  \item \textbf{Routing is a point estimate}; the reported uncertainty excludes
+        kernel-routing uncertainty, and the routing softmax is not a Bayesian model
+        probability.
+  \item \textbf{Mean-field posterior} ignores posterior correlation between CP factors, and
+        the periodic Fourier prior handles neither boundary conditions nor non-stationary
+        coefficients.
+  \item \textbf{Fixed rank $R=2$}; no head-to-head comparison with rank-learning methods.
+  \item \textbf{Nonnegative CP has local optima and component permutation}; we use only
+        reconstruction error and the induced spectrum, never component labels.
 \end{enumerate}

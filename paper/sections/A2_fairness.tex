@@ -1,0 +1,21 @@
+\section{Fairness control: collapsed vs.\ expanded mixtures}
+\label{app:fairness}
+
+The earlier parameterisation gave every atom its own coefficient vector,
+$f_{dr}(x) = \sum_q \sqrt{\route_{drq}}\,\phi_{dq}(x)^\top a_{drq}$, which is correct as a
+prior covariance but gives an $8$-atom bank twice the variational coefficients of a $4$-atom
+bank --- so method comparisons absorb a parameter-budget difference.
+
+The canonical collapsed form first mixes the spectra and then uses a single coefficient
+vector, \Cref{eq:collapsed}.  Since all atoms share the same discrete Fourier support the two
+prior covariances are identical; collapsing merely removes duplicated features.  The
+variational coefficient count is $2DR(1+2K)$, \emph{independent of bank size}.
+
+\begin{quote}
+This is what makes the knowledge-ladder experiment possible at all: a K1 bank is $M$ times
+larger than a K2 bank, so without collapsing, the level comparison would be entirely
+confounded by parameter budget.
+\end{quote}
+
+\todo{state the expanded-vs-collapsed numbers in a separate table; they must never be merged
+with the collapsed main table}

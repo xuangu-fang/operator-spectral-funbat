@@ -1,25 +1,36 @@
 \section{Method}
 \label{sec:method}
 
-\subsection{From the operator to a joint solution spectrum}
+The method has exactly two components: \textbf{M1} maps operator knowledge at any level to a
+bank of valid one-dimensional GP kernels; \textbf{M2} mixes that bank under a guaranteed
+support floor.  Everything else --- the CP likelihood, the finite-Fourier variational
+inference, the collapsed parameterisation, the routing granularity --- is model machinery or
+an experimental control, and is deferred to \Cref{sec:inference} and the appendices.
+
+\subsection{M1: from operator knowledge to a valid kernel bank}
+
+\paragraph{M1-a: operator to joint spectrum.}
 For a periodic constant-coefficient operator, $\widehat{u}(\wvec) = \widehat{w}(\wvec)/\Lhat(\wvec)$, so
 \begin{equation}
-  \Sop(\wvec) = \bigl|\Lhat(\wvec)\bigr|^{-2}\, \Sw(\wvec).
+  \Sop(\wvec;\theta) = \bigl|\Lhat_\theta(\wvec)\bigr|^{-2}\, \Sw(\wvec).
   \label{eq:joint-spectrum}
 \end{equation}
-\todo{table of the three implemented symbols (anisotropic diffusion / advection--diffusion / damped wave)}
+The headline family is \emph{anisotropic reaction--diffusion}, with
+$|\Lhat_\theta|^2 = (\kappa + D_x\omega_x^2 + D_y\omega_y^2 + D_t\omega_t^2)^2$ and unknown
+$\theta = (\kappa, D_x, D_y, D_t)$ --- physically, ``we know it is diffusion, but the medium
+was never characterised''. \todo{table with advection and wave as stress cases}
 
-\subsection{Nonnegative low-rank spectral separation}
+\paragraph{M1-b: nonnegative low-rank separation.}
 \begin{equation}
   \min_{\lambda_q \ge 0,\; s_{dq} \ge 0}
-  \Bigl\| \Sop - \sum_{q=1}^{\Qop} \lambda_q\, s_{1q} \circ \cdots \circ s_{Dq} \Bigr\|_F^2 .
+  \Bigl\| \Sop - \sum_{q} \lambda_q\, s_{1q} \circ \cdots \circ s_{Dq} \Bigr\|_F^2 .
   \label{eq:nncp}
 \end{equation}
-The relative separation error $e_Q = \|\Sop - \widehat{S}_Q\|_F / \|\Sop\|_F$ is reported as an
-\emph{a priori applicability diagnostic}, separately on the positive octant and on the full
-signed grid.
+The relative separation error $e_Q = \|\Sop - \widehat{S}_Q\|_F / \|\Sop\|_F$ is reported as
+an \emph{a priori applicability diagnostic}, separately on the positive octant and on the
+full signed grid.
 
-\subsection{Why nonnegative spectra give valid kernels}
+\paragraph{M1-c: nonnegative spectra give valid kernels.}
 For any nonnegative one-sided spectrum $s(k)$ on a periodic grid, define
 \begin{equation}
   \phi_s(x) = \Bigl[\, \sqrt{s(0)},\;
@@ -27,36 +38,33 @@ For any nonnegative one-sided spectrum $s(k)$ on a periodic grid, define
   \bigl\{\sqrt{2s(k)}\sin(2\pi k x)\bigr\}_{k=1}^{K} \,\Bigr].
   \label{eq:features}
 \end{equation}
-Then $k_s(x,x') = \phi_s(x)^\top \phi_s(x') = s(0) + 2\sum_{k\ge1} s(k)\cos\bigl(2\pi k (x-x')\bigr)$
+Then $k_s(x,x') = \phi_s(x)^\top \phi_s(x') = s(0) + 2\sum_{k\ge1} s(k)\cos(2\pi k (x-x'))$
 is PSD by construction, and so is any nonnegative convex combination
-$s_{dr} = \sum_q \route_{drq} s_{dq}$.
+$s_{dr} = \sum_q \route_{drq} s_{dq}$.  Hence nonnegative CP $\to$ parameter pooling $\to$
+routing softmax $\to$ final kernel preserves PSD at every step.
 
-\paragraph{Scope of the hypothesis class.} Real Fourier features pair $+k$ with $-k$, so the
-represented covariance components are \emph{axis-wise even and separable}.  Anisotropic
-diffusion matches this exactly; tilted advection does not. \todo{make this a boxed remark, not a footnote}
+\begin{quote}
+\textbf{Scope, kept in the main text.} $s_{dq}$ is a one-sided magnitude spectrum and real
+Fourier features pair $+k$ with $-k$, so the represented covariance components are
+\emph{axis-wise even and separable}.  The anisotropic-diffusion symbol is a sum of per-axis
+squares and matches this exactly --- that is the \emph{mathematical} reason it is the
+headline family, not merely that its numbers are better.
+\end{quote}
 
-\subsection{Operator bank and a fixed generic support floor}
+\paragraph{M1-d: building the bank per knowledge level.}
+K2 separates a single $\Sop(\theta^\star)$; K1/K0 draw $M$ parameter settings by Latin
+hypercube from $\Theta_1$/$\Theta_0$, separate each into $Q_1$ atoms, and pool.  All of
+$\Theta_1, \Theta_0, M, Q_1$ and any pruning rule are frozen before any test data is seen.
+Pooling is viable only because the variational coefficient budget is independent of bank size
+(\Cref{app:fairness}); otherwise K1 would win on parameter count alone.
+
+\subsection{M2: mixture under a guaranteed support floor}
 \begin{equation}
-  \bank_d = \{s^{\mathrm{op}}_{d1},\dots,s^{\mathrm{op}}_{d\Qop}\} \cup
-            \{s^{\mathrm{gen}}_{1},\dots,s^{\mathrm{gen}}_{\Qgen}\},
-  \qquad
   \route_{drq} = \floorw_q + \Bigl(1 - \sum_j \floorw_j\Bigr)\softmax(\alpha_{dr})_q ,
   \label{eq:floor}
 \end{equation}
 with $\floorw_q = 0$ for operator atoms and a total of $25\%$ mass split evenly across the
-generic atoms.
-
-\subsection{Collapsed spectral mixture and variational inference}
-\begin{equation}
-  f_{dr}(x) = \phi_{s_{dr}}(x)^\top a_{dr},
-  \qquad q(a_{dr}) = \Norm\bigl(\mu_{dr}, \diag(\sigma_{dr}^2)\bigr),
-  \qquad p(a_{dr}) = \Norm(0, I),
-  \label{eq:collapsed}
-\end{equation}
-so the variational coefficient budget is $2DR(1+2K)$ \emph{independent of bank size}.  Training
-maximises
-\begin{equation}
-  \mathcal{F} = \Exp_q\Bigl[\textstyle\sum_{i\in\Obs}\log p(y_i \mid f, c, \sigma_y)\Bigr]
-  - \sum_{d,r}\KL\bigl[q(a_{dr}) \,\|\, p(a_{dr})\bigr].
-  \label{eq:elbo}
-\end{equation}
+generic atoms.  A convex combination cannot create support that no atom has, so without the
+floor a misspecified operator prior is unrecoverable.  The floor trades a little
+matched-prior accuracy for support safety, and its marginal value is predicted to
+\emph{grow as the knowledge level drops}.

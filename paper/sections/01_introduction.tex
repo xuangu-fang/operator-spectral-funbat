@@ -1,24 +1,57 @@
 \section{Introduction}
 \label{sec:intro}
 
-\todo{port from docs/PAPER\_TECHNICAL\_REPORT\_ZH.md \S2}
+\paragraph{Setting.} Multi-dimensional physical fields are often observed at only a handful
+of sensors, times, or operating conditions.  Low-rank CP/Tucker exploits the multi-way
+correlation, and functional tensor models replace discrete factor tables with continuous
+functions so that unobserved coordinates can be interpolated.  At $1$--$5\%$ observation
+rates, however, low-rank structure alone is not enough: the model must still decide how
+smooth each continuous factor is, whether it oscillates, and whether different coordinate
+directions should share a length scale. \todo{tighten}
 
-\paragraph{Setting.} \todo{sparse observation of multi-dimensional physical fields; 1--5\% entries}
+\paragraph{The question we actually ask.} Standard functional Bayesian tensor models answer
+those questions with a generic Mat\'ern or RBF kernel, discarding an information source that
+is almost always available.  We do not ask whether the solution is known --- we ask
+\emph{how much is known about the operator that governs the field}.  That admits a ladder
+(\Cref{tab:ladder}), and the level that matters in practice is not the top one.
 
-\paragraph{Why generic GP kernels waste information.} \todo{the operator is often known even when the solution is not}
+\begin{table}[t]
+  \centering
+  \caption{Operator-knowledge levels.  Prior physics-informed GP work effectively assumes
+  K2; K1 is where most applications sit.}
+  \label{tab:ladder}
+  \small
+  \begin{tabular}{llp{0.42\linewidth}}
+    \toprule
+    Level & What is known & Example \\
+    \midrule
+    K2   & PDE form \emph{and} coefficients & calibrated rig; simulation with visible generator parameters \\
+    K1   & PDE form only, coefficients unknown & known to be anisotropic diffusion, but the medium's diffusion tensor was never measured \\
+    K0   & physics class only & ``roughly diffusion-dominated transport'' \\
+    K$-1$ & nothing & falls back to a generic GP kernel \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-\paragraph{The structural conflict.} \todo{non-separability vs.\ mode-wise functional factors; free dictionaries degenerate into kernel search}
+\noindent The claim K1 licenses is one sentence: \emph{we do not need you to know the
+coefficients, only which equation it is.}
+
+\paragraph{The structural conflict.} \todo{non-separability of the joint spectrum vs.\
+mode-wise functional factors; a free dictionary degenerates into kernel search}
 
 \paragraph{Contributions.}
 \begin{enumerate}
-  \item A PSD-preserving nonnegative low-rank projection from an operator-induced joint
-        spectrum to per-mode one-dimensional GP kernels (\Cref{sec:method}).
-  \item Per-mode (and optionally per-rank) routing over the resulting operator atom bank.
-  \item A bank-size-independent finite-spectrum variational parameterisation, so that
-        method comparisons are not confounded by coefficient budget.
-  \item A fixed generic support floor that repairs a deleted-support operator prior, with a
-        quantified robustness--specificity tradeoff.
+  \item \textbf{A single construction from any knowledge level to valid per-mode GP kernels.}
+        A nonnegative low-rank projection turns the non-separable $D$-dimensional operator
+        spectrum into per-mode kernels, preserving positive semi-definiteness at every step;
+        K1 is realised by pooling atoms over a parameter family (\Cref{sec:method}).
+  \item \textbf{A fixed generic support floor as insurance for descending the ladder.} A
+        convex combination cannot create frequency support that no atom has, so a
+        non-closable fraction of generic spectral mass is reserved, yielding a quantified
+        robustness--specificity tradeoff.
 \end{enumerate}
 
-\paragraph{What we do \emph{not} claim.} We do not claim atom-label identifiability or PDE
-discovery from $2\%$ observations. \todo{cite the top-1 recovery audit}
+\paragraph{What we do \emph{not} claim.} We do not claim atom-label identifiability, PDE
+discovery, or coefficient recovery from $2\%$ observations.  Routing granularity and the
+collapsed parameterisation are an ablation and a fairness control respectively, not
+contributions. \todo{cite the top-1 recovery audit}

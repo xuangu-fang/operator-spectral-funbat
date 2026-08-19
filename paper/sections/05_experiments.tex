@@ -1,24 +1,26 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Frozen protocol}
-\todo{seeds 101--105 development / 201--205 untouched confirmation; $24^3$ grid; 2\% observations;
-rank 2; $k \le 6$; Adam, 400 steps, 3 ELBO samples; no validation, no early stopping}
+\subsection{Mechanism confirmation at level K2}
+All results in this subsection sit at the \emph{top} of the ladder: the generating parameters
+are visible to the bank construction.  They validate the M1/M2 mechanism, not the headline
+claim.
 
-\subsection{Main confirmation}
-\todo{Table~\ref{tab:main} + \Cref{fig:main}}
+\todo{protocol: development seeds 101--105, untouched confirmation seeds 201--205,
+$24^3$ grid, $2\%$ observations, rank 2, $k \le 6$, Adam, 400 steps, 3 ELBO samples,
+no validation, no early stopping}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.85\linewidth]{submission_confirmation_nrmse.png}
-  \caption{Held-out NRMSE on untouched seeds 201--205 at $2\%$ observations.}
+  \caption{Held-out NRMSE on untouched seeds 201--205 at $2\%$ observations, level K2.}
   \label{fig:main}
 \end{figure}
 
 \begin{table}[t]
   \centering
-  \caption{Held-out NRMSE (mean $\pm$ std over untouched seeds 201--205).}
-  \label{tab:main}
+  \caption{Held-out NRMSE at level K2 (mean $\pm$ std over untouched seeds 201--205).}
+  \label{tab:k2}
   \small
   \begin{tabular}{lccccc}
     \toprule
@@ -30,6 +32,11 @@ rank 2; $k \le 6$; Adam, 400 steps, 3 ELBO samples; no validation, no early stop
     \bottomrule
   \end{tabular}
 \end{table}
+
+On the headline family, operator per-mode/rank kernels beat the parameter-matched generic
+bank by $\approx 24.5\%$ mean NRMSE with 5/5 paired wins, matching the oracle mean.  The two
+advection settings produce no consistent winner and are boundary evidence, consistent with
+the separability audit below.
 
 \subsection{Separability audit: positive octant vs.\ full signed grid}
 
@@ -49,23 +56,23 @@ rank 2; $k \le 6$; Adam, 400 steps, 3 ELBO samples; no validation, no early stop
   \end{tabular}
 \end{table}
 
-\subsection{Strict support mismatch}
+\subsection{Main experiment: degradation along the knowledge ladder}
+\label{sec:ladder-exp}
+\todo{NOT YET RUN --- design only; see docs/PAPER\_TECHNICAL\_REPORT\_ZH.md \S10}
 
-\begin{table}[t]
-  \centering
-  \caption{Deleting all operator support at $k \ge 2$; $25\%$ generic floor as the escape route.}
-  \label{tab:strict}
-  \small
-  \begin{tabular}{lccc}
-    \toprule
-    Setting & wrong-support operator & $25\%$ floor robust & paired wins \\
-    \midrule
-    reference advection   & 0.6723\,$\pm$\,0.1938 & \textbf{0.0402\,$\pm$\,0.0096} & 5/5 \\
-    shifted advection     & 0.6318\,$\pm$\,0.0883 & \textbf{0.0847\,$\pm$\,0.0414} & 5/5 \\
-    anisotropic diffusion & 0.6149\,$\pm$\,0.1798 & \textbf{0.1301\,$\pm$\,0.0621} & 5/5 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+The same ground-truth fields are reconstructed at every knowledge level, each with and
+without the generic floor, against two fairness controls: an \emph{atom-count-matched}
+generic bank, and a \emph{wrong-family} pooled bank of identical size.  Pre-registered,
+falsifiable predictions:
 
-\subsection{Predictive calibration}
-\todo{induced-spectrum cosine / relative L2 / 64-sample posterior predictive NLL and 95\% coverage}
+\begin{enumerate}
+  \item[\textbf{P1}] $\mathrm{NRMSE}(\mathrm{K2}) \le \mathrm{K1} \le \mathrm{K0} \le \mathrm{K}\!-\!1$ in the mean (K2 $\approx$ K1 permitted).
+  \item[\textbf{P2}] K1 retains $\ge 50\%$ of K2's gain over K$-1$.  Below that, the ``form is enough'' claim fails and the paper retreats to a K2 positioning.
+  \item[\textbf{P3}] The floor's marginal benefit \emph{grows} as the level drops.  If it is level-independent, the floor is generic regularisation, not insurance.
+  \item[\textbf{P4}] K0 still measurably beats K$-1$.  If not, the physical origin has already washed out at width $\Theta_0$ --- an upper bound on applicability that must be reported.
+  \item[\textbf{P5}] K1 beats the atom-count-matched generic bank.  If not, the gain is bank capacity, not physics.
+  \item[\textbf{P6}] K1 beats the wrong-family pooled bank.  If not, the correct operator family is doing no work.
+\end{enumerate}
+
+P4, P5 and P6 are the most likely to fail and therefore the most informative.  Confirmation
+uses \emph{fresh} seeds 301--305; seeds 201--205 are already published and count as seen.

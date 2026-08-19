@@ -1,0 +1,36 @@
+\section{Model and Inference}
+\label{sec:inference}
+
+This section is standard machinery and carries no methodological claim.
+
+\paragraph{Factors.} Each continuous factor uses one set of Fourier features built from the
+routed mixture spectrum,
+\begin{equation}
+  s_{dr} = \sum_q \route_{drq} s_{dq},
+  \qquad
+  f_{dr}(x) = \phi_{s_{dr}}(x)^\top a_{dr},
+  \qquad
+  a_{dr} \sim \Norm(0, I),
+  \label{eq:collapsed}
+\end{equation}
+so the variational coefficient budget is $2DR(1+2K)$, independent of the number of atoms in
+the bank (\Cref{app:fairness}).
+
+\paragraph{Variational family and objective.} Mean-field Gaussian
+$q(a_{dr}) = \Norm(\mu_{dr}, \diag(\sigma_{dr}^2))$ over the Fourier coefficients; the CP core
+$c_r$, routing logits $\alpha$ and observation noise $\sigma_y$ are point estimates.  Training
+maximises
+\begin{equation}
+  \mathcal{F} = \Exp_q\Bigl[\textstyle\sum_{i\in\Obs}\log p(y_i \mid f, c, \sigma_y)\Bigr]
+  - \sum_{d,r}\KL\bigl[q(a_{dr}) \,\|\, p(a_{dr})\bigr],
+  \label{eq:elbo}
+\end{equation}
+with three reparameterised Monte-Carlo samples, Adam, and a fixed 400-step budget shared by
+every method.  Numerical details are in \Cref{app:numerical}.
+
+\paragraph{What the uncertainty is.} After training, $64$ posterior predictive samples at
+$1024$ unobserved locations give $95\%$ interval coverage, Monte-Carlo predictive NLL, and
+interval width, evaluated against independently re-noised held-out observations.  This is a
+\emph{finite-Fourier, mean-field variational} posterior predictive, not an analytic exact GP
+posterior, and $\alpha$ is an ELBO-optimised kernel hyperparameter rather than a Bayesian
+model probability --- so the reported uncertainty excludes kernel-routing uncertainty.
