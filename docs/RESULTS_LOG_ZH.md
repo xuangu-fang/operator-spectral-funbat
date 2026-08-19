@@ -91,7 +91,35 @@
 
 > ⚠ 记录一次过早的判断：在单个 seed（seed 0）上固定核得 `0.4219` 而 routing 版得 `0.4622`，一度被读成"更简单的版本更好"。扩到 5 个 seed 后两者持平。单 seed 差异不足以支撑方法层面的结论。
 
-另注：generic 的 routing 与 global 结果**完全相同**（0.5008 / 0.5008）。通用 atom 在各 mode 间共享，两种 routing 收敛到同一解；修正强迫前观察到的"generic 自由 routing 过拟合"混淆已消失。
+> ⚠ **已撤回的错误结论**：此处原写"generic 的 routing 与 global 结果完全相同（0.5008/0.5008），过拟合混淆已消失"。**那是临时检查脚本的 bug**——解包了 routing 参数却没有传给 `train()`，两个 arm 实际都跑了 `per_mode_rank`。正式消融显示两者相差 **0.042**，混淆真实存在。见 §3.2。
+
+### 3.2 routing 粒度才是最大的单一因素（5 seeds，1% 观测，`ablation_fixed_summary.json`）
+
+| arm | mean | std | vs operator(pmr) | wins |
+|---|---:|---:|---:|---:|
+| **operator_global** | **0.4383** | 0.0299 | −0.0230 | 5/5 |
+| coefficient ×3 | 0.4500 | 0.0269 | −0.0113 | 5/5 |
+| isotropic prior | 0.4532 | 0.0292 | −0.0080 | 4/5 |
+| coefficient ×10 | 0.4549 | 0.0207 | −0.0064 | 3/5 |
+| **generic_global** | **0.4584** | 0.0326 | −0.0029 | 2/5 |
+| operator (per-mode/rank) | 0.4613 | 0.0282 | — | — |
+| oracle marginal | 0.4631 | 0.0250 | +0.0018 | 2/5 |
+| coefficient ×0.3 | 0.4720 | 0.0269 | +0.0107 | 1/5 |
+| wrong family: advection | 0.4723 | 0.0175 | +0.0110 | 2/5 |
+| wrong family: wave | 0.4777 | 0.0274 | +0.0165 | 2/5 |
+| robust（+25% floor） | 0.4872 | 0.0331 | +0.0259 | 1/5 |
+| coefficient ×0.1 | 0.4901 | 0.0415 | +0.0288 | 1/5 |
+| generic (per-mode/rank) | 0.5008 | 0.0215 | +0.0396 | 0/5 |
+| generic ×2 atoms | 0.5112 | 0.0275 | +0.0499 | 0/5 |
+
+**必须正视的结论**：
+
+1. **per-mode/rank routing 在 1% 观测下对两个 bank 都是过拟合**，operator 损失 0.023、generic 损失 0.042。
+2. 因此**主表让两边都用 per-mode/rank，等于把 baseline 放在它最差的配置上**，是不公平的比较。
+3. **公平比较（各自最优配置）**：operator_global `0.4383` vs generic_global `0.4584`，margin **+0.0201**，约为原主表 margin（0.0387）的一半，方向不变。已重跑 15 seeds 的公平版本作为新主表。
+4. 正面信号仍在：错误算子族（advection `0.4723`、wave `0.4777`）明显差于正确算子；系数放大方向容忍（×3、×10 尚可）但缩小方向不容忍（×0.3、×0.1 显著变差）；加倍 generic atom 只会更糟（`0.5112`）。
+5. `robust`（+25% generic floor）在此设定下是**纯代价**（`0.4872`），与知识档位实验的结论一致。
+
 
 ---
 

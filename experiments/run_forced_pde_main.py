@@ -71,11 +71,21 @@ def nrmse(prediction, truth):
                  / truth.std().clamp_min(1e-8))
 
 
-def train(field, observed, targets, test, truth, spectra, *, ranks, steps, seed, device, lr):
+def train(field, observed, targets, test, truth, spectra, *, ranks, steps, seed, device, lr,
+          routing="global"):
+    """Default routing is global.
+
+    The ablation showed that per-mode/rank routing over-fits at 1% observations
+    for *both* banks, and hurts the generic dictionary roughly twice as much as
+    the operator bank (0.042 versus 0.023).  Comparing both arms at
+    per-mode/rank therefore flatters the operator bank by handicapping the
+    baseline, so each arm is now run at the setting that is best for it, which
+    is global for both.
+    """
     torch.manual_seed(seed + 10_000)
     model = ModeAdaptiveVariationalTucker(
         tuple(torch.arange(s, device=device) / s for s in field.shape),
-        spectra.to(device), ranks=ranks, routing="per_mode_rank",
+        spectra.to(device), ranks=ranks, routing=routing,
         noise_std=0.08, basis=("cosine", "cosine", "cosine"),
     ).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -135,6 +145,8 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=0.02)
     parser.add_argument("--noise-std", type=float, default=0.05)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--routing", default="global",
+                        choices=["global", "per_mode", "per_mode_rank"])
     parser.add_argument("--tag", default="main")
     parser.add_argument("--output", type=Path, default=ROOT / "results" / "forced_pde")
     args = parser.parse_args()
@@ -160,7 +172,7 @@ def main() -> None:
             for name, bank in (("operator", ops), ("generic", generic)):
                 row[name] = train(field, observed, targets, test, truth, bank,
                                   ranks=ranks, steps=args.steps, seed=seed,
-                                  device=device, lr=args.lr)
+                                  device=device, lr=args.lr, routing=args.routing)
             row["margin"] = row["generic"]["test_nrmse"] - row["operator"]["test_nrmse"]
             records.append(row)
             print(f"  seed {seed} ratio {ratio:5.3f} n={row['observed']:5d} "
