@@ -98,6 +98,40 @@ tied ($0.4613$ versus $0.4631$), because that setting degrades both, which would
 have led us to discard the separation.
 
 \subsection{A derived kernel versus a tuned one}
-\todo{no\_routing\_summary.json}
 The sharpest form of the question is whether reading the kernel off the equation
-gets you where tuning a kernel on the answer would.
+gets you where tuning a kernel on the answer would.  We give a squared-exponential
+kernel a length scale chosen \emph{per mode by held-out error} -- an oracle no
+deployable method has, costing 21 training runs against the test set -- and
+compare at $1\%$ observed with every arm at its own best routing.
+
+\begin{table}[t]
+  \centering
+  \caption{Held-out NRMSE at $1\%$ observed, five seeds.  Starred arms are not
+  deployable: their hyper-parameters are selected against the test set.}
+  \label{tab:oracle}
+  \small
+  \begin{tabular}{lc}
+    \toprule
+    & held-out NRMSE \\
+    \midrule
+    SE kernel, oracle length scale per mode$^\star$ & \textbf{0.4218 $\pm$ 0.0354} \\
+    \textbf{PDE-form kernels (ours)}               & 0.4383 $\pm$ 0.0299 \\
+    generic dictionary, global mixture              & 0.4584 $\pm$ 0.0326 \\
+    PDE-form, per-mode/rank routing                 & 0.4613 $\pm$ 0.0282 \\
+    PDE-form, marginal spectrum only                & 0.4631 $\pm$ 0.0250 \\
+    SE kernel, one oracle length scale$^\star$      & 0.4646 $\pm$ 0.0190 \\
+    generic dictionary, per-mode/rank routing       & 0.5008 $\pm$ 0.0215 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The oracle wins, on all five seeds, by $3.9\%$.  We read that as the useful
+result rather than a defeat: reading the kernel off the equation, using no tuning
+data at all, lands within $3.9\%$ of tuning it on the answer, while beating every
+deployable alternative.
+
+One detail confirms the mechanism.  A \emph{single} oracle-tuned length scale
+shared across modes scores $0.4646$, worse than our derived kernels.  All of the
+oracle's advantage therefore comes from tuning \emph{per mode} -- which is
+exactly the claim, that different axes need different spectra.  The oracle finds
+them by looking at the answer; we get them from the equation for free.
