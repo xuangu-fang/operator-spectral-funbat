@@ -66,7 +66,7 @@ $$
 设线性平稳算子满足 $\mathcal{L}u=w$。在周期常系数近似下，解的功率谱为
 
 $$
-S_u(\boldsymbol{\omega})=\frac{S_w(\boldsymbol{\omega})}{\bigl|\widehat{\mathcal{L}}(\boldsymbol{\omega})\bigr|^{2}} .
+S_u(\boldsymbol{\omega})=\frac{S_w(\boldsymbol{\omega})}{\bigl\lvert\widehat{\mathcal{L}}(\boldsymbol{\omega})\bigr\rvert^{2}} .
 $$
 
 直接把 $S_u$ 当成一个巨大的 $D$ 维 GP 核会遇到结构冲突：
@@ -176,10 +176,10 @@ $$
 对周期常系数算子，在 Fourier 域中 $\widehat{u}(\boldsymbol\omega)=\widehat{w}(\boldsymbol\omega)/\widehat{\mathcal{L}}(\boldsymbol\omega)$。若随机激励 $w$ 的谱为 $S_w$，则
 
 $$
-S_{\mathrm{op}}(\boldsymbol\omega)=\bigl|\widehat{\mathcal{L}}(\boldsymbol\omega)\bigr|^{-2}S_w(\boldsymbol\omega).
+S_{\mathrm{op}}(\boldsymbol\omega)=\bigl\lvert\widehat{\mathcal{L}}(\boldsymbol\omega)\bigr\rvert^{-2}S_w(\boldsymbol\omega).
 $$
 
-当前实现（`operator_joint_spectrum`）支持三类机制，轴序为 $(\omega_x,\omega_y,\omega_t)$，激励取各向同性高斯 $S_w=\exp(-\alpha\|\boldsymbol\omega\|^2)$：
+当前实现（`operator_joint_spectrum`）支持三类机制，轴序为 $(\omega_x,\omega_y,\omega_t)$，激励取各向同性高斯 $S_w=\exp(-\alpha\Vert\boldsymbol\omega\Vert^2)$：
 
 | 机制 | $\lvert\widehat{\mathcal L}\rvert^{2}$ | 谱结构 |
 |---|---|---|
@@ -199,7 +199,7 @@ $$
 
 $$
 \min_{\lambda_q\ge 0,\;s_{dq}\ge 0}\;
-\Bigl\|\,S_{\mathrm{op}}-\sum_{q=1}^{Q_{\mathrm{op}}}\lambda_q\, s_{1q}\circ\cdots\circ s_{Dq}\,\Bigr\|_F^{2}.
+\Bigl\Vert\,S_{\mathrm{op}}-\sum_{q=1}^{Q_{\mathrm{op}}}\lambda_q\, s_{1q}\circ\cdots\circ s_{Dq}\,\Bigr\Vert_F^{2}.
 $$
 
 实现（`nonnegative_cp_spectrum`）采用**确定性 seed 的非负 CP 乘性更新**（Euclidean loss，MTTKRP 形式），每轮把各 mode factor 的范数收进 $\lambda_q$ 以稳定迭代。每个一维 factor 随后归一化到单位 marginal variance。
@@ -209,7 +209,7 @@ $$
 谱分离误差
 
 $$
-e_Q=\frac{\bigl\|S_{\mathrm{op}}-\widehat{S}_Q\bigr\|_F}{\bigl\|S_{\mathrm{op}}\bigr\|_F}
+e_Q=\frac{\bigl\Vert S_{\mathrm{op}}-\widehat{S}_Q\bigr\Vert_F}{\bigl\Vert S_{\mathrm{op}}\bigr\Vert_F}
 $$
 
 被当作**方法适用性的先验诊断**：低 $e_Q$ 表示该算子谱适合少量逐 mode atoms 表示。
@@ -229,7 +229,7 @@ $$
 在一维周期网格上，对任意非负单边谱 $s(k)$ 定义特征映射
 
 $$
-\phi_s(x)=\Bigl[\;\sqrt{s(0)},\;\;\bigl\{\sqrt{2s(k)}\cos(2\pi kx)\bigr\}_{k=1}^{K},\;\;\bigl\{\sqrt{2s(k)}\sin(2\pi kx)\bigr\}_{k=1}^{K}\;\Bigr].
+\phi_s(x)=\Bigl[\;\sqrt{s(0)},\;\;\bigl\lbrace\sqrt{2s(k)}\cos(2\pi kx)\bigr\rbrace_{k=1}^{K},\;\;\bigl\lbrace\sqrt{2s(k)}\sin(2\pi kx)\bigr\rbrace_{k=1}^{K}\;\Bigr].
 $$
 
 于是
@@ -249,7 +249,7 @@ $$
 最终候选谱库为
 
 $$
-\mathcal{B}_d=\bigl\{s^{\mathrm{op}}_{d1},\ldots,s^{\mathrm{op}}_{dQ_{\mathrm{op}}}\bigr\}\;\cup\;\bigl\{s^{\mathrm{gen}}_{1},\ldots,s^{\mathrm{gen}}_{Q_{\mathrm{gen}}}\bigr\}.
+\mathcal{B}_d=\bigl\lbrace s^{\mathrm{op}}_{d1},\ldots,s^{\mathrm{op}}_{dQ_{\mathrm{op}}}\bigr\rbrace\;\cup\;\bigl\lbrace s^{\mathrm{gen}}_{1},\ldots,s^{\mathrm{gen}}_{Q_{\mathrm{gen}}}\bigr\rbrace.
 $$
 
 POC 冻结 $Q_{\mathrm{op}}=Q_{\mathrm{gen}}=4$，generic atoms 分别覆盖 smooth、Matérn-like、oscillatory、broadband。**generic-only 是主要 baseline**。robust 版本把路由约束为
@@ -329,7 +329,7 @@ $$
 CP core 权重 $c_r$、routing logits $\alpha$ 与观测噪声 $\sigma_y$ 是点估计。训练最大化
 
 $$
-\mathcal{F}=\mathbb{E}_{q}\Bigl[\sum_{i\in\mathcal{O}}\log p(y_i\mid f,c,\sigma_y)\Bigr]-\sum_{d,r}\mathrm{KL}\bigl[q(a_{dr})\,\|\,p(a_{dr})\bigr].
+\mathcal{F}=\mathbb{E}_{q}\Bigl[\sum_{i\in\mathcal{O}}\log p(y_i\mid f,c,\sigma_y)\Bigr]-\sum_{d,r}\mathrm{KL}\bigl[q(a_{dr})\,\Vert\,p(a_{dr})\bigr].
 $$
 
 实现细节：3 个 reparameterized MC samples 估计期望 log likelihood；Adam；400 steps。观测率 $\le 2\%$ 时使用**完整 observed batch**，因此代码中的 minibatch scaling 恒等于 1；loss 除以 $N_{\mathrm{obs}}$，相当于优化 per-observation negative ELBO。所有方法共享相同的学习率、gradient clipping、初始化随机流与 step 数。

@@ -61,11 +61,11 @@ $$
    $$
 
    因而 $k_q(x,x')=\phi_q(x)^\top\phi_q(x')$ 必然半正定。混合特征使用 $\sqrt{\pi_{drq}}\phi_q$，所以任意学习到的 routing 也保持 PSD。
-4. 每个 Fourier coefficient 使用 mean-field Gaussian $q(a)=\mathcal N(\mu,\operatorname{diag}\sigma^2)$；训练目标是 Monte-Carlo Gaussian ELBO：
+4. 每个 Fourier coefficient 使用 mean-field Gaussian $q(a)=\mathcal N(\mu,\mathrm{diag}\sigma^2)$；训练目标是 Monte-Carlo Gaussian ELBO：
 
    $$
    \mathcal L=\mathbb E_q[\log p(y\mid f_x,f_y,f_t,c)]
-   -\sum_{d,r}\operatorname{KL}[q(a_{dr})\|\mathcal N(0,I)].
+   -\sum_{d,r}\mathrm{KL}[q(a_{dr})\Vert\mathcal N(0,I)].
    $$
 
 5. `global`、`per_mode`、`per_mode_rank`、`oracle`、`swap` 使用完全相同的 feature budget、rank、噪声、mask 和 400-step 预算。
@@ -73,7 +73,7 @@ $$
 层级折中版本使用
 
 $$
-\pi_{dq}=\operatorname{softmax}(g_q+\Delta_{dq}),
+\pi_{dq}=\mathrm{softmax}(g_q+\Delta_{dq}),
 \qquad \Delta_{dq}\sim\mathcal N(0,0.35^2),
 $$
 
@@ -209,7 +209,7 @@ hybrid 有小幅最好均值，但优势不足以单独构成论文证据。层�
 令第 $c$ 个物理域为 $\Omega_c\subset\mathbb R^d$，它可以有不规则外边界和内部孔洞。一个观测写作
 
 $$
-\mathcal D=\{(c_i,s_i,a_i,x_i,y_i)\}_{i=1}^{N_{\mathrm{obs}}},
+\mathcal D=\lbrace(c_i,s_i,a_i,x_i,y_i)\rbrace_{i=1}^{N_{\mathrm{obs}}},
 $$
 
 其中：
@@ -274,20 +274,20 @@ $$
 为 source 和 spatial 因子使用同一个域 kernel：
 
 $$
-F^{(s)}_{cp}\sim\operatorname{GP}(m^{(s)}_{\theta,p},k_{\Omega_c}),\qquad
-F^{(x)}_{cr}\sim\operatorname{GP}(m^{(x)}_{\theta,r},k_{\Omega_c}),
+F^{(s)}_{cp}\sim\mathrm{GP}(m^{(s)}_{\theta,p},k_{\Omega_c}),\qquad
+F^{(x)}_{cr}\sim\mathrm{GP}(m^{(x)}_{\theta,r},k_{\Omega_c}),
 $$
 
 参数因子可采用一维 Matérn/RBF GP：
 
 $$
-F^{(a)}_q\sim\operatorname{GP}(m^{(a)}_{\theta,q},k_a).
+F^{(a)}_q\sim\mathrm{GP}(m^{(a)}_{\theta,q},k_a).
 $$
 
 小 core 使用
 
 $$
-\operatorname{vec}(G)\sim\mathcal N(0,\tau_G^{-1}I).
+\mathrm{vec}(G)\sim\mathcal N(0,\tau_G^{-1}I).
 $$
 
 共享 mean (m_\theta(c,x)) 由纯几何输入（坐标、SDF、工况和允许的 domain descriptor）产生。它承担 zero-shot transfer；domain GP residual 承担新域 few-shot adaptation、局部几何平滑和 uncertainty。若去掉共享 mean，不同域的 GP 独立，则测试域零观测时 posterior mean 为零，这是模型性质而不是训练技巧能解决的问题。
@@ -316,12 +316,12 @@ $$
 当前 intrinsic section 为
 
 $$
-z_{\Omega,q}(x,s)=\operatorname{RMSNorm}\left[
+z_{\Omega,q}(x,s)=\mathrm{RMSNorm}\left[
 \frac1J\sum_{j=0}^{J-1}\phi_j(x)\phi_j(s)
 (1+\alpha_q\lambda_j)^{-p}\right],
 $$
 
-其中 $J=48$、$\alpha_q\in\{0.03,0.1,0.3,1,3\}$、$p=1.5$。eigenvalue 先除以该图第一个正 eigenvalue，basis 又做 empirical-$L^2$ normalization，最后每个 section channel 按其自身 RMS 标准化。
+其中 $J=48$、$\alpha_q\in\lbrace0.03,0.1,0.3,1,3\rbrace$、$p=1.5$。eigenvalue 先除以该图第一个正 eigenvalue，basis 又做 empirical-$L^2$ normalization，最后每个 section channel 按其自身 RMS 标准化。
 
 这些操作对跨分辨率数值稳定很有帮助，但它们改变了 covariance amplitude，也没有学习 $\kappa,\nu,\sigma_f$。因此这些 section 应叫“由 covariance 启发的 geometry features”，不能当作已经校准的 GP covariance matrix。
 
@@ -335,7 +335,7 @@ $$
 其中 (d_\Omega\in\mathbb R^7) 是手工 domain descriptor；纯 kernel 版本令 (z=z_\Omega(x,s))，当前默认版本令
 
 $$
-z=[z_\Omega(x,s),x,\operatorname{SDF}_\Omega(x),s,\|x-s\|,1].
+z=[z_\Omega(x,s),x,\mathrm{SDF}_\Omega(x),s,\Vert x-s\Vert,1].
 $$
 
 $A,B,H$ 都是两层 GELU MLP，使用 AdamW 训练。这个模型有显式 Tucker core，但它是**确定性 neural functional Tucker**。普通 weight decay 不是显式 GP coefficient prior；当前没有 posterior distribution。
@@ -385,7 +385,7 @@ $$
 
 $$
 y_i=a_i^\top g+\epsilon_i,
-\quad g=\operatorname{vec}(G).
+\quad g=\mathrm{vec}(G).
 $$
 
 Gaussian prior 下可精确计算
@@ -404,7 +404,7 @@ $$
 
 $$
 F^{(x)}_{cr}(x)=m_{\theta,r}(c,x)
-+\Phi_c(x)\operatorname{diag}(\rho_c^{1/2})w_{cr},
++\Phi_c(x)\mathrm{diag}(\rho_c^{1/2})w_{cr},
 \quad w_{cr}\sim\mathcal N(0,I),
 $$
 
@@ -419,8 +419,8 @@ $$
 $$
 \mathcal L=
 \sum_{i\in\mathcal O}\mathbb E_q[\log p(y_i\mid F,G)]
--\sum_{c,r}\operatorname{KL}[q(w_{cr})\|p(w_{cr})]
--\operatorname{KL}[q(G)\|p(G)].
+-\sum_{c,r}\mathrm{KL}[q(w_{cr})\Vert p(w_{cr})]
+-\mathrm{KL}[q(G)\Vert p(G)].
 $$
 
 先用 diagonal (S)，通过 reparameterization Monte Carlo 训练。只有 Stage 2 完成后，代码才能诚实称为 approximate GP factor posterior。
@@ -452,7 +452,7 @@ $$
 \mathcal L=
 \frac{N}{|B|}\sum_{i\in B}
 \mathbb E_{q(u)}\log p(y_i\mid u)
--\operatorname{KL}[q(u)\|p(u)].
+-\mathrm{KL}[q(u)\Vert p(u)].
 $$
 
 Gaussian expected log-likelihood 和 KL 都解析计算；使用 Adam mini-batch SGD，500 steps。因为只有 35 个 latent coefficients，还同时计算同一 kernel、同一 learned noise 下的闭式 exact posterior。这一实现可以严格称为 finite-feature variational GP，但还没有 Tucker core，也没有 neural mean。
@@ -473,7 +473,7 @@ $$
 \frac{N}{|B|}\sum_{i\in B}
 \mathbb E_q\log\mathcal N(y_i\mid
 m_\theta(\xi_i)+\phi_i^\top u,\sigma_n^2)
--\mathrm{KL}[q(u)\|p(u)].
+-\mathrm{KL}[q(u)\Vert p(u)].
 $$
 
 `mean-only` 使用同一个 rank-24、hidden-64 geometry-conditioned neural CP、相同初始化、mask、mini-batch sequence、500 steps 和 learning rates；它只去掉 residual $u$ 与 KL。intrinsic/Euclidean residual 的 latent dimension 都是 35，唯一差别是 kernel sections。
@@ -503,7 +503,7 @@ $$
 数据由 `simulate_screened_elliptic` 独立求解
 
 $$
-(\operatorname{diag}(r(x,a))+aL_{\mathrm{physics}})u=f_{s,a}
+(\mathrm{diag}(r(x,a))+aL_{\mathrm{physics}})u=f_{s,a}
 $$
 
 得到，边界条件是所有外边界和孔洞边界上的 reflecting zero-flux。训练 learner 看到的是 unweighted geometry operator，而 simulator 使用由 material speed 加权的 physics operator，因此不是把 solver 的精确 diagonalization basis 直接交给模型。
@@ -534,9 +534,9 @@ $$
 当前
 
 $$
-\operatorname{NRMSE}_{\mathrm{boundary}}=
-\frac{\operatorname{RMSE}_{x\in\partial\Omega_h}}
-{\operatorname{Std}(y_{x\in\partial\Omega_h})}
+\mathrm{NRMSE}_{\mathrm{boundary}}=
+\frac{\mathrm{RMSE}_{x\in\partial\Omega_h}}
+{\mathrm{Std}(y_{x\in\partial\Omega_h})}
 $$
 
 只取一层离散 boundary nodes。需要补充：
@@ -855,7 +855,7 @@ GINO、Geo-FNO、DAFNO/相关 arbitrary-domain operator 并非 Bayesian tensor b
 | `matern_resolvent` | $(I+\alpha L_\Omega)^{-3/2}$ | 多尺度低频平滑、边界条件和 topology 改变的全局谱结构 |
 | `heat_diffusion` | $\exp(-tL_\Omega)$ | 在给定 diffusion time 内沿合法域路径传播的可达性 |
 | `geodesic_rbf` | $\exp[-d_{G_\Omega}(x,s)^2/(2\ell^2)]$ | mesh graph 内最短路径；不会穿过墙或孔洞 shortcut |
-| `euclidean_rbf` | $\exp[-\|x-s\|^2/(2\ell^2)]$ | ambient proximity control；不知道墙和孔洞 |
+| `euclidean_rbf` | $\exp[-\Vert x-s\Vert^2/(2\ell^2)]$ | ambient proximity control；不知道墙和孔洞 |
 
 所有 family 都输出 5 个 source-centred sections，再与 5 个固定 parameter RBF features 做 tensor product，因此单 kernel 都是 25 维。这里的 heat kernel 是 graph Laplacian 的有限谱近似；Matérn/resolvent 是同一算子的另一种 spectral response。两者不是改名后的同一个 kernel。
 
@@ -863,7 +863,7 @@ GINO、Geo-FNO、DAFNO/相关 arbitrary-domain operator 并非 Bayesian tensor b
 
 $$
 k_{\mathrm{mix}}=\sum_{q=1}^4 w_q k_q,\qquad
-w=\operatorname{softmax}(\eta),
+w=\mathrm{softmax}(\eta),
 $$
 
 对应 feature map 是
