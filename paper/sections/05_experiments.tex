@@ -78,6 +78,40 @@ function factors are necessary rather than decorative.  The strongest competitor
 is kernel ridge regression whose length scale is selected on held-out error -- an
 advantage no deployable method has.
 
+\subsection{A negative control: remove the anisotropy and the gain goes away}
+
+\begin{table}[t]
+  \centering
+  \caption{Held-out NRMSE at $1\%$ observed, five seeds, both arms at global
+  routing.  The isotropic row is the negative control.}
+  \label{tab:operators}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Operator family & ours & generic & margin & paired wins \\
+    \midrule
+    anisotropic diffusion  & 0.4383 & 0.4584 & $+0.0201$ & 4/5 \\
+    \textbf{isotropic diffusion} & 0.4541 & 0.4595 & $\mathbf{+0.0054}$ & 3/5 \\
+    advection--diffusion   & 0.4132 & 0.4361 & $+0.0229$ & 5/5 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Making the true spectrum isotropic collapses the margin from $0.020$ to $0.005$
+and the wins to 3/5.  This is the sharpest evidence for the mechanism rather than
+for the numbers: the generic dictionary shares its atoms across modes, so it is
+only handicapped when the axes genuinely need \emph{different} spectra.  It
+agrees with the oracle result, where all of the oracle's advantage also came from
+tuning per mode.  Two independent controls point at the same cause.
+
+Advection--diffusion wins on all five seeds, which needs a word because our
+signed-spectrum audit lists tilted transport as a representational limit.  There
+is no contradiction: that limit concerns cross-sign coupling in the \emph{full
+signed} spectrum, whereas a stochastically forced advection--diffusion field at
+statistical steady state still has an anisotropic low-pass \emph{even} magnitude
+spectrum, which is what the construction uses.  The boundary is the signed phase
+structure, not the name of the operator family.
+
 \subsection{Where the gain comes from}
 \todo{ablation table from ablation\_fixed\_summary.json}
 The arms vary only the spectral bank or the routing: the exact operator spectrum
