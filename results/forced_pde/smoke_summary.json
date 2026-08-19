@@ -1,0 +1,150 @@
+{
+  "true_setting": {
+    "operator": "anisotropic_diffusion",
+    "grid": [
+      32,
+      32
+    ],
+    "diffusivity": [
+      0.02,
+      0.006
+    ],
+    "reaction": 0.8,
+    "forcing_scale": 8,
+    "record_every": 40,
+    "record_steps": 32,
+    "burn_in": 3000,
+    "dt": 0.0015
+  },
+  "nominal_prior": {
+    "source_scale": 0.05,
+    "diffusivity": [
+      1.0,
+      0.3
+    ],
+    "rate": -1.0,
+    "damping": 0.3
+  },
+  "config": {
+    "seeds": [
+      0,
+      1
+    ],
+    "ratios": [
+      0.02,
+      0.05
+    ],
+    "ranks": [
+      8,
+      5,
+      5
+    ],
+    "atoms": 4,
+    "max_frequency": 8,
+    "steps": 800,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "device": "cuda",
+    "tag": "smoke",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/forced_pde"
+  },
+  "operator_separation_relative_error": 0.00779686118808201,
+  "records": [
+    {
+      "seed": 0,
+      "ratio": 0.02,
+      "tucker_ceiling": 0.18947456948332642,
+      "observed": 655,
+      "global_mean": 1.0037370920181274,
+      "nearest_neighbour": 0.5453391671180725,
+      "operator": {
+        "test_nrmse": 0.34157034754753113,
+        "observed_fit_nrmse": 0.23619000613689423,
+        "trainable_parameter_count": 597,
+        "seconds": 15.785156726837158
+      },
+      "generic": {
+        "test_nrmse": 0.3774223029613495,
+        "observed_fit_nrmse": 0.2179211676120758,
+        "trainable_parameter_count": 597,
+        "seconds": 14.03980302810669
+      },
+      "margin": 0.03585195541381836
+    },
+    {
+      "seed": 0,
+      "ratio": 0.05,
+      "tucker_ceiling": 0.18947456948332642,
+      "observed": 1638,
+      "global_mean": 1.0010756254196167,
+      "nearest_neighbour": 0.45873045921325684,
+      "operator": {
+        "test_nrmse": 0.3012252748012543,
+        "observed_fit_nrmse": 0.258423775434494,
+        "trainable_parameter_count": 597,
+        "seconds": 14.433128595352173
+      },
+      "generic": {
+        "test_nrmse": 0.30336296558380127,
+        "observed_fit_nrmse": 0.2546086013317108,
+        "trainable_parameter_count": 597,
+        "seconds": 15.099627017974854
+      },
+      "margin": 0.002137690782546997
+    },
+    {
+      "seed": 1,
+      "ratio": 0.02,
+      "tucker_ceiling": 0.24177411455225714,
+      "observed": 655,
+      "global_mean": 1.0003695487976074,
+      "nearest_neighbour": 0.585537850856781,
+      "operator": {
+        "test_nrmse": 0.4178594648838043,
+        "observed_fit_nrmse": 0.32503819465637207,
+        "trainable_parameter_count": 597,
+        "seconds": 14.91808557510376
+      },
+      "generic": {
+        "test_nrmse": 0.44866207242012024,
+        "observed_fit_nrmse": 0.2877599000930786,
+        "trainable_parameter_count": 597,
+        "seconds": 15.241638660430908
+      },
+      "margin": 0.030802607536315918
+    },
+    {
+      "seed": 1,
+      "ratio": 0.05,
+      "tucker_ceiling": 0.24177411455225714,
+      "observed": 1638,
+      "global_mean": 1.0000088214874268,
+      "nearest_neighbour": 0.49406173825263977,
+      "operator": {
+        "test_nrmse": 0.36020955443382263,
+        "observed_fit_nrmse": 0.3285354971885681,
+        "trainable_parameter_count": 597,
+        "seconds": 15.333099365234375
+      },
+      "generic": {
+        "test_nrmse": 0.3659607768058777,
+        "observed_fit_nrmse": 0.3194952607154846,
+        "trainable_parameter_count": 597,
+        "seconds": 14.244240760803223
+      },
+      "margin": 0.005751222372055054
+    }
+  ],
+  "ratio_0.02": {
+    "operator_mean": 0.3797149062156677,
+    "generic_mean": 0.41304218769073486,
+    "nearest_neighbour_mean": 0.5654385089874268,
+    "paired_wins": "2/2"
+  },
+  "ratio_0.05": {
+    "operator_mean": 0.33071741461753845,
+    "generic_mean": 0.3346618711948395,
+    "nearest_neighbour_mean": 0.4763960987329483,
+    "paired_wins": "2/2"
+  }
+}
