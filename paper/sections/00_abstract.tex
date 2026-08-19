@@ -19,7 +19,10 @@ than a periodic one.  And the host must be a Tucker rather than a CP model,
 because real two-dimensional fields are not separable across axes at any rank
 sparse observations could identify.
 
-On fields produced by an independent forced-PDE solver, \todo{numbers}.  We also
+On fields produced by an independent forced-PDE solver, observing $1\%$ of
+entries, this reduces held-out error by $5.5\%$ relative to a parameter-matched
+generic dictionary, winning on 13 of 15 seeds ($p = 0.004$), while discrete
+low-rank completion does not beat predicting the mean at that sparsity.  We also
 report where the method does not apply, and why: it requires an operator that
 suppresses much of the spectrum, which is the same condition that makes the field
 low-rank, and it fails on broad-spectrum turbulence and on radially band-pass

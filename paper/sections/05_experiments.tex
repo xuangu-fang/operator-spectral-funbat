@@ -21,16 +21,16 @@ datasets (\Cref{sec:limitations}).
 
 \begin{table}[t]
   \centering
-  \caption{Held-out NRMSE, five seeds, identical fields and masks across arms.}
+  \caption{Held-out NRMSE, fifteen seeds, identical fields and masks across arms, each arm at the routing best for it.}
   \label{tab:main}
   \small
   \begin{tabular}{lcccc}
     \toprule
     Observed & PDE-form kernels (ours) & generic dictionary & nearest neighbour & paired wins \\
     \midrule
-    $1\%$ & \textbf{0.4613} & 0.5008 & 0.5840 & 5/5 \\
-    $2\%$ & \textbf{0.3618} & 0.3682 & 0.5027 & 4/5 \\
-    $5\%$ & \textbf{0.2971} & 0.2997 & 0.4153 & 4/5 \\
+    $1\%$ & \textbf{0.4217} & 0.4464 & 0.5699 & 13/15 \\
+    $2\%$ & \textbf{0.3478} & 0.3581 & 0.4929 & 14/15 \\
+    $5\%$ & \textbf{0.2969} & 0.2993 & 0.4073 & 13/15 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -46,13 +46,20 @@ datasets (\Cref{sec:limitations}).
 \end{figure}
 
 \paragraph{Pooled over fifteen seeds at $1\%$.}
-PDE-form kernels reach $0.4431 \pm 0.0539$ against $0.4818 \pm 0.0615$ for the
+PDE-form kernels reach $0.4217 \pm 0.0470$ against $0.4464 \pm 0.0545$ for the
 parameter-matched generic dictionary and $0.5699$ for nearest neighbour, with a
 fully observed Tucker ceiling of $0.1791$.  The paired margin is
-$0.0387 \pm 0.0256$, an $8.0\%$ relative improvement, and it is positive on
-\emph{every} seed; a sign test and a Wilcoxon signed-rank test both give
-$p = 3.1\times 10^{-5}$.  The test is paired because all arms share the field,
-mask and noise within a seed.
+$0.0247 \pm 0.0235$, a $5.5\%$ relative improvement on 13 of 15 seeds; the sign
+test gives $p = 0.004$ and a Wilcoxon signed-rank test $p = 0.0006$.  The test is
+paired because all arms share the field, mask and noise within a seed.
+
+\paragraph{Both arms are run at their own best setting.}
+An earlier version of this table used per-mode/rank routing for both arms and
+reported $15/15$ with an $8.0\%$ margin.  The ablation shows that routing
+over-fits at $1\%$ observed and costs the generic dictionary $0.042$ against
+$0.023$ for the operator bank, so that setting handicaps the baseline more than
+it handicaps us and overstates the effect by roughly $1.6\times$.  We therefore
+give each arm the routing that is best for it, which is global for both.
 
 \begin{figure}[t]
   \centering

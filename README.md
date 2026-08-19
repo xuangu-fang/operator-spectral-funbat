@@ -8,19 +8,27 @@ decomposition, with no kernel parameters left to learn.**
 
 Fifteen seeds, 1% of entries observed, fields from an independent forced-PDE
 solver.  All arms share the field, mask, noise, host model, ranks, optimizer and
-step budget; the only variable is where the per-mode spectra come from.
+step budget, **and each arm runs at the routing setting that is best for it**;
+the only variable is where the per-mode spectra come from.
 
 | | held-out NRMSE |
 |---|---|
-| **PDE-form kernels (ours)** | **0.4431 ± 0.0539** |
-| generic dictionary (parameter-matched) | 0.4818 ± 0.0615 |
+| **PDE-form kernels (ours)** | **0.4217 ± 0.0470** |
+| generic dictionary (parameter-matched) | 0.4464 ± 0.0545 |
 | nearest neighbour | 0.5699 |
 | discrete CP / Tucker completion (EM) | ≥ 0.98 — no better than the mean |
 | kernel ridge, *oracle*-tuned length scale | 0.4887 |
 | fully observed Tucker ceiling (shared by all arms) | 0.1791 |
 
-Paired margin `+0.0387 ± 0.0256` (8.0% relative), **15/15 seeds**, sign test and
-Wilcoxon both `p = 3.1e-05`.
+Paired margin `+0.0247 ± 0.0235` (5.5% relative), **13/15 seeds**, sign test
+`p = 0.0037`, Wilcoxon `p = 0.00058`.  The operator bank also wins at 2%
+(14/15) and 5% (13/15).
+
+> An earlier version of this table ran both arms at per-mode/rank routing and
+> reported 15/15 with an 8.0% margin.  That setting over-fits at 1% and costs the
+> generic dictionary twice what it costs the operator bank, so it overstated the
+> effect by about 1.6x.  The superseded numbers are kept in
+> `results/forced_pde/headline_legacy_pmr_summary.json`.
 
 ![headline](results/forced_pde/figure_headline.png)
 
