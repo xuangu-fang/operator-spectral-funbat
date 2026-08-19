@@ -98,9 +98,12 @@ def main() -> None:
                 solved.field, args.ratio, seed, args.noise_std, device)
             cell = {"seed": seed, "tucker_ceiling": ceiling}
             for arm, bank in (("operator", prior), ("generic", generic)):
+                # Global routing for both arms: per-mode/rank over-fits at 1%
+                # and hurts the generic dictionary about twice as much.
                 cell[arm] = train(field, observed, targets, test, truth, bank,
                                   ranks=ranks, steps=args.steps, seed=seed,
-                                  device=device, lr=args.lr)["test_nrmse"]
+                                  device=device, lr=args.lr,
+                                  routing="global")["test_nrmse"]
             cell["margin"] = cell["generic"] - cell["operator"]
             rows.append(cell)
             print(f"  {name:22s} seed {seed} ceil={ceiling:.3f} "
