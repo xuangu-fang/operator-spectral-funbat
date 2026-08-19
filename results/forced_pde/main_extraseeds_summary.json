@@ -1,0 +1,277 @@
+{
+  "true_setting": {
+    "operator": "anisotropic_diffusion",
+    "grid": [
+      32,
+      32
+    ],
+    "diffusivity": [
+      0.02,
+      0.006
+    ],
+    "reaction": 0.8,
+    "forcing_scale": 8,
+    "record_every": 40,
+    "record_steps": 32,
+    "burn_in": 3000,
+    "dt": 0.0015
+  },
+  "nominal_prior": {
+    "source_scale": 0.05,
+    "diffusivity": [
+      1.0,
+      0.3
+    ],
+    "rate": -1.0,
+    "damping": 0.3
+  },
+  "config": {
+    "seeds": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "ratios": [
+      0.01
+    ],
+    "ranks": [
+      8,
+      5,
+      5
+    ],
+    "atoms": 4,
+    "max_frequency": 8,
+    "steps": 1200,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "device": "cuda",
+    "tag": "main_extraseeds",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/forced_pde"
+  },
+  "operator_separation_relative_error": 0.00779686118808201,
+  "records": [
+    {
+      "seed": 5,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.22514975243479898,
+      "observed": 328,
+      "global_mean": 1.0006331205368042,
+      "nearest_neighbour": 0.6414318084716797,
+      "operator": {
+        "test_nrmse": 0.5110084414482117,
+        "observed_fit_nrmse": 0.23419830203056335,
+        "trainable_parameter_count": 597,
+        "seconds": 20.066728353500366
+      },
+      "generic": {
+        "test_nrmse": 0.5746184587478638,
+        "observed_fit_nrmse": 0.2022896260023117,
+        "trainable_parameter_count": 597,
+        "seconds": 20.102882385253906
+      },
+      "margin": 0.0636100172996521
+    },
+    {
+      "seed": 6,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.17438730840604627,
+      "observed": 328,
+      "global_mean": 1.0004011392593384,
+      "nearest_neighbour": 0.5322836637496948,
+      "operator": {
+        "test_nrmse": 0.44807568192481995,
+        "observed_fit_nrmse": 0.18379729986190796,
+        "trainable_parameter_count": 597,
+        "seconds": 19.974864721298218
+      },
+      "generic": {
+        "test_nrmse": 0.4727839231491089,
+        "observed_fit_nrmse": 0.15455999970436096,
+        "trainable_parameter_count": 597,
+        "seconds": 20.113492488861084
+      },
+      "margin": 0.02470824122428894
+    },
+    {
+      "seed": 7,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.16045831655855924,
+      "observed": 328,
+      "global_mean": 1.0004346370697021,
+      "nearest_neighbour": 0.5572078227996826,
+      "operator": {
+        "test_nrmse": 0.37439194321632385,
+        "observed_fit_nrmse": 0.15916131436824799,
+        "trainable_parameter_count": 597,
+        "seconds": 20.152233600616455
+      },
+      "generic": {
+        "test_nrmse": 0.4228841960430145,
+        "observed_fit_nrmse": 0.1253422647714615,
+        "trainable_parameter_count": 597,
+        "seconds": 20.084144830703735
+      },
+      "margin": 0.048492252826690674
+    },
+    {
+      "seed": 8,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.18078835206563335,
+      "observed": 328,
+      "global_mean": 1.000303864479065,
+      "nearest_neighbour": 0.5545341372489929,
+      "operator": {
+        "test_nrmse": 0.47600263357162476,
+        "observed_fit_nrmse": 0.2384827733039856,
+        "trainable_parameter_count": 597,
+        "seconds": 19.835894346237183
+      },
+      "generic": {
+        "test_nrmse": 0.49301934242248535,
+        "observed_fit_nrmse": 0.1367456614971161,
+        "trainable_parameter_count": 597,
+        "seconds": 20.2937068939209
+      },
+      "margin": 0.017016708850860596
+    },
+    {
+      "seed": 9,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.2004765030130198,
+      "observed": 328,
+      "global_mean": 1.0018826723098755,
+      "nearest_neighbour": 0.6498026251792908,
+      "operator": {
+        "test_nrmse": 0.5562286972999573,
+        "observed_fit_nrmse": 0.22896616160869598,
+        "trainable_parameter_count": 597,
+        "seconds": 21.475598335266113
+      },
+      "generic": {
+        "test_nrmse": 0.5973430275917053,
+        "observed_fit_nrmse": 0.15900249779224396,
+        "trainable_parameter_count": 597,
+        "seconds": 21.748169898986816
+      },
+      "margin": 0.04111433029174805
+    },
+    {
+      "seed": 10,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.17036654384103533,
+      "observed": 328,
+      "global_mean": 1.0006275177001953,
+      "nearest_neighbour": 0.5908925533294678,
+      "operator": {
+        "test_nrmse": 0.41579189896583557,
+        "observed_fit_nrmse": 0.2164168804883957,
+        "trainable_parameter_count": 597,
+        "seconds": 22.502706050872803
+      },
+      "generic": {
+        "test_nrmse": 0.5069791078567505,
+        "observed_fit_nrmse": 0.16030101478099823,
+        "trainable_parameter_count": 597,
+        "seconds": 22.19584822654724
+      },
+      "margin": 0.09118720889091492
+    },
+    {
+      "seed": 11,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.16455605906046844,
+      "observed": 328,
+      "global_mean": 1.0001580715179443,
+      "nearest_neighbour": 0.5060922503471375,
+      "operator": {
+        "test_nrmse": 0.37981197237968445,
+        "observed_fit_nrmse": 0.18888172507286072,
+        "trainable_parameter_count": 597,
+        "seconds": 22.38168716430664
+      },
+      "generic": {
+        "test_nrmse": 0.38325077295303345,
+        "observed_fit_nrmse": 0.15146490931510925,
+        "trainable_parameter_count": 597,
+        "seconds": 21.607861518859863
+      },
+      "margin": 0.003438800573348999
+    },
+    {
+      "seed": 12,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.15914114757908268,
+      "observed": 328,
+      "global_mean": 1.0028187036514282,
+      "nearest_neighbour": 0.5607803463935852,
+      "operator": {
+        "test_nrmse": 0.4220307171344757,
+        "observed_fit_nrmse": 0.15381084382534027,
+        "trainable_parameter_count": 597,
+        "seconds": 21.741304636001587
+      },
+      "generic": {
+        "test_nrmse": 0.422280490398407,
+        "observed_fit_nrmse": 0.12280040979385376,
+        "trainable_parameter_count": 597,
+        "seconds": 22.287930250167847
+      },
+      "margin": 0.0002497732639312744
+    },
+    {
+      "seed": 13,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.15036700043883422,
+      "observed": 328,
+      "global_mean": 1.0001763105392456,
+      "nearest_neighbour": 0.45830613374710083,
+      "operator": {
+        "test_nrmse": 0.3548446297645569,
+        "observed_fit_nrmse": 0.1842082440853119,
+        "trainable_parameter_count": 597,
+        "seconds": 22.52797794342041
+      },
+      "generic": {
+        "test_nrmse": 0.3674945533275604,
+        "observed_fit_nrmse": 0.1297581046819687,
+        "trainable_parameter_count": 597,
+        "seconds": 21.115575790405273
+      },
+      "margin": 0.01264992356300354
+    },
+    {
+      "seed": 14,
+      "ratio": 0.01,
+      "tucker_ceiling": 0.17373979055987598,
+      "observed": 328,
+      "global_mean": 1.0020241737365723,
+      "nearest_neighbour": 0.5778537392616272,
+      "operator": {
+        "test_nrmse": 0.402267724275589,
+        "observed_fit_nrmse": 0.2537766098976135,
+        "trainable_parameter_count": 597,
+        "seconds": 20.585423707962036
+      },
+      "generic": {
+        "test_nrmse": 0.48188191652297974,
+        "observed_fit_nrmse": 0.15703217685222626,
+        "trainable_parameter_count": 597,
+        "seconds": 22.694929361343384
+      },
+      "margin": 0.07961419224739075
+    }
+  ],
+  "ratio_0.01": {
+    "operator_mean": 0.4340454339981079,
+    "generic_mean": 0.4722535789012909,
+    "nearest_neighbour_mean": 0.562918508052826,
+    "paired_wins": "10/10"
+  }
+}

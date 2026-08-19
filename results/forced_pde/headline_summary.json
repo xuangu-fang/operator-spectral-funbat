@@ -1,0 +1,26 @@
+{
+  "sources": [
+    "main_fixedforcing_summary.json",
+    "main_extraseeds_summary.json"
+  ],
+  "ratio": 0.01,
+  "seeds": 15,
+  "operator": {
+    "mean": 0.4431179424126943,
+    "std": 0.053863747383020584
+  },
+  "generic": {
+    "mean": 0.4817852814992269,
+    "std": 0.06149522044944853
+  },
+  "nearest_neighbour_mean": 0.5699323773384094,
+  "fully_observed_tucker_ceiling_mean": 0.17908570401436405,
+  "paired_margin": {
+    "mean": 0.038667339086532596,
+    "std": 0.02556707273758545
+  },
+  "relative_improvement_percent": 8.025844825771134,
+  "paired_wins": "15/15",
+  "sign_test_p": 3.0517578125e-05,
+  "wilcoxon_p": 3.0517578125e-05
+}
