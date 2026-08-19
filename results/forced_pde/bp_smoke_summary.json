@@ -1,0 +1,96 @@
+{
+  "true_setting": {
+    "operator": "banded_pattern",
+    "grid": [
+      32,
+      32
+    ],
+    "band_wavenumber": 2.5,
+    "band_stiffness": 0.001,
+    "band_offset": 0.2,
+    "forcing_scale": 8,
+    "dt": 1.0,
+    "burn_in": 200,
+    "record_steps": 32
+  },
+  "nominal_prior": {
+    "source_scale": 0.02,
+    "band_wavenumber": 2.5,
+    "band_stiffness": 0.6,
+    "band_offset": 0.12
+  },
+  "operator_separation_relative_error": 0.06949411280319526,
+  "ratios": {
+    "0.01": {
+      "operator_pmr": {
+        "mean": 0.926880419254303,
+        "std": 0.03129452466964722,
+        "values": [
+          0.8955858945846558,
+          0.9581749439239502
+        ]
+      },
+      "operator_global": {
+        "mean": 0.9210608303546906,
+        "std": 0.014476269483566284,
+        "values": [
+          0.9065845608711243,
+          0.9355370998382568
+        ]
+      },
+      "wrong_band_pmr": {
+        "mean": 1.054867684841156,
+        "std": 0.020627081394195557,
+        "values": [
+          1.0754947662353516,
+          1.0342406034469604
+        ]
+      },
+      "wrong_band_global": {
+        "mean": 1.0481027960777283,
+        "std": 0.022453606128692627,
+        "values": [
+          1.070556402206421,
+          1.0256491899490356
+        ]
+      },
+      "generic_pmr": {
+        "mean": 0.7768457531929016,
+        "std": 0.021618008613586426,
+        "values": [
+          0.7552277445793152,
+          0.798463761806488
+        ]
+      },
+      "generic_global": {
+        "mean": 0.7438240051269531,
+        "std": 0.011237084865570068,
+        "values": [
+          0.7550610899925232,
+          0.7325869202613831
+        ]
+      },
+      "generic3x_pmr": {
+        "mean": 0.7926198542118073,
+        "std": 0.03907337784767151,
+        "values": [
+          0.7535464763641357,
+          0.8316932320594788
+        ]
+      },
+      "generic3x_global": {
+        "mean": 0.7583292722702026,
+        "std": 0.0007907748222351074,
+        "values": [
+          0.7591200470924377,
+          0.7575384974479675
+        ]
+      },
+      "best_operator_arm": "operator_global",
+      "best_generic_arm": "generic_global",
+      "margin_best_vs_best": -0.17723682522773743,
+      "wins_best_vs_best": 0,
+      "tucker_ceiling_mean": 0.2062441324044761
+    }
+  }
+}

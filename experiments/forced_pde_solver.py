@@ -50,18 +50,33 @@ def _laplacian_neumann(u: np.ndarray, dx: float, dy: float) -> tuple[np.ndarray,
 
 
 def _smooth_noise(rng: np.random.Generator, shape: tuple[int, int], scale: int) -> np.ndarray:
-    """Spatially correlated forcing: white noise block-averaged then bilinear-ish."""
-    coarse = rng.standard_normal((max(shape[0] // scale, 1), max(shape[1] // scale, 1)))
-    return np.kron(coarse, np.ones((scale, scale)))[: shape[0], : shape[1]]
+    """Spatially correlated forcing with a smooth Gaussian spectrum.
+
+    An earlier version block-replicated coarse noise, which is piecewise
+    constant and therefore has a sinc-shaped spectrum with exact zeros at
+    multiples of ``n/scale`` plus harmonics.  No smooth spectral prior can model
+    that, and it silently dominated the field's per-mode spectra -- the measured
+    y-mode spectrum peaked at the forcing's harmonic rather than at the origin.
+    Filtering white noise with a Gaussian instead gives ``S_w(k) ~ exp(-a k^2)``,
+    which is the forcing model the operator construction actually assumes.
+    """
+    from scipy.ndimage import gaussian_filter
+    white = rng.standard_normal(shape)
+    smoothed = gaussian_filter(white, sigma=scale / 2.0, mode="reflect")
+    return smoothed / max(smoothed.std(), 1e-12)
 
 
 def solve_forced(
     *,
-    operator: Literal["anisotropic_diffusion", "advection_diffusion", "damped_wave"],
+    operator: Literal["anisotropic_diffusion", "advection_diffusion", "damped_wave",
+                      "banded_pattern"],
     grid: tuple[int, int] = (64, 64),
     diffusivity: tuple[float, float] = (0.004, 0.0012),
     reaction: float = 0.6,
     velocity: tuple[float, float] = (0.35, -0.2),
+    band_wavenumber: float = 2.0,
+    band_stiffness: float = 2.0e-4,
+    band_offset: float = 0.25,
     wave_speed: float = 0.35,
     wave_damping: float = 0.9,
     forcing_scale: int = 4,
@@ -85,6 +100,20 @@ def solve_forced(
         ux, uy = _laplacian_neumann(state, dx, dy)
         if operator == "anisotropic_diffusion":
             return dxc * ux + dyc * uy - reaction * state
+        if operator == "banded_pattern":
+            # Linear Swift-Hohenberg: L = a + b (lap + k0^2)^2.  Its response is
+            # minimised at |k| = k0, so the steady-state spectrum has a peak at
+            # a *nonzero* wavenumber.  A generic smooth dictionary cannot
+            # express a band-pass spectrum at all, which is what makes the
+            # shape of the operator spectrum -- not merely its smoothness --
+            # the thing being tested.  A small k0 keeps the pattern large-scale
+            # and therefore still low multilinear rank.
+            k0sq = (2 * np.pi * band_wavenumber) ** 2
+            lap = ux + uy
+            lx, ly = _laplacian_neumann(lap, dx, dy)
+            biharmonic = lx + ly
+            return -(band_offset * state
+                     + band_stiffness * (biharmonic + 2 * k0sq * lap + k0sq**2 * state))
         if operator == "advection_diffusion":
             gx = np.empty_like(state); gy = np.empty_like(state)
             gx[1:-1] = (state[2:] - state[:-2]) / (2 * dx)
@@ -130,3 +159,80 @@ def block_average(field: torch.Tensor, factors: tuple[int, int, int]) -> torch.T
             raise ValueError(f"size {size} not divisible by {factor}")
         shape += [size // factor, factor]
     return field.reshape(*shape).mean(dim=(1, 3, 5))
+
+
+def _dct_eigenvalues(n: int, spacing: float) -> np.ndarray:
+    """Eigenvalues of the Neumann finite-difference Laplacian on a uniform grid.
+
+    They are ``-(2 - 2 cos(pi k / n)) / h^2``, which differs from the continuum
+    ``-(pi k)^2`` -- a genuine discretisation mismatch between the field and the
+    continuum symbol the prior is built from.
+    """
+    k = np.arange(n)
+    return -(2 - 2 * np.cos(np.pi * k / n)) / spacing**2
+
+
+def solve_forced_spectral(
+    *,
+    operator: Literal["anisotropic_diffusion", "banded_pattern"],
+    grid: tuple[int, int] = (32, 32),
+    diffusivity: tuple[float, float] = (0.02, 0.006),
+    reaction: float = 0.8,
+    band_wavenumber: float = 2.0,
+    band_stiffness: float = 2.0e-4,
+    band_offset: float = 0.25,
+    forcing_scale: int = 8,
+    forcing_std: float = 1.0,
+    dt: float = 0.06,
+    burn_in: int = 200,
+    record_steps: int = 32,
+    seed: int = 0,
+) -> ForcedField:
+    """Exponential (exact-in-time) integration for DCT-diagonal operators.
+
+    Explicit stepping is unusable for the fourth-order banded operator, whose
+    stability limit scales like ``h^4``.  Because a Neumann finite-difference
+    operator with constant coefficients is diagonalised exactly by the DCT, the
+    linear part can instead be integrated exactly, which is unconditionally
+    stable and lets the forcing correlation rather than the timestep set the
+    physics.
+    """
+    from scipy.fft import dctn, idctn
+
+    rng = np.random.default_rng(seed)
+    nx, ny = grid
+    lx = _dct_eigenvalues(nx, 1.0 / nx)[:, None]
+    ly = _dct_eigenvalues(ny, 1.0 / ny)[None, :]
+    if operator == "anisotropic_diffusion":
+        multiplier = diffusivity[0] * lx + diffusivity[1] * ly - reaction
+    elif operator == "banded_pattern":
+        k0sq = (2 * np.pi * band_wavenumber) ** 2
+        multiplier = -(band_offset + band_stiffness * (lx + ly + k0sq) ** 2)
+    else:
+        raise ValueError(f"{operator} is not DCT-diagonal; use solve_forced")
+    if np.any(multiplier >= 0):
+        raise ValueError("operator has a non-decaying mode; steady state does not exist")
+    decay = np.exp(multiplier * dt)
+    # Exact Ornstein-Uhlenbeck increment for each mode.
+    increment = np.sqrt((1 - decay**2) / (-2 * multiplier))
+
+    state = np.zeros(grid)
+    frames = []
+    for step in range(burn_in + record_steps):
+        forcing = forcing_std * _smooth_noise(rng, grid, forcing_scale)
+        forcing_hat = dctn(forcing, norm="ortho")
+        state = idctn(dctn(state, norm="ortho") * decay + forcing_hat * increment,
+                      norm="ortho")
+        if not np.isfinite(state).all():
+            raise FloatingPointError(f"spectral solver diverged at step {step}")
+        if step >= burn_in:
+            frames.append(state.copy())
+    field = torch.from_numpy(np.stack(frames)).float()
+    field = (field - field.mean()) / field.std().clamp_min(1e-8)
+    return ForcedField(
+        field=field, operator=operator, grid=grid, dt=dt,
+        parameters={"diffusivity": diffusivity, "reaction": reaction,
+                    "band_wavenumber": band_wavenumber, "band_stiffness": band_stiffness,
+                    "band_offset": band_offset, "forcing_scale": forcing_scale,
+                    "integrator": "exponential/DCT"},
+    )

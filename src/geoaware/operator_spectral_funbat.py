@@ -181,7 +181,8 @@ def normalize_spectrum_cosine(spectrum: torch.Tensor, eps: float = 1e-12) -> tor
 
 
 def operator_joint_spectrum(
-    operator: Literal["diffusion", "wave", "advection", "reaction_diffusion"],
+    operator: Literal["diffusion", "wave", "advection", "reaction_diffusion",
+                      "banded_pattern"],
     frequencies: torch.Tensor,
     *,
     source_scale: float = 0.12,
@@ -195,6 +196,9 @@ def operator_joint_spectrum(
     reaction_diffusivity: tuple[float, float] = (1.0, 1.0),
     reaction_rate: float = 0.0,
     reaction_damping: float = 0.15,
+    band_wavenumber: float = 2.0,
+    band_stiffness: float = 1.0,
+    band_offset: float = 0.2,
 ) -> torch.Tensor:
     """Construct ``|L_hat|^-2 S_w`` on a three-dimensional frequency grid.
 
@@ -212,6 +216,7 @@ def operator_joint_spectrum(
         *advection_diffusivity, advection_reaction,
         *wave_coefficients, *wave_damping,
         *reaction_diffusivity, reaction_damping,
+        band_stiffness, band_offset,
     )
     if any(value <= 0 for value in positive_parameters):
         raise ValueError("source, reaction and diffusivity parameters must be positive")
@@ -226,6 +231,15 @@ def operator_joint_spectrum(
         gamma0, gamma1 = wave_damping
         dispersion = cx * (wx.square() + cy * wy.square()) - wt.square()
         response_sq = dispersion.square() + (gamma0 + gamma1 * wt.abs()).square()
+    elif operator == "banded_pattern":
+        # Linear Swift-Hohenberg symbol: |L|^2 = wt^2 + (a + b(|k|^2 - k0^2)^2)^2.
+        # Even in every axis, so the real cosine representation is exact, but
+        # *not* axis-separable, so the nonnegative projection does real work.
+        # Its solution spectrum peaks at |k| = k0 rather than at the origin,
+        # which is the property a generic smooth dictionary cannot express: the
+        # operator says *where* the energy sits, not merely that it decays.
+        radial = wx.square() + wy.square() - band_wavenumber**2
+        response_sq = wt.square() + (band_offset + band_stiffness * radial.square()).square()
     elif operator == "reaction_diffusion":
         # Parabolic symbol of  d_t u = D grad^2 u + a u  (+ higher-order terms
         # absorbed into the forcing).  Even in every axis, so the real

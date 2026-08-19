@@ -286,3 +286,20 @@ def test_tucker_posterior_mean_matches_large_sample_monte_carlo():
         sampled = model.posterior_predictive_samples(
             indices, samples=4000, generator=generator).mean(0)
     assert torch.allclose(exact, sampled, atol=0.05)
+
+
+def test_banded_operator_spectrum_peaks_off_the_origin():
+    frequency = torch.arange(9, dtype=torch.float32)
+    spectrum = operator_joint_spectrum(
+        "banded_pattern", frequency, band_wavenumber=4.0,
+        band_stiffness=1.0, band_offset=0.05, source_scale=1e-4)
+    radial = spectrum[:, 0, 0]
+    # The whole point of this family: the maximum is at a nonzero wavenumber,
+    # so a monotone-decaying generic kernel cannot represent it.
+    assert int(radial.argmax()) not in (0, len(radial) - 1)
+    assert torch.all(spectrum >= 0) and torch.isfinite(spectrum).all()
+    # Moving the band must move the peak.
+    shifted = operator_joint_spectrum(
+        "banded_pattern", frequency, band_wavenumber=2.0,
+        band_stiffness=1.0, band_offset=0.05, source_scale=1e-4)
+    assert int(shifted[:, 0, 0].argmax()) < int(radial.argmax())
