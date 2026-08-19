@@ -41,8 +41,18 @@ expressiveness, is what the construction requires.
   \item The evidence is on fields from a linear forced PDE.  Nonlinear and
         variable-coefficient operators are only approximated by a linearised
         constant-coefficient form, and we do not measure how far that degrades.
+  \item \textbf{The posterior predictive is badly under-covered in the sparse
+        regime.}  At $1\%$ observed a nominal $95\%$ interval covers $83.7\%$
+        with our prior and $77.5\%$ with the generic one, reaching $91\%$ only by
+        $5\%$ observed.  The derived prior is consistently the better calibrated
+        of the two and its advantage again concentrates where data is scarce, but
+        it does not fix the under-coverage, which belongs to the host model.  Our
+        intervals are also wider ($1.14$ versus $1.00$ at $1\%$), so part of that
+        advantage is honesty about uncertainty rather than accuracy.  We claim a
+        better prior for point prediction, not better uncertainty quantification.
   \item Uncertainty is a mean-field variational posterior over a finite feature
-        basis, not an exact GP posterior.
+        basis, not an exact GP posterior, and the NLL carries 64-sample
+        Monte-Carlo error.
   \item The tensor is on a regular grid with a uniform random mask; structured
         sensor layouts and irregular domains are untested.
   \item The margin shrinks with observation count and is small by $5\%$ observed,
