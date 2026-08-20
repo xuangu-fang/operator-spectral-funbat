@@ -96,6 +96,11 @@ def sensor_mask(shape, layout: str, budget: int, seed: int, device):
         region = (depth >= inner) & (depth < outer)
     elif layout == "one_wall_strip":
         region = x < 5
+    elif layout == "one_wall_strip_y":
+        # The same strip against the other wall.  The field is anisotropic, so
+        # this is not a relabelling: it extrapolates along the slowly diffusing
+        # axis instead of the quickly diffusing one.
+        region = y < 5
     elif layout == "corner_block":
         region = (x < 20) & (y < 20)
     else:
