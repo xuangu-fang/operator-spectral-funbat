@@ -1,29 +1,32 @@
-Reconstructing a physical field from a very small fraction of its entries is
-underdetermined, and low-rank structure alone does not resolve it: the model must
-still decide how smooth each continuous factor is along each axis.  We observe
-that one piece of information is almost always available even when the solution
-is not --- the \emph{form} of the partial differential equation the field obeys
---- and that it is enough.  From the form alone, with coefficients set to
-nominal values, the operator's symbol gives the solution's joint power spectrum;
-projecting that spectrum nonnegatively onto a handful of per-axis factors yields
-valid positive semi-definite GP kernels for every mode of a functional tensor
-decomposition, leaving four mixture weights to learn instead of a whole kernel.
+In many physical fields the sensors cannot be placed where the reconstruction is
+wanted.  Instruments attach to a wall, to a duct, to whatever surface is
+reachable, and the interior of the domain is never observed at all.
+Reconstruction is then not interpolation between neighbouring samples but
+extrapolation into a region no sensor sees, and a smoothness prior --- which
+says only that distant points correlate weakly --- has nothing left to say about
+it.  What is still available is the \emph{form} of the partial differential
+equation the field obeys, and for a dissipative operator that form states
+exactly what smoothness cannot: how the field decays along each axis.
 
-The construction is a prior, not a model: it replaces the generic kernels in an
-existing functional tensor method, so model, capacity and optimisation budget
-are held fixed and the only variable is where the spectra come from.  Two details
-turn out to be load-bearing rather than incidental.  The eigenbasis of a
-stationary operator is fixed by its boundary condition, so real initial-value
-data --- which is not periodic in time --- needs the no-flux cosine basis rather
-than a periodic one.  And the host must be a Tucker rather than a CP model,
-because real two-dimensional fields are not separable across axes at any rank
-sparse observations could identify.
+We turn the form alone, with coefficients set to deliberately wrong nominal
+values, into positive semi-definite GP kernels for every mode of a functional
+tensor decomposition.  The operator's symbol gives the solution's joint power
+spectrum; projecting that spectrum nonnegatively onto a handful of per-axis
+factors yields one valid kernel per mode, leaving four mixture weights to learn
+instead of a whole kernel.  The construction is a prior, not a model: it replaces
+the generic kernels in an existing method, so capacity and optimisation budget
+are held fixed and the only variable is where the spectra come from.
 
-On fields produced by an independent forced-PDE solver, observing $1\%$ of
-entries, this reduces held-out error by $5.5\%$ relative to a parameter-matched
-generic dictionary, winning on 13 of 15 seeds ($p = 0.004$), while discrete
-low-rank completion does not beat predicting the mean at that sparsity.  We also
-report where the method does not apply, and why: it requires an operator that
-suppresses much of the spectrum, which is the same condition that makes the field
-low-rank, and it fails on broad-spectrum turbulence and on radially band-pass
-operators whose response is minimised on a ring.
+The experiment is a single table, sensor layout against method, at a fixed $1\%$
+budget.  With sensors scattered anywhere in the room every method ties, which is
+the expected control: interpolation does not need physics.  As the sensors are
+confined the methods separate, and they separate in the direction the prior's
+structure predicts --- the largest margin is at a single instrumented wall, where
+extrapolation runs along one axis and a per-mode spectrum is precisely a
+statement about one axis, while a surrounding ring still allows interpolation and
+a corner patch is near-hopeless for everyone.  \todo{quote the eight-seed
+one-wall margin once the rerun lands} The baselines are given an oracle
+advantage they would not have in deployment: their length scales are chosen
+against the held-out error itself.  We also report where the construction cannot
+help and why, including two settings our own pre-declared screens rejected before
+any method was run.

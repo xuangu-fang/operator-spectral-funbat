@@ -2,24 +2,36 @@
 \label{sec:intro}
 
 \paragraph{The setting.}
-A physical field is measured at a small random subset of grid entries --- a few
-percent or less --- and the rest must be reconstructed.  Low-rank tensor models
-exploit the multi-way correlation, and functional versions replace discrete
-factor tables with continuous functions so unobserved coordinates can be
-interpolated.  At a few percent observed, however, low-rank structure alone does
-not determine the answer.  The model must still decide how smooth each factor is,
-whether it oscillates, and whether different axes share a length scale, and there
-is not enough data to decide those things reliably.
+Consider monitoring a gas leak in a room, a combustion chamber, or a length of
+pipe.  In each case the sensors go where they can be mounted --- on the walls, on
+one accessible face, on a single instrumented patch --- and not where the
+quantity of interest is.  The measurements therefore occupy a small, contiguous,
+badly placed part of the domain, and the reconstruction is wanted everywhere
+else.  This is not the missingness pattern the tensor completion literature
+assumes.  Uniformly random masks leave every unobserved entry with observed
+neighbours; a wall-mounted array leaves most of the room with none.
+
+\paragraph{Why this changes what a prior has to do.}
+Under random masks, reconstruction is interpolation, and a smoothness prior is
+already an adequate description of it: nearby points are similar, and there is
+always a nearby point.  Under a confined layout, reconstruction is extrapolation,
+and smoothness degenerates.  A stationary kernel says only that correlation
+decays with distance, so far from the sensors it says the field is near its mean
+--- which is a statement about ignorance, not about the field.  Our own control
+experiment shows both halves of this: with sensors anywhere, three quite
+different methods tie to three decimal places; confine them to one wall and they
+spread out by a wide margin.
 
 \paragraph{The information that is being left on the table.}
-Standard functional tensor models answer those questions with a generic
-Mat\'ern or RBF kernel, or by learning a kernel from the same scarce data.  Both
-discard something that is almost always known even when the solution is not: the
-\emph{form} of the governing equation.  A practitioner rarely knows the field,
-often does not know the coefficients, and yet usually does know whether they are
-looking at diffusion, transport, or a wave.  We show that the form alone is
-enough to fix the kernel, and that fixing it beats learning it exactly where the
-data is scarcest.
+What a smoothness prior lacks in the unobserved region is any statement of what
+the values there should be.  For a dissipative operator the governing equation
+supplies exactly that.  Its symbol fixes how strongly each spatial and temporal
+frequency is suppressed, which is a direct statement about how the field decays
+along each axis --- and decay along an axis is what one-directional extrapolation
+needs.  A practitioner rarely knows the field, often does not know the
+coefficients, and yet usually does know whether they are looking at diffusion,
+transport, or a wave.  We show that the form alone is enough, and that it earns
+its keep exactly where the geometry of the sensors makes the problem hard.
 
 \paragraph{A prior, not a model.}
 Our contribution is deliberately narrow.  The construction produces per-mode GP
@@ -29,32 +41,40 @@ every comparison in this paper varies only the origin of the spectra.  This also
 means the result is not in competition with better tensor models --- it composes
 with them.
 
+\paragraph{On not tuning the baselines down.}
+The comparison is only interesting if the alternatives are given every
+advantage.  We hand the Mat\'ern arm its length scale by minimising the
+\emph{held-out} error, per seed and per layout, over a grid we check brackets its
+own optimum; that is an oracle no deployable method has.  Our arm is given
+nominal coefficients that are wrong by $50\%$ and no tuning data at all.
+
 \paragraph{Two details that turned out to be load-bearing.}
 The eigenbasis of a stationary operator is fixed by its boundary condition, not
-by its symbol alone.  Periodic domains give complex exponentials; no-flux
-boundaries give cosines.  Real initial-value data is not periodic along time, and
-imposing $f(0) = f(1)$ there is a large unphysical constraint
-\todo{cite the measurement}.  Separately, the host model must be a Tucker rather
-than a CP decomposition: real two-dimensional fields are fields of blobs, not
-outer products, and are not low CP-rank at any rank that sparse observations
-could identify, even though their multilinear rank is small.
+by its symbol alone.  Periodic domains give complex exponentials; no-flux walls
+give cosines --- and no-flux is what a room actually has.  Separately, the host
+model must be a Tucker rather than a CP decomposition: real two-dimensional
+fields are fields of blobs, not outer products, and are not low CP-rank at any
+rank that sparse observations could identify, even though their multilinear rank
+is small.
 
 \paragraph{When this cannot work, stated first.}
-The method needs the operator to suppress a large part of the spectrum.  That is
+The method needs the operator to suppress a large part of the spectrum, which is
 the same condition that makes the field low multilinear rank, so the requirement
-is not an extra assumption but the one that was already there.  Broad-spectrum
-turbulence fails both halves at once, and we report it as a measured failure
-rather than omitting it.  We screen candidate datasets against this criterion
-before committing to them, and report the screen including what it rejected.
+is not an extra assumption but the one that was already there.  It additionally
+needs the sensors to be able to see the region of interest at all: a field driven
+by independent noise everywhere is not determined by its boundary, and a single
+narrow plume reaches the wall attenuated below the noise floor.  Both were
+rejected by pre-declared screens before any method was run, and we report them.
 
 \paragraph{Contributions.}
 \begin{enumerate}
   \item A construction taking the form of a PDE --- not its coefficients, not its
         solution --- to a positive semi-definite kernel for each mode of a
         functional tensor decomposition, with no kernel parameters left to learn.
-  \item Evidence that fixing the kernel this way beats learning it from a generic
-        dictionary precisely in the sparse regime, with the advantage shrinking as
-        observations grow, which is the behaviour the claim predicts.
+  \item Evidence that the value of that prior is controlled by \emph{sensor
+        geometry} rather than by sample count alone: it is worth nothing when
+        samples are scattered and most when they are confined to one face, which
+        is the behaviour a per-axis spectral prior predicts.
   \item An explicit applicability criterion, measurable before training, together
-        with the datasets and operator families it rejects.
+        with the datasets and sensor geometries it rejects.
 \end{enumerate}
