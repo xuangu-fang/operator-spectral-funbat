@@ -38,7 +38,12 @@ FIELD = dict(grid=(64, 64), diffusivity=(0.02, 0.006), reaction=0.04,
 # What the method is told: the equation's form with nominal coefficients that
 # are deliberately not the generating ones.
 NOMINAL = dict(diffusivity=(0.03, 0.012), reaction=0.06)
-LENGTH_SCALES = (0.12, 0.32, 0.8)
+# The baseline's length-scale grid must contain the baseline's own optimum.  An
+# audit against a wide grid found it at 2.4 on the one-wall layout -- far outside
+# the original (0.12, 0.32, 0.8) -- where Matern reaches 0.545 rather than the
+# 0.657 that grid could manage.  The optimum is now interior (0.553 at 1.6, 0.545
+# at 2.4, 0.567 at 3.5), so the arm is no longer limited by where we stopped.
+LENGTH_SCALES = (0.12, 0.32, 0.8, 1.6, 2.4, 3.5)
 BINS = (12, 12, 12)
 RANKS = (8, 5, 5)
 
