@@ -161,6 +161,27 @@ def block_average(field: torch.Tensor, factors: tuple[int, int, int]) -> torch.T
     return field.reshape(*shape).mean(dim=(1, 3, 5))
 
 
+def narrowband_forcing_spectrum(
+    steps: int, dt: float, centre: float, width: float,
+) -> np.ndarray:
+    """Band-pass temporal forcing power, a Gaussian bump at ``centre``.
+
+    This is the separable band-pass case, and it is deliberately not the damped
+    wave.  A wave's temporal resonance sits at ``c sqrt(lambda_q)``, so it moves
+    with the spatial mode and the joint spectrum lies on a dispersion surface --
+    coupled, and the worst case for an axis-separable approximation.  Driving a
+    dissipative system with narrowband noise instead puts the same temporal band
+    on every spatial mode, so the joint spectrum factorises by construction.
+
+    Physically this is ordinary: ocean swell, machinery vibration, ambient
+    seismic noise in a band, mains ripple.
+    """
+    if centre <= 0 or width <= 0:
+        raise ValueError("centre and width must be positive")
+    frequency = np.fft.rfftfreq(steps, d=dt) * 2 * np.pi
+    return np.exp(-0.5 * ((frequency - centre) / width) ** 2)
+
+
 def _dct_eigenvalues(n: int, spacing: float) -> np.ndarray:
     """Eigenvalues of the Neumann finite-difference Laplacian on a uniform grid.
 
@@ -235,4 +256,64 @@ def solve_forced_spectral(
                     "band_wavenumber": band_wavenumber, "band_stiffness": band_stiffness,
                     "band_offset": band_offset, "forcing_scale": forcing_scale,
                     "integrator": "exponential/DCT"},
+    )
+
+
+def solve_narrowband_forced(
+    *,
+    grid: tuple[int, int] = (32, 32),
+    diffusivity: tuple[float, float] = (0.02, 0.006),
+    reaction: float = 0.8,
+    forcing_scale: int = 8,
+    band_centre: float = 6.0,
+    band_width: float = 1.2,
+    dt: float = 0.05,
+    burn_in: int = 256,
+    record_steps: int = 32,
+    seed: int = 0,
+) -> ForcedField:
+    """Dissipative field driven by temporally narrowband, spatially smooth noise.
+
+    The forcing is white in space (after Gaussian smoothing) but band-limited in
+    time, so the response's joint spectrum is (band-pass in omega) times
+    (low-pass in k).  That is the one case where a generic monotone kernel is
+    structurally unable to follow the truth while the axis-separable
+    approximation the method relies on remains exact.
+    """
+    from scipy.fft import dctn, idctn
+
+    rng = np.random.default_rng(seed)
+    nx, ny = grid
+    lx = _dct_eigenvalues(nx, 1.0 / nx)[:, None]
+    ly = _dct_eigenvalues(ny, 1.0 / ny)[None, :]
+    multiplier = diffusivity[0] * lx + diffusivity[1] * ly - reaction
+    if np.any(multiplier >= 0):
+        raise ValueError("operator has a non-decaying mode")
+
+    total = burn_in + record_steps
+    # Draw the whole forcing history at once so its temporal spectrum can be
+    # shaped exactly, rather than approximated by an online filter.
+    power = narrowband_forcing_spectrum(total, dt, band_centre, band_width)
+    white = rng.standard_normal((total, nx, ny))
+    smoothed = np.stack([_smooth_noise(rng, grid, forcing_scale) for _ in range(total)])
+    spectrum = np.fft.rfft(smoothed, axis=0)
+    forcing = np.fft.irfft(spectrum * np.sqrt(power)[:, None, None], n=total, axis=0)
+
+    decay = np.exp(multiplier * dt)
+    state = np.zeros(grid)
+    frames = []
+    for step in range(total):
+        hat = dctn(state, norm="ortho") * decay + dctn(forcing[step], norm="ortho") * dt
+        state = idctn(hat, norm="ortho")
+        if not np.isfinite(state).all():
+            raise FloatingPointError(f"narrowband solver diverged at step {step}")
+        if step >= burn_in:
+            frames.append(state.copy())
+    field = torch.from_numpy(np.stack(frames)).float()
+    field = (field - field.mean()) / field.std().clamp_min(1e-8)
+    return ForcedField(
+        field=field, operator="narrowband_forced", grid=grid, dt=dt,
+        parameters={"diffusivity": diffusivity, "reaction": reaction,
+                    "band_centre": band_centre, "band_width": band_width,
+                    "forcing_scale": forcing_scale, "integrator": "exponential/DCT"},
     )

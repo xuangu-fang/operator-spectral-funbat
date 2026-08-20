@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "pde": "d_t u + (-d/dx(a(x) d/dx) + kappa) u = 0",
+    "boundary_condition": "homogeneous Neumann (zero flux)",
+    "tensor_semantics": "time x receiver x source (Green response)",
+    "log_diffusivity_contrast": 1.0,
+    "diffusivity_min": 0.26545377180328367,
+    "diffusivity_max": 3.349431452177879,
+    "reaction": 0.15,
+    "truth_modes": 14,
+    "learner_modes": 8,
+    "learner_knows": "the equation form and the zero-flux boundary; not a(x), so both eigenvectors and decay rates are wrong"
+  },
+  "full_modes": 18,
+  "config": {
+    "seeds": [
+      0,
+      1
+    ],
+    "ratios": [
+      0.02
+    ],
+    "masks": [
+      "random"
+    ],
+    "cutoffs": [
+      5,
+      8,
+      12
+    ],
+    "contrast": 1.0,
+    "reaction": 0.15,
+    "decay": 0.18,
+    "ranks": [
+      4,
+      5,
+      5
+    ],
+    "steps": 600,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "device": "cuda",
+    "tag": "smoke2",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/green_response"
+  },
+  "records": [
+    {
+      "mask": "random",
+      "ratio": 0.02,
+      "soft_all_modes": {
+        "mean": 0.4046641141176224,
+        "std": 0.007238999009132385,
+        "values": [
+          0.41190311312675476,
+          0.39742511510849
+        ],
+        "wins_against_soft_all": 0
+      },
+      "hard_cutoff_5": {
+        "mean": 0.3794366270303726,
+        "std": 0.0006906241178512573,
+        "values": [
+          0.37874600291252136,
+          0.3801272511482239
+        ],
+        "wins_against_soft_all": 2
+      },
+      "soft_cutoff_5": {
+        "mean": 0.3221030682325363,
+        "std": 0.05709986388683319,
+        "values": [
+          0.2650032043457031,
+          0.3792029321193695
+        ],
+        "wins_against_soft_all": 2
+      },
+      "hard_cutoff_8": {
+        "mean": 0.3870154321193695,
+        "std": 0.00016033649444580078,
+        "values": [
+          0.3871757686138153,
+          0.3868550956249237
+        ],
+        "wins_against_soft_all": 2
+      },
+      "soft_cutoff_8": {
+        "mean": 0.3797593116760254,
+        "std": 0.0037925243377685547,
+        "values": [
+          0.37596678733825684,
+          0.38355183601379395
+        ],
+        "wins_against_soft_all": 2
+      },
+      "hard_cutoff_12": {
+        "mean": 0.9999509453773499,
+        "std": 5.960464477539063e-08,
+        "values": [
+          0.9999508857727051,
+          0.9999510049819946
+        ],
+        "wins_against_soft_all": 0
+      },
+      "soft_cutoff_12": {
+        "mean": 0.3906494677066803,
+        "std": 0.0027050673961639404,
+        "values": [
+          0.38794440031051636,
+          0.39335453510284424
+        ],
+        "wins_against_soft_all": 2
+      }
+    }
+  ]
+}

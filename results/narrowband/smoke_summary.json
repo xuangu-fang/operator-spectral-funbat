@@ -1,0 +1,88 @@
+{
+  "true_setting": {
+    "grid": [
+      32,
+      32
+    ],
+    "diffusivity": [
+      0.02,
+      0.006
+    ],
+    "reaction": 0.8,
+    "forcing_scale": 8,
+    "band_width": 1.2,
+    "dt": 0.05,
+    "burn_in": 256,
+    "record_steps": 32
+  },
+  "nominal_prior": {
+    "source_scale": 0.05,
+    "diffusivity": [
+      1.0,
+      0.3
+    ],
+    "reaction": 0.8,
+    "band_width": 1.4
+  },
+  "config": {
+    "seeds": [
+      0,
+      1
+    ],
+    "ratios": [
+      0.02
+    ],
+    "band_centres": [
+      10.0
+    ],
+    "ranks": [
+      8,
+      5,
+      5
+    ],
+    "atoms": 4,
+    "max_frequency": 8,
+    "steps": 600,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "device": "cuda",
+    "tag": "smoke",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/narrowband"
+  },
+  "records": [
+    {
+      "band_centre": 10.0,
+      "excited_index": 5.092958178940651,
+      "ratio": 0.02,
+      "separation_relative_error": 0.01370524198167517,
+      "tucker_ceiling": 0.10975403454075097,
+      "operator": {
+        "mean": 0.2153429016470909,
+        "std": 0.0026829317212104797,
+        "values": [
+          0.2180258333683014,
+          0.21265996992588043
+        ]
+      },
+      "generic": {
+        "mean": 0.23592210561037064,
+        "std": 0.001976810395717621,
+        "values": [
+          0.23789891600608826,
+          0.23394529521465302
+        ]
+      },
+      "wrong_band": {
+        "mean": 0.3745056837797165,
+        "std": 0.033246979117393494,
+        "values": [
+          0.341258704662323,
+          0.40775266289711
+        ]
+      },
+      "margin_mean": 0.020579203963279724,
+      "relative_percent": 8.72288076186749,
+      "wins": 2
+    }
+  ]
+}

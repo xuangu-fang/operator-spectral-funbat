@@ -182,7 +182,7 @@ def normalize_spectrum_cosine(spectrum: torch.Tensor, eps: float = 1e-12) -> tor
 
 def operator_joint_spectrum(
     operator: Literal["diffusion", "wave", "advection", "reaction_diffusion",
-                      "banded_pattern"],
+                      "banded_pattern", "narrowband_diffusion"],
     frequencies: torch.Tensor,
     *,
     source_scale: float = 0.12,
@@ -199,6 +199,8 @@ def operator_joint_spectrum(
     band_wavenumber: float = 2.0,
     band_stiffness: float = 1.0,
     band_offset: float = 0.2,
+    forcing_band_centre: float = 5.0,
+    forcing_band_width: float = 1.2,
 ) -> torch.Tensor:
     """Construct ``|L_hat|^-2 S_w`` on a three-dimensional frequency grid.
 
@@ -216,7 +218,7 @@ def operator_joint_spectrum(
         *advection_diffusivity, advection_reaction,
         *wave_coefficients, *wave_damping,
         *reaction_diffusivity, reaction_damping,
-        band_stiffness, band_offset,
+        band_stiffness, band_offset, forcing_band_width,
     )
     if any(value <= 0 for value in positive_parameters):
         raise ValueError("source, reaction and diffusivity parameters must be positive")
@@ -231,6 +233,20 @@ def operator_joint_spectrum(
         gamma0, gamma1 = wave_damping
         dispersion = cx * (wx.square() + cy * wy.square()) - wt.square()
         response_sq = dispersion.square() + (gamma0 + gamma1 * wt.abs()).square()
+    elif operator == "narrowband_diffusion":
+        # A dissipative operator driven by temporally narrowband noise.  The
+        # response is band-pass along time and low-pass along space, and --
+        # unlike a wave -- the temporal band does not move with the spatial
+        # mode, so the joint spectrum is close to axis-separable.  This is the
+        # one structure a generic monotone kernel cannot follow while the
+        # separable approximation the method needs still holds.
+        dx, dy = reaction_diffusivity
+        response_sq = (wt.square()
+                       + (reaction + dx * wx.square() + dy * wy.square()).square())
+        source = (torch.exp(-0.5 * ((wt - forcing_band_centre) / forcing_band_width).square())
+                  * torch.exp(-source_scale * (wx.square() + wy.square())))
+        spectrum = source / response_sq.clamp_min(1e-8)
+        return spectrum / spectrum.sum().clamp_min(1e-12)
     elif operator == "banded_pattern":
         # Linear Swift-Hohenberg symbol: |L|^2 = wt^2 + (a + b(|k|^2 - k0^2)^2)^2.
         # Even in every axis, so the real cosine representation is exact, but

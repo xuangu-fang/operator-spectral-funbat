@@ -1,0 +1,367 @@
+{
+  "metadata": {
+    "pde": "d_t u + (-d/dx(a(x) d/dx) + kappa) u = 0",
+    "boundary_condition": "homogeneous Neumann (zero flux)",
+    "tensor_semantics": "time x receiver x source (Green response)",
+    "log_diffusivity_contrast": 1.0,
+    "diffusivity_min": 0.26545377180328367,
+    "diffusivity_max": 3.349431452177879,
+    "reaction": 0.15,
+    "truth_modes": 14,
+    "learner_modes": 8,
+    "learner_knows": "the equation form and the zero-flux boundary; not a(x), so both eigenvectors and decay rates are wrong"
+  },
+  "oracle_projection_residual_note": "the learner's reference basis cannot represent the true field exactly; that irreducible floor is reported in the data module",
+  "config": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ratios": [
+      0.02,
+      0.05,
+      0.1
+    ],
+    "masks": [
+      "random",
+      "source_fibers"
+    ],
+    "contrast": 1.0,
+    "learner_modes": 8,
+    "ranks": [
+      4,
+      5,
+      5
+    ],
+    "steps": 1200,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "wrong_contrast": 2.2,
+    "device": "cuda",
+    "tag": "green_main",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/green_response"
+  },
+  "records": [
+    {
+      "mask": "random",
+      "ratio": 0.02,
+      "observed": 207,
+      "ours_operator_basis_and_spectrum": {
+        "mean": 0.27006384134292605,
+        "std": 0.032721293892949345,
+        "values": [
+          0.25098538398742676,
+          0.28827139735221863,
+          0.30615633726119995,
+          0.21547356247901917,
+          0.2894325256347656
+        ],
+        "wins_against_ours": 0
+      },
+      "operator_basis_flat_spectrum": {
+        "mean": 0.3456761300563812,
+        "std": 0.05218835336074465,
+        "values": [
+          0.2518641948699951,
+          0.3262939155101776,
+          0.3833156228065491,
+          0.3926943242549896,
+          0.3742125928401947
+        ],
+        "wins_against_ours": 0
+      },
+      "generic_basis_and_dictionary": {
+        "mean": 0.3773896276950836,
+        "std": 0.009460836211558413,
+        "values": [
+          0.37033891677856445,
+          0.37033265829086304,
+          0.37520831823349,
+          0.39579570293426514,
+          0.3752725422382355
+        ],
+        "wins_against_ours": 0
+      },
+      "wrong_medium_operator": {
+        "mean": 0.2925536036491394,
+        "std": 0.035822018389411917,
+        "values": [
+          0.2727651596069336,
+          0.26759612560272217,
+          0.3547152578830719,
+          0.25752177834510803,
+          0.31016969680786133
+        ],
+        "wins_against_ours": 1
+      }
+    },
+    {
+      "mask": "random",
+      "ratio": 0.05,
+      "observed": 518,
+      "ours_operator_basis_and_spectrum": {
+        "mean": 0.21248965859413146,
+        "std": 0.03084209442838422,
+        "values": [
+          0.18189451098442078,
+          0.2402428835630417,
+          0.2411196231842041,
+          0.16879236698150635,
+          0.23039890825748444
+        ],
+        "wins_against_ours": 0
+      },
+      "operator_basis_flat_spectrum": {
+        "mean": 0.272679877281189,
+        "std": 0.08912648597062528,
+        "values": [
+          0.19240738451480865,
+          0.37527862191200256,
+          0.38516688346862793,
+          0.18283618986606598,
+          0.2277103066444397
+        ],
+        "wins_against_ours": 1
+      },
+      "generic_basis_and_dictionary": {
+        "mean": 0.3299967050552368,
+        "std": 0.07935477212271354,
+        "values": [
+          0.3712558448314667,
+          0.3696191608905792,
+          0.3683573007583618,
+          0.17129796743392944,
+          0.3694532513618469
+        ],
+        "wins_against_ours": 0
+      },
+      "wrong_medium_operator": {
+        "mean": 0.2602940261363983,
+        "std": 0.02729218861139599,
+        "values": [
+          0.2312535047531128,
+          0.29444289207458496,
+          0.2910059094429016,
+          0.23431989550590515,
+          0.25044792890548706
+        ],
+        "wins_against_ours": 0
+      }
+    },
+    {
+      "mask": "random",
+      "ratio": 0.1,
+      "observed": 1037,
+      "ours_operator_basis_and_spectrum": {
+        "mean": 0.16815612018108367,
+        "std": 0.019025794959472434,
+        "values": [
+          0.1614123433828354,
+          0.1567428708076477,
+          0.20606377720832825,
+          0.1593126505613327,
+          0.15724895894527435
+        ],
+        "wins_against_ours": 0
+      },
+      "operator_basis_flat_spectrum": {
+        "mean": 0.16511095464229583,
+        "std": 0.02086766214023834,
+        "values": [
+          0.17651516199111938,
+          0.170107901096344,
+          0.19365207850933075,
+          0.15258394181728363,
+          0.13269568979740143
+        ],
+        "wins_against_ours": 3
+      },
+      "generic_basis_and_dictionary": {
+        "mean": 0.33641304075717926,
+        "std": 0.060643067877553955,
+        "values": [
+          0.366914302110672,
+          0.37182173132896423,
+          0.3640005886554718,
+          0.21526052057743073,
+          0.36406806111335754
+        ],
+        "wins_against_ours": 0
+      },
+      "wrong_medium_operator": {
+        "mean": 0.2249723881483078,
+        "std": 0.026370799284745068,
+        "values": [
+          0.2474353015422821,
+          0.23041705787181854,
+          0.23406323790550232,
+          0.17348997294902802,
+          0.23945637047290802
+        ],
+        "wins_against_ours": 0
+      }
+    },
+    {
+      "mask": "source_fibers",
+      "ratio": 0.02,
+      "observed": null,
+      "ours_operator_basis_and_spectrum": {
+        "mean": 0.9055452942848206,
+        "std": 0.032677975100622265,
+        "values": [
+          0.8941196799278259,
+          0.8794496059417725,
+          0.8886001110076904,
+          0.8956484794616699,
+          0.969908595085144
+        ],
+        "wins_against_ours": 0
+      },
+      "operator_basis_flat_spectrum": {
+        "mean": 0.9492040157318116,
+        "std": 0.014690314083425941,
+        "values": [
+          0.9315437078475952,
+          0.9418050646781921,
+          0.9464873671531677,
+          0.9504573941230774,
+          0.9757265448570251
+        ],
+        "wins_against_ours": 0
+      },
+      "generic_basis_and_dictionary": {
+        "mean": 0.9275232791900635,
+        "std": 0.05141238693278106,
+        "values": [
+          0.8870502710342407,
+          0.9024294018745422,
+          0.9086238145828247,
+          0.9104946255683899,
+          1.0290182828903198
+        ],
+        "wins_against_ours": 1
+      },
+      "wrong_medium_operator": {
+        "mean": 0.8623940348625183,
+        "std": 0.056412443855641745,
+        "values": [
+          0.8335450887680054,
+          0.8271617889404297,
+          0.8330269455909729,
+          0.8435074687004089,
+          0.9747288823127747
+        ],
+        "wins_against_ours": 4
+      }
+    },
+    {
+      "mask": "source_fibers",
+      "ratio": 0.05,
+      "observed": null,
+      "ours_operator_basis_and_spectrum": {
+        "mean": 0.9055452942848206,
+        "std": 0.032677975100622265,
+        "values": [
+          0.8941196799278259,
+          0.8794496059417725,
+          0.8886001110076904,
+          0.8956484794616699,
+          0.969908595085144
+        ],
+        "wins_against_ours": 0
+      },
+      "operator_basis_flat_spectrum": {
+        "mean": 0.9492040157318116,
+        "std": 0.014690314083425941,
+        "values": [
+          0.9315437078475952,
+          0.9418050646781921,
+          0.9464873671531677,
+          0.9504573941230774,
+          0.9757265448570251
+        ],
+        "wins_against_ours": 0
+      },
+      "generic_basis_and_dictionary": {
+        "mean": 0.9275232791900635,
+        "std": 0.05141238693278106,
+        "values": [
+          0.8870502710342407,
+          0.9024294018745422,
+          0.9086238145828247,
+          0.9104946255683899,
+          1.0290182828903198
+        ],
+        "wins_against_ours": 1
+      },
+      "wrong_medium_operator": {
+        "mean": 0.8623940348625183,
+        "std": 0.056412443855641745,
+        "values": [
+          0.8335450887680054,
+          0.8271617889404297,
+          0.8330269455909729,
+          0.8435074687004089,
+          0.9747288823127747
+        ],
+        "wins_against_ours": 4
+      }
+    },
+    {
+      "mask": "source_fibers",
+      "ratio": 0.1,
+      "observed": null,
+      "ours_operator_basis_and_spectrum": {
+        "mean": 0.7526919484138489,
+        "std": 0.05046775476298177,
+        "values": [
+          0.7601982355117798,
+          0.6901113390922546,
+          0.7051799893379211,
+          0.7790558338165283,
+          0.8289143443107605
+        ],
+        "wins_against_ours": 0
+      },
+      "operator_basis_flat_spectrum": {
+        "mean": 0.8832279682159424,
+        "std": 0.021934872453976764,
+        "values": [
+          0.8951126933097839,
+          0.847916305065155,
+          0.8681469559669495,
+          0.8975491523742676,
+          0.9074147343635559
+        ],
+        "wins_against_ours": 0
+      },
+      "generic_basis_and_dictionary": {
+        "mean": 0.5542106091976166,
+        "std": 0.14647699168723083,
+        "values": [
+          0.4957685172557831,
+          0.4557548761367798,
+          0.46673667430877686,
+          0.5080841779708862,
+          0.8447088003158569
+        ],
+        "wins_against_ours": 4
+      },
+      "wrong_medium_operator": {
+        "mean": 0.615862500667572,
+        "std": 0.13381731176481662,
+        "values": [
+          0.5091142058372498,
+          0.4908587336540222,
+          0.5228577852249146,
+          0.7544620633125305,
+          0.8020197153091431
+        ],
+        "wins_against_ours": 5
+      }
+    }
+  ]
+}

@@ -38,8 +38,16 @@ def nrmse(prediction, truth):
                  / truth.std().clamp_min(1e-8))
 
 
-def make_task(field, ratio, seed, noise_std, device, mask="random"):
-    """Random entries, or whole missing source fibres."""
+def make_task(field, ratio, seed, noise_std, device, mask="random", sources_kept=None):
+    """Random entries, or whole missing source fibres.
+
+    For the fibre mask, `sources_kept` is the number of sources actually fired
+    and is the meaningful quantity in this modality; passing a `ratio` instead
+    quantises badly (24 sources make 2% and 5% both round to a single source,
+    which silently produced identical results for two different labels).  The
+    realised observation fraction is not the requested ratio and callers should
+    report it from `len(observed)`.
+    """
     field = field.to(device)
     nt, nr, ns = field.shape
     grid = torch.stack(torch.meshgrid(
@@ -51,7 +59,9 @@ def make_task(field, ratio, seed, noise_std, device, mask="random"):
         observed, test = grid[order[:count]], grid[order[count:]]
     elif mask == "source_fibers":
         # Keep a subset of sources; within them keep all times and receivers.
-        keep = max(1, round(ratio * ns))
+        keep = int(sources_kept) if sources_kept is not None else max(1, round(ratio * ns))
+        if not 1 <= keep < ns:
+            raise ValueError(f"sources_kept must lie in [1, {ns - 1}]")
         chosen = torch.randperm(ns, generator=generator, device=device)[:keep]
         is_kept = torch.zeros(ns, dtype=torch.bool, device=device)
         is_kept[chosen] = True
