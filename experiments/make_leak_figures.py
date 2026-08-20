@@ -13,10 +13,18 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results" / "leak"
-METHODS = [("ours_pde", "PDE-form kernels (ours)", "tab:blue"),
-           ("matern", "Matern", "tab:orange"),
+METHODS = [("ours_pde", "PDE-form kernels (ours), no tuning", "tab:blue"),
+           ("matern_deployable", "Matern, tuned on sensor readings", "tab:orange"),
            ("spectral_mixture", "spectral mixture", "tab:green"),
            ("neural_tucker", "neural functional Tucker", "tab:red")]
+# The oracle tier is drawn separately: it is not a method anyone can run, so it
+# belongs as a reference line rather than as a fifth bar competing with the rest.
+ORACLE = ("matern_oracle", "Matern tuned on the answer (not deployable)", "black")
+
+
+def series(record, key):
+    """Tolerate summaries written before the arm existed."""
+    return record.get(key)
 
 
 def load(name):
@@ -73,19 +81,37 @@ def figure_layouts(tag: str = "leak_round2_summary.json", seeds: int | None = No
 
     bars = figure.add_subplot(grid[1, :])
     for index, (key, label, colour) in enumerate(METHODS):
+        if series(records[0], key) is None:
+            continue
         means = [r[key]["mean"] for r in records]
         errors = [r[key]["std"] / np.sqrt(len(r[key]["values"])) for r in records]
         bars.bar(positions + index * width, means, width, yerr=errors, capsize=2,
                  label=label, color=colour)
+    if series(records[0], ORACLE[0]) is not None:
+        for index, record in enumerate(records):
+            bars.hlines(record[ORACLE[0]]["mean"], index - 0.15, index + 3 * width + 0.15,
+                        color=ORACLE[1 - 1] if False else "black", lw=1.6, ls="--",
+                        label=ORACLE[1] if not index else None, zorder=4)
     bars.axhline(1.0, color="black", lw=0.9, ls=":")
-    bars.text(len(records) - 0.55, 1.02, "predicting the mean", fontsize=7.5, va="bottom")
+    bars.text(-0.42, 1.01, "predicting the mean", fontsize=7.5, va="bottom", color="0.35")
     bars.set_xticks(positions + width * 1.5)
     bars.set_xticklabels([PRETTY.get(l, l).replace("\n", " ") for l in labels], fontsize=8.5)
+    # The corner bar is the one result that goes above predicting the mean, so it
+    # gets said rather than left for the reader to measure off the axis.
+    for index, record in enumerate(records):
+        if record["ours_pde"]["mean"] > 1.0:
+            bars.annotate("worse than\npredicting the mean",
+                          xy=(index + width * 0.0, record["ours_pde"]["mean"]),
+                          xytext=(index - 1.15, 1.10), fontsize=7.5, color="tab:red",
+                          ha="center",
+                          arrowprops=dict(arrowstyle="->", color="tab:red", lw=1.0))
     bars.set_ylabel("held-out NRMSE")
     bars.set_title(f"Every layout observes the same 1% of the room "
                    f"({count} seeds); only the arrangement differs", fontsize=10)
-    bars.legend(fontsize=7.5, ncol=4, loc="upper left"); bars.grid(axis="y", alpha=0.3)
-    bars.set_ylim(0, 1.25)
+    bars.legend(fontsize=7.5, ncol=3, loc="lower center", bbox_to_anchor=(0.5, -0.42),
+                frameon=False)
+    bars.grid(axis="y", alpha=0.3)
+    bars.set_ylim(0, 1.16)
     figure.savefig(RESULTS / "figure_layouts.png", dpi=160, bbox_inches="tight")
     plt.close(figure)
     print("wrote figure_layouts.png")
@@ -99,6 +125,8 @@ def figure_confinement(tag: str = "confinement_summary.json") -> None:
     fraction = [100 * r["fraction_of_room"] for r in records]
     figure, axes = plt.subplots(1, 2, figsize=(11.0, 4.3))
     for key, label, colour in METHODS:
+        if series(records[0], key) is None:
+            continue
         means = [r[key]["mean"] for r in records]
         errors = [r[key]["std"] / np.sqrt(len(r[key]["values"])) for r in records]
         axes[0].errorbar(fraction, means, yerr=errors, marker="o", capsize=3,
@@ -140,16 +168,39 @@ def figure_tuning(tag: str = "leak_main3tier_summary.json") -> None:
     labels = [PRETTY.get(r["layout"], r["layout"]).replace("\n", " ") for r in records]
     positions = np.arange(len(records))
 
+    # The left panel needs both tiers' choices.  Prefer whichever summary
+    # recorded them; the tunability run always does, the main run does so only
+    # after the field was added.
+    pairs = [r for r in records if r.get("oracle_length_scales")]
+    source = "main"
+    if not pairs:
+        alternative = load("tunability_summary.json")
+        if alternative is not None:
+            pairs = [{"layout": r["layout"],
+                      "chosen_length_scales": r["chosen_length_scales"]["deployable"],
+                      "oracle_length_scales": r["chosen_length_scales"]["oracle"]}
+                     for r in alternative["records"]]
+            source = "tunability"
+
     figure, axes = plt.subplots(1, 2, figsize=(11.5, 4.2))
-    for index, record in enumerate(records):
-        picked = record["chosen_length_scales"]
-        axes[0].scatter([index] * len(picked), picked, s=42, color="tab:orange",
-                        zorder=3, label="validation on sensor readings" if not index else None)
+    if pairs:
+        spots = np.arange(len(pairs))
+        for index, record in enumerate(pairs):
+            jitter = 0.06
+            axes[0].scatter([index - jitter] * len(record["chosen_length_scales"]),
+                            record["chosen_length_scales"], s=46, color="tab:orange",
+                            zorder=3, label="validation on sensor readings" if not index else None)
+            axes[0].scatter([index + jitter] * len(record["oracle_length_scales"]),
+                            record["oracle_length_scales"], s=46, color="black", marker="D",
+                            zorder=3, label="what the answer wanted" if not index else None)
+        axes[0].set_xticks(spots)
+        axes[0].set_xticklabels([PRETTY.get(r["layout"], r["layout"]).replace("\n", " ")
+                                 for r in pairs], fontsize=8, rotation=12)
+        axes[0].set_xlim(-0.6, len(pairs) - 0.4)
     axes[0].set_yscale("log")
-    axes[0].set_xticks(positions); axes[0].set_xticklabels(labels, fontsize=8, rotation=12)
     axes[0].set_ylabel("length scale chosen")
-    axes[0].set_title("What a practitioner's validation split picks")
-    axes[0].grid(axis="y", alpha=0.3); axes[0].legend(fontsize=8)
+    axes[0].set_title("What validation picks, against what works")
+    axes[0].grid(axis="y", alpha=0.3); axes[0].legend(fontsize=8, loc="best")
 
     costs = [r["tuning_cost"] for r in records]
     colours = ["tab:red" if c > 0.05 else "tab:grey" for c in costs]

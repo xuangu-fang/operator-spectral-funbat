@@ -200,8 +200,10 @@ def main() -> None:
             # length scales on those.  With sensors confined, every point it can
             # hold out sits inside the same patch, so it scores interpolation
             # while deployment asks for extrapolation.
-            rows.setdefault("matern_oracle", []).append(min(
-                gp(matern_spectra(BINS, ls)) for ls in LENGTH_SCALES))
+            oracle = {ls: gp(matern_spectra(BINS, ls)) for ls in LENGTH_SCALES}
+            oracle_best = min(oracle, key=oracle.get)
+            rows.setdefault("matern_oracle", []).append(oracle[oracle_best])
+            rows.setdefault("_oracle_length_scale", []).append(oracle_best)
 
             split = torch.randperm(len(observed), generator=torch.Generator(
                 device=device).manual_seed(seed + 4242), device=device)
@@ -220,7 +222,8 @@ def main() -> None:
                 shape, observed, targets, test, truth, ranks=RANKS,
                 steps=args.neural_steps, seed=seed, device=device))
         cell = {"layout": layout, "observed": budget,
-                "chosen_length_scales": rows.pop("_chosen_length_scale")}
+                "chosen_length_scales": rows.pop("_chosen_length_scale"),
+                "oracle_length_scales": rows.pop("_oracle_length_scale")}
         for name, values in rows.items():
             values = np.array(values)
             cell[name] = {"mean": float(values.mean()), "std": float(values.std()),
