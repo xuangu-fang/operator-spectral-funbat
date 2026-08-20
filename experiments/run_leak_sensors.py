@@ -192,28 +192,58 @@ def main() -> None:
                               steps=args.steps, seed=seed, device=device, lr=args.lr)
 
             rows.setdefault("ours_pde", []).append(gp(ours))
-            rows.setdefault("matern", []).append(min(
+
+            # Two Matern tiers, differing only in what data chose the length
+            # scale.  The oracle tier minimises the true held-out error, which
+            # no practitioner can do.  The deployable tier does what one
+            # actually can: hold out a quarter of the sensor readings and score
+            # length scales on those.  With sensors confined, every point it can
+            # hold out sits inside the same patch, so it scores interpolation
+            # while deployment asks for extrapolation.
+            rows.setdefault("matern_oracle", []).append(min(
                 gp(matern_spectra(BINS, ls)) for ls in LENGTH_SCALES))
+
+            split = torch.randperm(len(observed), generator=torch.Generator(
+                device=device).manual_seed(seed + 4242), device=device)
+            cut = int(len(observed) * 0.75)
+            inner, held = split[:cut], split[cut:]
+            validation = {ls: fit_gp(field, observed[inner], targets[inner],
+                                     observed[held], targets[held],
+                                     matern_spectra(BINS, ls), bases, steps=args.steps,
+                                     seed=seed, device=device, lr=args.lr)
+                          for ls in LENGTH_SCALES}
+            chosen = min(validation, key=validation.get)
+            rows.setdefault("matern_deployable", []).append(gp(matern_spectra(BINS, chosen)))
+            rows.setdefault("_chosen_length_scale", []).append(chosen)
             rows.setdefault("spectral_mixture", []).append(gp(dictionary))
             rows.setdefault("neural_tucker", []).append(fit_neural_tucker(
                 shape, observed, targets, test, truth, ranks=RANKS,
                 steps=args.neural_steps, seed=seed, device=device))
-        cell = {"layout": layout, "observed": budget}
+        cell = {"layout": layout, "observed": budget,
+                "chosen_length_scales": rows.pop("_chosen_length_scale")}
         for name, values in rows.items():
             values = np.array(values)
             cell[name] = {"mean": float(values.mean()), "std": float(values.std()),
                           "values": values.tolist()}
-        best_other = min(cell[k]["mean"] for k in
-                         ("matern", "spectral_mixture", "neural_tucker"))
-        cell["margin_vs_best_baseline"] = best_other - cell["ours_pde"]["mean"]
-        cell["relative_percent"] = 100 * cell["margin_vs_best_baseline"] / best_other
+        deployable = min(cell[k]["mean"] for k in
+                         ("matern_deployable", "spectral_mixture", "neural_tucker"))
+        cell["margin_vs_best_deployable"] = deployable - cell["ours_pde"]["mean"]
+        cell["relative_percent"] = 100 * cell["margin_vs_best_deployable"] / deployable
+        # What it costs to have to choose the length scale from sensor data.
+        cell["tuning_cost"] = (cell["matern_deployable"]["mean"]
+                               - cell["matern_oracle"]["mean"])
+        cell["gap_to_oracle"] = cell["matern_oracle"]["mean"] - cell["ours_pde"]["mean"]
         records.append(cell)
         print(f"  {layout:16s} ours {cell['ours_pde']['mean']:.4f}  "
-              f"matern {cell['matern']['mean']:.4f}  "
+              f"matern[deployable] {cell['matern_deployable']['mean']:.4f}  "
+              f"matern[oracle] {cell['matern_oracle']['mean']:.4f}  "
               f"mixture {cell['spectral_mixture']['mean']:.4f}  "
-              f"neural {cell['neural_tucker']['mean']:.4f}  "
-              f"margin {cell['margin_vs_best_baseline']:+.4f} "
-              f"({cell['relative_percent']:+.1f}%)", flush=True)
+              f"neural {cell['neural_tucker']['mean']:.4f}", flush=True)
+        print(f"  {'':16s} validation picked {cell['chosen_length_scales']}   "
+              f"tuning cost {cell['tuning_cost']:+.4f}   "
+              f"ours vs best deployable {cell['margin_vs_best_deployable']:+.4f} "
+              f"({cell['relative_percent']:+.1f}%)   "
+              f"ours vs oracle {cell['gap_to_oracle']:+.4f}", flush=True)
 
     (args.output / f"{args.tag}_summary.json").write_text(json.dumps(
         {"field": FIELD, "nominal_prior": NOMINAL, "bins": BINS, "ranks": RANKS,
