@@ -1,21 +1,61 @@
-\section{Fairness control: collapsed vs.\ expanded mixtures}
+\section{Baseline fairness: auditing the grids, and what the audit found}
 \label{app:fairness}
 
+Every comparison in this paper rests on baselines that were given their best
+chance.  Two mechanisms are involved, and one of them failed at first.
+
+\subsection{Parameter budget}
 The earlier parameterisation gave every atom its own coefficient vector,
-$f_{dr}(x) = \sum_q \sqrt{\route_{drq}}\,\phi_{dq}(x)^\top a_{drq}$, which is correct as a
-prior covariance but gives an $8$-atom bank twice the variational coefficients of a $4$-atom
-bank --- so method comparisons absorb a parameter-budget difference.
+$f_{dr}(x) = \sum_q \sqrt{\route_{drq}}\, \phi_{dq}(x)^\top a_{drq}$, which is a
+correct prior covariance but gives an $8$-atom bank twice the variational
+coefficients of a $4$-atom bank -- so a method comparison would absorb a
+parameter-budget difference.  The collapsed form mixes the spectra first and then
+uses a single coefficient vector, \Cref{eq:collapsed}.  Because all atoms share
+the same discrete support the two prior covariances are identical and collapsing
+merely removes duplicated features; the variational coefficient count is
+$2DR(1 + 2K)$, independent of bank size.  Every table in this paper uses the
+collapsed form for all arms.
 
-The canonical collapsed form first mixes the spectra and then uses a single coefficient
-vector, \Cref{eq:collapsed}.  Since all atoms share the same discrete Fourier support the two
-prior covariances are identical; collapsing merely removes duplicated features.  The
-variational coefficient count is $2DR(1+2K)$, \emph{independent of bank size}.
+\subsection{Hyper-parameter grids, and a retraction}
+The Mat\'ern arm selects its length scale by minimising error, which is a
+safeguard only if the grid contains the optimum.  Ours did not.  The original
+grid was $(0.12, 0.32, 0.8)$, chosen when the experiments used random masks,
+where it is more than adequate.  Under a one-wall layout the baseline's optimum
+lies far outside it.
 
-\begin{quote}
-This is what makes the knowledge-ladder experiment possible at all: a K1 bank is $M$ times
-larger than a K2 bank, so without collapsing, the level comparison would be entirely
-confounded by parameter budget.
-\end{quote}
+\begin{table}[h]
+  \centering
+  \caption{Oracle Mat\'ern at one wall, $1\%$ observed, three seeds, swept over a
+  wide grid.  The original grid's best attainable value was $0.6570$; the true
+  optimum is $0.5449$ at $\ell = 2.4$, an interior point of the wide grid.}
+  \label{tab:grid-audit}
+  \small
+  \begin{tabular}{lccccccccc}
+    \toprule
+    $\ell$ & $0.8$ & $1.6$ & $\mathbf{2.4}$ & $3.5$ & $5.0$ & $8.0$ & $14$ & $25$ & $50$ \\
+    \midrule
+    NRMSE & 0.6570 & 0.5530 & \textbf{0.5449} & 0.5667 & 0.5884 & 0.6114 & 0.6353 & 0.7087 & 1.2077 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-\todo{state the expanded-vs-collapsed numbers in a separate table; they must never be merged
-with the collapsed main table}
+An earlier draft of this paper reported a $+17.2\%$ margin over the Mat\'ern arm
+at one wall.  That margin was the distance between our arm and a baseline
+searching too narrow a grid, and it does not survive the correction: against the
+properly bracketed optimum the two arms are level.  We report this rather than
+quietly rerunning, because the failure mode is worth naming.  Tuning a baseline
+\emph{up} until a comparison looks good is an intervention a reader can see in
+the method section.  Tuning it too \emph{little} produces a number that looks
+like a measurement, and nothing in the experiment flags it.  The safeguard is
+cheap: sweep wide enough that the chosen value is interior, and report that it
+is.  All grids in this paper are now audited that way, and the main table's
+grid $(0.12, 0.32, 0.8, 1.6, 2.4, 3.5)$ brackets its optimum on every layout.
+
+\subsection{Two tiers, because the oracle is not available}
+The audited oracle tier is reported throughout but marked $\star$: it selects
+against the true held-out region, which no practitioner can do.  Alongside it we
+report a deployable tier that selects on a random quarter of the sensor readings
+over the same grid, with the same host, ranks, optimiser and step budget.  The
+gap between the two tiers is the paper's main quantity, and it is a property of
+the sensor geometry rather than of any method: it is $+0.0003$ under random masks
+and $+0.2697$ at a single wall.

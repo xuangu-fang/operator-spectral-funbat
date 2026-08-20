@@ -1,10 +1,52 @@
-\section{Related Work}
+\section{Related work}
 \label{sec:related}
 
-\todo{port from docs/PAPER\_TECHNICAL\_REPORT\_ZH.md \S4 --- keep the ``what is different'' column explicit}
+\paragraph{Functional tensor decomposition.}
+FunBaT~\citep{funbat2024} replaces the discrete factor tables of a Tucker model
+with GP-distributed latent functions, so unobserved coordinates are interpolated
+rather than looked up, and performs inference by message passing on an
+equivalent state-space form.  RR-FBTC~\citep{rrfbtc2025} extends functional
+Bayesian tensor completion with automatic rank determination.  Both use
+\emph{generic} per-mode kernels; neither derives the kernels from the operator
+that generated the field, which is the only thing this paper changes.  We hold
+the host model, ranks, feature budget and optimiser fixed and vary only where
+the spectra come from, so the comparison is against those methods' kernels
+rather than against those methods.
 
-\paragraph{Functional Bayesian tensor decomposition.} \citep{funbat2024,rrfbtc2025}
+\paragraph{GP priors that encode a PDE.}
+EPGP~\citep{epgp2023} constructs a GP whose samples satisfy a constant-coefficient
+linear PDE exactly, via the Ehrenpreis--Palamodov representation.  Tensor
+GPs~\citep{tensorgp2025} solve nonlinear PDEs by collocation with
+one-dimensional GP factors and a tensor decomposition.  Both require the equation
+to be known completely, coefficients included, and both aim at solving rather
+than at completing noisy sparse observations.  We ask for less and deliver less:
+only the \emph{form} of the operator, and only an approximation to the
+second-order spectrum of its solutions, which is what allows the coefficients to
+be wrong by $50\%$ throughout our experiments.
 
-\paragraph{GP priors that encode PDEs.} \citep{epgp2023,tensorgp2025}
+\paragraph{Learning expressive stationary kernels.}
+Spectral mixture kernels~\citep{spectralmixture2013} parameterise the spectral density
+directly and are dense in the class of stationary kernels, so no fixed
+construction can beat them on expressiveness -- only on sample efficiency, and
+only where data is too scarce to identify the parameters.  We therefore include a
+matched spectral-mixture dictionary as a baseline rather than claiming novelty
+for using a spectral representation.  Our atoms are a nonnegative low-rank
+projection of an operator family's joint spectrum, which is a physically
+reachable set rather than a freely parameterised one.
 
-\paragraph{Learned stationary kernels.} \citep{spectralmixture2013}
+\paragraph{Sensor placement and observability.}
+Optimal sensor placement asks where to put sensors to make a field observable.
+We ask the complementary question, which is what the applications force: the
+placement is fixed and bad, and the question is what prior makes the resulting
+extrapolation possible.  The closest point of contact is that our feasibility
+screen is an observability test -- we reject fields whose boundary carries a
+disproportionately small share of the energy, because no prior recovers what the
+sensors never see.
+
+\paragraph{What is not claimed.}
+Neither ``GP plus tensor'' nor ``PDE-informed GP'' is new, and the title and
+abstract do not claim them.  The narrow claim is the construction -- a
+nonnegative, PSD-preserving low-rank projection of a non-separable joint
+operator spectrum into per-mode kernels, usable when only the equation's form is
+known -- together with the empirical finding about when that matters, which is
+when the sensor geometry makes hyper-parameter selection impossible.

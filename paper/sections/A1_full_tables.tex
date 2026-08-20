@@ -1,6 +1,90 @@
 \section{Full numerical tables}
 \label{app:tables}
 
-\todo{port Appendix A of docs/PAPER\_TECHNICAL\_REPORT\_ZH.md: per-case tables of NRMSE,
-induced-spectrum cosine, relative $L_2$, 95\% coverage and predictive NLL, plus the
-paired-win summary.}
+Per-seed held-out NRMSE behind \Cref{tab:layouts}.  All arms share the field, mask and noise within a seed, so every comparison is paired.
+
+\begin{table}[h]
+  \centering
+  \caption{anywhere in the room, $1\%$ observed, 2621 points.  Validation chose $\ell = [0.12, 0.8, 0.8, 0.12, 0.32]$; the held-out region wanted $\ell = n/a$.}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    & seed 0 & seed 1 & seed 2 & seed 3 & seed 4 & mean \\
+    \midrule
+    ours & 0.0564 & 0.0539 & 0.0539 & 0.0545 & 0.0579 & 0.0553 \\
+    Mat\'ern deployable & 0.0537 & 0.0531 & 0.0524 & 0.0553 & 0.0550 & 0.0539 \\
+    Mat\'ern oracle$^\star$ & 0.0537 & 0.0531 & 0.0524 & 0.0539 & 0.0550 & 0.0536 \\
+    spectral mixture & 0.0541 & 0.0534 & 0.0524 & 0.0536 & 0.0551 & 0.0537 \\
+    neural CP & 0.0775 & 0.0797 & 0.0842 & 0.0774 & 0.0662 & 0.0770 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{all four walls, $1\%$ observed, 2621 points.  Validation chose $\ell = [0.8, 0.32, 0.8, 0.32, 1.6]$; the held-out region wanted $\ell = n/a$.}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    & seed 0 & seed 1 & seed 2 & seed 3 & seed 4 & mean \\
+    \midrule
+    ours & 0.4382 & 0.4985 & 0.4930 & 0.4824 & 0.4712 & 0.4767 \\
+    Mat\'ern deployable & 0.4495 & 0.5309 & 0.5208 & 0.5493 & 0.4554 & 0.5012 \\
+    Mat\'ern oracle$^\star$ & 0.4297 & 0.4480 & 0.4679 & 0.4547 & 0.4338 & 0.4468 \\
+    spectral mixture & 0.5246 & 0.5380 & 0.5169 & 0.5235 & 0.5380 & 0.5282 \\
+    neural CP & 0.6006 & 0.5046 & 0.4518 & 0.5204 & 0.4983 & 0.5151 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{band inside the walls, $1\%$ observed, 2621 points.  Validation chose $\ell = [0.12, 0.12, 0.32, 0.8, 0.32]$; the held-out region wanted $\ell = n/a$.}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    & seed 0 & seed 1 & seed 2 & seed 3 & seed 4 & mean \\
+    \midrule
+    ours & 0.2963 & 0.2989 & 0.3242 & 0.3256 & 0.3261 & 0.3142 \\
+    Mat\'ern deployable & 0.4227 & 0.4429 & 0.3962 & 0.3351 & 0.3334 & 0.3861 \\
+    Mat\'ern oracle$^\star$ & 0.2960 & 0.2884 & 0.3118 & 0.3304 & 0.3079 & 0.3069 \\
+    spectral mixture & 0.3126 & 0.2797 & 0.4012 & 0.3395 & 0.3378 & 0.3342 \\
+    neural CP & 0.3457 & 0.3337 & 0.3196 & 0.3426 & 0.3388 & 0.3361 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{one wall only, $1\%$ observed, 2621 points.  Validation chose $\ell = [0.32, 0.8, 0.32, 0.32, 0.12]$; the held-out region wanted $\ell = n/a$.}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    & seed 0 & seed 1 & seed 2 & seed 3 & seed 4 & mean \\
+    \midrule
+    ours & 0.5240 & 0.5427 & 0.5496 & 0.5373 & 0.5445 & 0.5396 \\
+    Mat\'ern deployable & 0.8145 & 0.6719 & 0.8291 & 0.8369 & 0.9123 & 0.8130 \\
+    Mat\'ern oracle$^\star$ & 0.5362 & 0.5492 & 0.5460 & 0.5369 & 0.5481 & 0.5433 \\
+    spectral mixture & 0.7384 & 0.7340 & 0.7047 & 0.7631 & 0.7266 & 0.7334 \\
+    neural CP & 0.9723 & 0.9550 & 0.8597 & 0.8793 & 0.8012 & 0.8935 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{one corner patch, $1\%$ observed, 2621 points.  Validation chose $\ell = [0.8, 0.32, 1.6, 0.32, 0.12]$; the held-out region wanted $\ell = n/a$.}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    & seed 0 & seed 1 & seed 2 & seed 3 & seed 4 & mean \\
+    \midrule
+    ours & 1.0978 & 0.9786 & 1.0274 & 0.9954 & 1.0070 & 1.0212 \\
+    Mat\'ern deployable & 0.9597 & 0.8947 & 1.0638 & 0.9409 & 0.9246 & 0.9568 \\
+    Mat\'ern oracle$^\star$ & 0.9209 & 0.8947 & 0.8850 & 0.9353 & 0.8758 & 0.9023 \\
+    spectral mixture & 0.9531 & 0.9127 & 0.9050 & 0.9493 & 0.8977 & 0.9236 \\
+    neural CP & 0.9597 & 0.8967 & 0.9650 & 0.9365 & 0.9745 & 0.9465 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+

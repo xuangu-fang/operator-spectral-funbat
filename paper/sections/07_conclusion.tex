@@ -7,9 +7,27 @@ construction is three steps, leaves no kernel parameters to learn, and drops int
 an existing model in place of its generic kernels, so it composes with better
 tensor models rather than competing with them.
 
-The advantage is largest where the data is least informative and disappears as
-observations accumulate, which is what a prior should do.  It requires an
-operator that suppresses much of the spectrum -- the same condition that makes
-the field low rank in the first place -- and we give a criterion, measurable
-before training, for deciding in advance whether a given field qualifies, along
-with the cases it rejects.
+What we did not find is a margin over a well-tuned generic kernel.  Given a
+length scale chosen against the held-out region, a plain Mat\'ern matches our
+derived spectra everywhere we measured, and the first version of this work
+claimed otherwise only because its search grid stopped short of the baseline's
+own optimum.
+
+What we did find is that in the setting this work is about, that length scale
+cannot be chosen.  When sensors are confined to a wall or a patch, every point a
+practitioner can hold out lies inside the same region, so validation scores
+interpolation while deployment requires extrapolation, and it selects a kernel
+three to five times too short.  Following that choice costs $0.27$ NRMSE at a
+single instrumented wall, against $0.0003$ when sensors are scattered.  A kernel
+read off the equation needs no such split and lands where the oracle would have.
+
+The two halves are one statement rather than a result and an excuse: \emph{where
+you can validate, you do not need physics; where you need physics, you cannot
+validate}.  It also says where not to use this.  Scattered sensors do not need
+it.  Geometries demanding extrapolation along two axes at once are not merely
+beyond it -- there it is worse than predicting the mean.
+
+The construction is a prior over how a field varies along each axis, obtained
+without fitting.  Whether such a representation transfers to tasks other than
+reconstruction -- generation, or fields it was not fitted to -- is the question
+we would ask next, and this paper does not answer it.

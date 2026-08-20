@@ -1,61 +1,80 @@
 \section{When this does not work}
 \label{sec:limitations}
 
-The method needs the operator to suppress a large part of the spectrum.  That is
-not an extra assumption layered on top of low-rank tensor completion -- it is the
-same condition, seen from the other side.  An operator that suppresses little
-leaves a broad spectrum, and a field with a broad spectrum is not low rank, so
-the host model fails before any kernel is chosen.  Consequently the failures are
-predictable rather than surprising, and we screen for them before committing to a
-dataset.
+Three separate conditions have to hold, and each of them rejected something we
+tried.  We state them as screens because that is how we used them: measured
+before any method was run, on fields we then did not use.
 
-\paragraph{Screening criterion.}
-We fit a fully observed low-rank model at the ranks we intend to use and require
-its relative error to be comfortably below $1$.  Below that threshold, sparse
-completion is infeasible for \emph{any} low-rank method and every arm lands near
-the trivial baseline, so a kernel comparison measures nothing.  We report the
-screen including what it rejected.
+\paragraph{The operator must suppress much of the spectrum.}
+This is not an extra assumption layered on top of low-rank tensor completion --
+it is the same condition seen from the other side.  An operator that suppresses
+little leaves a broad spectrum, a field with a broad spectrum is not low rank,
+and the host model fails before any kernel is chosen.  We fit a fully observed
+low-rank model at the ranks we intend to use and require its relative error to be
+comfortably below $1$.
 
-\paragraph{Rejected: broad-spectrum turbulence.}
-Kolmogorov flow at $\mathrm{Re}=40$ needs $63\%$ of the modes along each spatial
-axis for $95\%$ of the energy, and a fully observed rank-$40$ CP still leaves
-$0.298$ relative error.  \todo{cite table}
+\emph{Rejected: broad-spectrum turbulence.}  Kolmogorov flow at
+$\mathrm{Re} = 40$ needs $63\%$ of the modes along each spatial axis to carry
+$95\%$ of the energy, and a fully observed rank-$40$ CP still leaves $0.298$
+relative error.  \emph{Rejected: pattern-forming reaction-diffusion.}  PDEBench
+2D diffusion-reaction gives the same $63\%$, unchanged by resolution and by
+whether one strides or block-averages, so it is intrinsic rather than an
+aliasing artefact; held-out NRMSE stayed above $1$ for every combination of host
+model, basis, feature budget and observation ratio we tried.
 
-\paragraph{Rejected: pattern-forming reaction-diffusion.}
-PDEBench 2D diffusion-reaction shows the same $63\%$ figure, invariant to
-resolution and to whether one strides or block-averages, so it is intrinsic
-rather than an aliasing artefact.  Held-out NRMSE stayed above $1$ for every
-combination of host model, basis, feature budget and observation ratio.
-
-\paragraph{Rejected, and counter-intuitively so: radially band-pass operators.}
-It is tempting to expect the method to shine where a generic monotone kernel
-cannot follow the spectrum at all.  The opposite happens.  A linear
-Swift-Hohenberg operator has its response minimised on a ring $|k| = k_0$, and a
-ring is maximally non-separable: an axis-separable approximation fills the square
-instead of the ring.  At $1\%$ observed the band-pass operator prior scores
-$0.92$ against $0.74$ for a generic dictionary.  Separability, not
+\paragraph{The spectrum must be approximately separable across axes.}
+It is tempting to expect the construction to shine where a generic monotone
+kernel cannot follow the spectrum at all.  The opposite happens.  A linear
+Swift--Hohenberg operator has its response minimised on a ring $\lvert k \rvert
+= k_0$, and a ring is maximally non-separable: an axis-separable approximation
+fills the square instead of the ring.  At $1\%$ observed the band-pass operator
+prior scores $0.92$ against $0.74$ for a generic dictionary.  Separability, not
 expressiveness, is what the construction requires.
+
+\paragraph{The sensors must be able to see the region of interest.}
+This screen is specific to the confined-layout setting and it rejected two
+designs of our own.  A field driven by independent noise everywhere is not
+determined by its boundary at all -- the interior carries forcing no boundary
+sensor observes -- and every method landed near $0.9$ there, as information alone
+predicts.  A single narrow plume fails for the opposite reason: its signal
+reaches the wall attenuated to nothing.  We measure the boundary's share of the
+field's energy divided by its share of the cells, and require at least $0.5$.
+The rejected plume scores $0.160$ with wall SNR $7.6$; the fields we use score
+$0.986$ and $1.035$ with wall SNR $19$.  An earlier version of this screen
+demanded a ratio of at least $1$, which would have rejected our own main field at
+$0.986$ -- a threshold sitting on the accepted set is not measuring anything, and
+we recalibrated it against the design it was introduced to reject.
+
+\paragraph{Extrapolating along two axes at once is worse than useless.}
+The corner-patch row of \Cref{tab:layouts} is a loss, and a large one: we score
+$1.0212$, worse than predicting the mean and worse than every baseline including
+the deployable ones.  The prior does not degrade gracefully into a weak
+smoothness assumption when the geometry defeats it; it actively hurts.  The
+layouts where it helps are those forcing extrapolation along a single axis, which
+is what a per-mode spectrum is a statement about.
 
 \paragraph{Other limitations.}
 \begin{enumerate}
+  \item \textbf{We do not beat a well-tuned kernel; we match it.}  The claim in
+        this paper is that the tuning is unavailable, not that the tuned answer
+        is beatable.  Wherever a practitioner \emph{can} validate -- scattered
+        sensors, or any layout where held-out data resembles the target region --
+        this construction has nothing to offer, and \Cref{tab:layouts} shows it
+        losing slightly there.
   \item The evidence is on fields from a linear forced PDE.  Nonlinear and
         variable-coefficient operators are only approximated by a linearised
         constant-coefficient form, and we do not measure how far that degrades.
-  \item \textbf{The posterior predictive is badly under-covered in the sparse
-        regime.}  At $1\%$ observed a nominal $95\%$ interval covers $83.7\%$
-        with our prior and $77.5\%$ with the generic one, reaching $91\%$ only by
-        $5\%$ observed.  The derived prior is consistently the better calibrated
+  \item \textbf{The posterior predictive is under-covered in the sparse regime.}
+        At $1\%$ observed a nominal $95\%$ interval covers $83.7\%$ with our
+        prior and $77.5\%$ with the generic one.  Ours is the better calibrated
         of the two and its advantage again concentrates where data is scarce, but
         it does not fix the under-coverage, which belongs to the host model.  Our
-        intervals are also wider ($1.14$ versus $1.00$ at $1\%$), so part of that
+        intervals are also wider ($1.14$ versus $1.00$), so part of that
         advantage is honesty about uncertainty rather than accuracy.  We claim a
         better prior for point prediction, not better uncertainty quantification.
   \item Uncertainty is a mean-field variational posterior over a finite feature
-        basis, not an exact GP posterior, and the NLL carries 64-sample
+        basis, not an exact GP posterior, and the NLL carries $64$-sample
         Monte-Carlo error.
-  \item The tensor is on a regular grid with a uniform random mask; structured
-        sensor layouts and irregular domains are untested.
-  \item The margin shrinks with observation count and is small by $5\%$ observed,
-        so the method is aimed at the sparse regime and should not be sold
-        outside it.
+  \item The domain is a regular grid with axis-aligned sensor regions.  Irregular
+        domains, curved boundaries and moving sensors are untested.
 \end{enumerate}
