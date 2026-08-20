@@ -1,28 +1,110 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Setup}
-Ground truth comes from an independent finite-difference integration of a
-stochastically forced linear PDE run to statistical steady state, so the field
-carries the operator's true, fully non-separable joint spectrum while the method
-sees only the marginals of a nominal-coefficient version of it.  Nothing is
-sampled from the model's own prior.  The tensor is $[t,x,y]$ at $32^3$; all three
-modes are PDE coordinates, so every kernel comes from the equation and no mode
-needs a fallback.  We observe $1\%$, $2\%$ or $5\%$ of entries uniformly at
-random and reconstruct the rest.
+\subsection{The setting: sensors you cannot place freely}
+A room contains several gas leaks.  The field obeys
+$\partial_t u = D_x \partial_{xx} u + D_y \partial_{yy} u - r u$ with zero flux at
+the walls, and away from the leaks it is source-free, so the interior is
+genuinely constrained by what happens at the boundary.  We record it as a
+$[t,x,y]$ tensor at $64 \times 64$ in space and $64$ steps in time.
 
-\paragraph{Feasibility is checked before comparing anything.}
-A fully observed Tucker fit at the ranks used reaches $0.17$--$0.21$ relative
-error.  This ceiling is shared by every arm; where it is not comfortably below
-$1$, no kernel can matter, and we use it as the criterion that rejected two
-datasets (\Cref{sec:limitations}).
+What we vary is the one thing a practitioner does not get to choose: \emph{where
+the sensors are}.  Instruments attach to walls, to a strip along one wall, to a
+band set slightly in from the wall, or to a single instrumented patch.  Every
+layout observes the same $1\%$ of entries; only their arrangement differs.  This
+turns reconstruction from interpolation between neighbours into extrapolation
+into a region no sensor ever sees, and that is the regime in which a smoothness
+prior has nothing left to say.
 
-\subsection{Main result}
+\paragraph{What the method is told.}  The equation's \emph{form} and nominal
+coefficients that are deliberately not the generating ones: the field is run at
+$D = (0.02, 0.006)$, $r = 0.04$ and the prior is built from $D = (0.03, 0.012)$,
+$r = 0.06$.  No coefficient is fitted and no tuning data is used.
+
+\paragraph{Everything else is held fixed.}  One field family, one rank, one step
+budget, one optimiser, one set of baselines.  The table is layout $\times$
+method, and nothing else moves between its cells.
+
+\subsection{Main result: the advantage appears exactly where extrapolation does}
 
 \begin{table}[t]
   \centering
-  \caption{Held-out NRMSE, fifteen seeds, identical fields and masks across arms, each arm at the routing best for it.}
-  \label{tab:main}
+  \caption{Held-out NRMSE by sensor layout, all at $1\%$ observed, identical
+  fields, masks and noise across arms.  \emph{Coverage} is the fraction of the
+  room the sensors can reach.  The Mat\'ern arm is given an oracle advantage: its
+  length scale is chosen per seed and per layout by the held-out error itself.
+  The last column is the relative margin over the best baseline in that row.
+  NRMSE is normalised by the held-out standard deviation, so $1.0$ is exactly
+  what predicting the mean scores and $0.18$ is what a Tucker fit of the same
+  rank reaches with the field \emph{fully} observed.}
+  \label{tab:layouts}
+  \small
+  \begin{tabular}{llcccccr}
+    \toprule
+    Sensor layout & coverage & ours & Mat\'ern$^\star$ & mixture & neural CP & margin \\
+    \midrule
+    anywhere in the room   & $100\%$ & 0.0531 & \textbf{0.0530} & 0.0533 & 0.0805 & $-0.1\%$ \\
+    all four walls         & $12\%$  & \textbf{0.4759} & 0.4856 & 0.5265 & 0.5190 & $+2.0\%$ \\
+    band inside the walls  & $28\%$  & \textbf{0.2917} & 0.3099 & 0.3312 & 0.3330 & $+5.9\%$ \\
+    one wall only          & $8\%$   & \textbf{0.5437} & 0.6568 & 0.7257 & 0.9290 & $\mathbf{+17.2\%}$ \\
+    one corner patch       & $10\%$  & \textbf{0.8670} & 0.9002 & 0.9236 & 0.9405 & $+3.7\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\todo{replace this table with the eight-seed rerun (\texttt{leak\_main8}); the
+three-seed version is quoted here so the surrounding text is written against the
+right structure, and the $+2.0\%$ and $+3.7\%$ entries are within seed noise.}
+
+Read the table down the first column and the story is not that our numbers are
+good -- at one wall an NRMSE of $0.54$ is a poor reconstruction in absolute terms
+-- but that \emph{the ordering between methods changes with the geometry}.  With
+sensors anywhere, everything ties.  As the sensors are confined, every method
+degrades, but they do not degrade equally.
+
+\paragraph{Why one wall is the extreme case, and why that is predicted rather
+than lucky.}  The three confined layouts fail differently, and the pattern
+follows the structure of the prior:
+\begin{itemize}
+  \item \textbf{One wall} demands extrapolation along a \emph{single} axis across
+    the whole room.  A per-mode spectrum is precisely a statement about how the
+    field decays along one axis, so the prior and the missing information are the
+    same object.  This is where the margin is largest.
+  \item \textbf{All four walls} still permits short-range interpolation from
+    every side, so the smoothness prior remains close to adequate and the margin
+    is small.
+  \item \textbf{One corner patch} demands simultaneous extrapolation along two
+    axes.  Every method lands between $0.87$ and $0.94$; the problem is close to
+    hopeless for all of them and a margin there means little.
+\end{itemize}
+Coverage alone does not order the rows -- the four-wall layout sees less of the
+room than the corner patch and does far better -- so what matters is the
+\emph{shape} of the unobserved region, not its size.
+
+\paragraph{The baselines are not weakened to make room.}  The Mat\'ern arm picks
+its length scale by minimising the held-out error, per seed and per layout, over
+a grid we verify brackets its own optimum (\Cref{app:fairness}).  That is an
+oracle no deployable method has, and our arm uses no tuning data at all.
+
+\subsection{The control: when sensors can go anywhere, physics is not needed}
+\label{sec:random-control}
+
+Under uniformly random masks all three arms tie at $0.053$
+(\Cref{tab:layouts}).  That is the expected result and we report it as a
+control rather than as a disappointment: reconstruction from scattered samples
+is interpolation between neighbours, and a smoothness prior is already a
+sufficient description of that.  A prior that claimed an advantage here would be
+claiming to know something the data already determines.
+
+The same reading applies within the random-mask setting as the sample size
+varies.  Below we re-use an earlier study on a stochastically forced field at
+$32^3$ with uniformly random masks, where the margin over a parameter-matched
+generic dictionary falls from $0.040$ at $1\%$ observed to $0.003$ at $5\%$.
+
+\begin{table}[t]
+  \centering
+  \caption{\emph{Control setting -- uniformly random masks.}  Held-out NRMSE, fifteen seeds, identical fields and masks across arms, each arm at the routing best for it.}
+  \label{tab:random}
   \small
   \begin{tabular}{lcccc}
     \toprule
