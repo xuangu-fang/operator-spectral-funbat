@@ -1,0 +1,154 @@
+{
+  "note": "distance from the reconstructed time-averaged peak to the true source, in room widths; single source so the correspondence is unambiguous",
+  "field": {
+    "grid": [
+      64,
+      64
+    ],
+    "diffusivity": [
+      0.02,
+      0.006
+    ],
+    "reaction": 0.04,
+    "sources": [
+      [
+        0.3,
+        0.65,
+        0.09,
+        15.0
+      ]
+    ],
+    "dt": 0.6,
+    "burn_in": 200,
+    "record_steps": 64,
+    "background_noise": 0.02
+  },
+  "config": {
+    "seeds": [
+      0
+    ],
+    "layouts": [
+      "one_wall_strip",
+      "wall_ring",
+      "corner_block"
+    ],
+    "ratio": 0.01,
+    "noise_std": 0.05,
+    "steps": 60,
+    "neural_steps": 1500,
+    "lr": 0.02,
+    "device": "cuda",
+    "tag": "localization",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/leak"
+  },
+  "records": [
+    {
+      "layout": "one_wall_strip",
+      "true_source": [
+        0.3,
+        0.65
+      ],
+      "observed": 2621,
+      "ours_pde": {
+        "mean_distance": 0.2925257066695165,
+        "std": 0.0,
+        "values": [
+          0.2925257066695165
+        ]
+      },
+      "matern": {
+        "mean_distance": 0.2315981332232624,
+        "std": 0.0,
+        "values": [
+          0.2315981332232624
+        ]
+      },
+      "spectral_mixture": {
+        "mean_distance": 0.2315981332232624,
+        "std": 0.0,
+        "values": [
+          0.2315981332232624
+        ]
+      },
+      "neural_tucker": {
+        "mean_distance": 0.24710234784902388,
+        "std": 0.0,
+        "values": [
+          0.24710234784902388
+        ]
+      }
+    },
+    {
+      "layout": "wall_ring",
+      "true_source": [
+        0.3,
+        0.65
+      ],
+      "observed": 2621,
+      "ours_pde": {
+        "mean_distance": 0.2936918160461745,
+        "std": 0.0,
+        "values": [
+          0.2936918160461745
+        ]
+      },
+      "matern": {
+        "mean_distance": 0.2925257066695165,
+        "std": 0.0,
+        "values": [
+          0.2925257066695165
+        ]
+      },
+      "spectral_mixture": {
+        "mean_distance": 0.2925257066695165,
+        "std": 0.0,
+        "values": [
+          0.2925257066695165
+        ]
+      },
+      "neural_tucker": {
+        "mean_distance": 0.2006459295936501,
+        "std": 0.0,
+        "values": [
+          0.2006459295936501
+        ]
+      }
+    },
+    {
+      "layout": "corner_block",
+      "true_source": [
+        0.3,
+        0.65
+      ],
+      "observed": 2621,
+      "ours_pde": {
+        "mean_distance": 0.7005334184123552,
+        "std": 0.0,
+        "values": [
+          0.7005334184123552
+        ]
+      },
+      "matern": {
+        "mean_distance": 0.6584227424781893,
+        "std": 0.0,
+        "values": [
+          0.6584227424781893
+        ]
+      },
+      "spectral_mixture": {
+        "mean_distance": 0.9442077739102236,
+        "std": 0.0,
+        "values": [
+          0.9442077739102236
+        ]
+      },
+      "neural_tucker": {
+        "mean_distance": 0.6845283789314363,
+        "std": 0.0,
+        "values": [
+          0.6845283789314363
+        ]
+      }
+    }
+  ]
+}
