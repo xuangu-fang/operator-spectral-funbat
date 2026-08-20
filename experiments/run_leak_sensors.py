@@ -57,6 +57,14 @@ def operator_spectra(shape, dt: float, bins, atoms: int = 4):
     elliptic = NOMINAL["reaction"] + dx * lam_x[:, None] + dy * lam_y[None, :]
     joint = (1.0 / (omega[:, None, None].square() + elliptic[None].square())
              .clamp_min(1e-12)).float()
+    # The data is mean-centred, which removes exactly the (0,0,0) joint mode.
+    # Leaving it in the prior is catastrophic rather than merely wasteful: the
+    # response at k=0 is 1/r^2, some 400x the k=2 term, so after normalisation
+    # the prior places essentially all of its mass on a constant field that the
+    # centred data does not contain, and the model can only predict a constant.
+    # A generic kernel has a much flatter spectrum and is not hurt this way,
+    # which is why it was winning.
+    joint[0, 0, 0] = 0.0
     separated = nonnegative_cp_spectrum(joint, rank=atoms, steps=1200, seed=17)
     return [normalize_spectrum_cosine(f) for f in separated.factors]
 

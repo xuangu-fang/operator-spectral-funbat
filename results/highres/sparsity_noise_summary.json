@@ -1,0 +1,190 @@
+{
+  "note": "matern arm is oracle-scanned over a small length-scale grid",
+  "config": {
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "ratios": [
+      0.002,
+      0.005,
+      0.01,
+      0.02
+    ],
+    "noises": [
+      0.05,
+      0.3
+    ],
+    "bins": [
+      16,
+      12,
+      12
+    ],
+    "ranks": [
+      12,
+      6,
+      6
+    ],
+    "steps": 800,
+    "neural_steps": 1500,
+    "lr": 0.02,
+    "device": "cuda",
+    "tag": "sparsity_noise",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/highres"
+  },
+  "records": [
+    {
+      "ratio": 0.002,
+      "noise": 0.05,
+      "observed": 524,
+      "ours": {
+        "mean": 0.5222086111704508,
+        "std": 0.04672574505358196
+      },
+      "matern_oracle": {
+        "mean": 0.5141984423001608,
+        "std": 0.02570265546393579
+      },
+      "neural_tucker": {
+        "mean": 0.79829869667689,
+        "std": 0.06368886884087585
+      },
+      "margin_vs_best_other": -0.008010168870290046,
+      "relative_percent": -1.5577971871050809
+    },
+    {
+      "ratio": 0.005,
+      "noise": 0.05,
+      "observed": 1311,
+      "ours": {
+        "mean": 0.4158415198326111,
+        "std": 0.02708135262470556
+      },
+      "matern_oracle": {
+        "mean": 0.40439515312512714,
+        "std": 0.03009549973026563
+      },
+      "neural_tucker": {
+        "mean": 0.6625481843948364,
+        "std": 0.12494165672372516
+      },
+      "margin_vs_best_other": -0.011446366707483946,
+      "relative_percent": -2.830490578096082
+    },
+    {
+      "ratio": 0.01,
+      "noise": 0.05,
+      "observed": 2621,
+      "ours": {
+        "mean": 0.3664143681526184,
+        "std": 0.026818806984828646
+      },
+      "matern_oracle": {
+        "mean": 0.3616000811258952,
+        "std": 0.022299774057439735
+      },
+      "neural_tucker": {
+        "mean": 0.40148000915845233,
+        "std": 0.06227472888977092
+      },
+      "margin_vs_best_other": -0.004814287026723207,
+      "relative_percent": -1.3313843878942766
+    },
+    {
+      "ratio": 0.02,
+      "noise": 0.05,
+      "observed": 5243,
+      "ours": {
+        "mean": 0.34091323614120483,
+        "std": 0.02350126631485226
+      },
+      "matern_oracle": {
+        "mean": 0.3421082595984141,
+        "std": 0.02323783643306367
+      },
+      "neural_tucker": {
+        "mean": 0.22629101077715555,
+        "std": 0.026201939925936453
+      },
+      "margin_vs_best_other": -0.11462222536404928,
+      "relative_percent": -50.65257562392778
+    },
+    {
+      "ratio": 0.002,
+      "noise": 0.3,
+      "observed": 524,
+      "ours": {
+        "mean": 0.5790709952513377,
+        "std": 0.05633064425086509
+      },
+      "matern_oracle": {
+        "mean": 0.5482598344484965,
+        "std": 0.027903206087179666
+      },
+      "neural_tucker": {
+        "mean": 0.8946434855461121,
+        "std": 0.04791817851880595
+      },
+      "margin_vs_best_other": -0.030811160802841187,
+      "relative_percent": -5.6198099636159995
+    },
+    {
+      "ratio": 0.005,
+      "noise": 0.3,
+      "observed": 1311,
+      "ours": {
+        "mean": 0.45858830213546753,
+        "std": 0.04330671989626613
+      },
+      "matern_oracle": {
+        "mean": 0.4352134168148041,
+        "std": 0.027929081216221077
+      },
+      "neural_tucker": {
+        "mean": 0.9074968099594116,
+        "std": 0.03840227440613349
+      },
+      "margin_vs_best_other": -0.023374885320663452,
+      "relative_percent": -5.370901819097673
+    },
+    {
+      "ratio": 0.01,
+      "noise": 0.3,
+      "observed": 2621,
+      "ours": {
+        "mean": 0.3937078018983205,
+        "std": 0.027648477295812452
+      },
+      "matern_oracle": {
+        "mean": 0.38288336992263794,
+        "std": 0.02043739479334204
+      },
+      "neural_tucker": {
+        "mean": 0.8693005641301473,
+        "std": 0.031283351102239995
+      },
+      "margin_vs_best_other": -0.010824431975682558,
+      "relative_percent": -2.827083343387217
+    },
+    {
+      "ratio": 0.02,
+      "noise": 0.3,
+      "observed": 5243,
+      "ours": {
+        "mean": 0.3551323413848877,
+        "std": 0.02450278691665587
+      },
+      "matern_oracle": {
+        "mean": 0.3550567428270976,
+        "std": 0.022552946644418776
+      },
+      "neural_tucker": {
+        "mean": 0.3948088387648265,
+        "std": 0.028203945120970818
+      },
+      "margin_vs_best_other": -7.559855779010194e-05,
+      "relative_percent": -0.021291965106241133
+    }
+  ]
+}
