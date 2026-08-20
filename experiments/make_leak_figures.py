@@ -122,8 +122,51 @@ def figure_confinement(tag: str = "confinement_summary.json") -> None:
     print("wrote figure_confinement.png")
 
 
+def figure_tuning(tag: str = "leak_main3tier_summary.json") -> None:
+    """The mechanism, as a picture: what validation picks against what works.
+
+    The error bars in the main figure show that the deployable tier is worse.
+    They do not show *why*, and the why is the argument: with sensors confined,
+    the only split a practitioner can make scores interpolation inside the patch
+    while deployment needs extrapolation out of it, so validation reaches for a
+    length scale far too short to extrapolate with.
+    """
+    data = load(tag)
+    if data is None:
+        return
+    records = [r for r in data["records"] if "tuning_cost" in r]
+    if not records:
+        print("skip: no three-tier records"); return
+    labels = [PRETTY.get(r["layout"], r["layout"]).replace("\n", " ") for r in records]
+    positions = np.arange(len(records))
+
+    figure, axes = plt.subplots(1, 2, figsize=(11.5, 4.2))
+    for index, record in enumerate(records):
+        picked = record["chosen_length_scales"]
+        axes[0].scatter([index] * len(picked), picked, s=42, color="tab:orange",
+                        zorder=3, label="validation on sensor readings" if not index else None)
+    axes[0].set_yscale("log")
+    axes[0].set_xticks(positions); axes[0].set_xticklabels(labels, fontsize=8, rotation=12)
+    axes[0].set_ylabel("length scale chosen")
+    axes[0].set_title("What a practitioner's validation split picks")
+    axes[0].grid(axis="y", alpha=0.3); axes[0].legend(fontsize=8)
+
+    costs = [r["tuning_cost"] for r in records]
+    colours = ["tab:red" if c > 0.05 else "tab:grey" for c in costs]
+    axes[1].bar(positions, costs, color=colours)
+    axes[1].axhline(0, color="black", lw=0.8)
+    axes[1].set_xticks(positions); axes[1].set_xticklabels(labels, fontsize=8, rotation=12)
+    axes[1].set_ylabel("NRMSE lost to having to tune")
+    axes[1].set_title("Cost of choosing the kernel from data you can collect")
+    axes[1].grid(axis="y", alpha=0.3)
+    figure.tight_layout()
+    figure.savefig(RESULTS / "figure_tuning.png", dpi=160)
+    plt.close(figure)
+    print("wrote figure_tuning.png")
+
+
 if __name__ == "__main__":
     import sys
     layout_tag = sys.argv[1] if len(sys.argv) > 1 else "leak_round2_summary.json"
     curve_tag = sys.argv[2] if len(sys.argv) > 2 else "confinement_summary.json"
-    figure_layouts(layout_tag); figure_confinement(curve_tag)
+    figure_layouts(layout_tag); figure_confinement(curve_tag); figure_tuning()
