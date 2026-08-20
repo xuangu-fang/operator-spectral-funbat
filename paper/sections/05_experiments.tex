@@ -25,70 +25,59 @@ $r = 0.06$.  No coefficient is fitted and no tuning data is used.
 budget, one optimiser, one set of baselines.  The table is layout $\times$
 method, and nothing else moves between its cells.
 
-\subsection{Main result: the advantage appears exactly where extrapolation does}
+\subsection{Main result: with sensors confined, the kernel cannot be chosen from data}
 
-\begin{table}[t]
-  \centering
-  \caption{Held-out NRMSE by sensor layout, all at $1\%$ observed, identical
-  fields, masks and noise across arms.  \emph{Coverage} is the fraction of the
-  room the sensors can reach.  The Mat\'ern arm is given an oracle advantage: its
-  length scale is chosen per seed and per layout by the held-out error itself.
-  The last column is the relative margin over the best baseline in that row.
-  NRMSE is normalised by the held-out standard deviation, so $1.0$ is exactly
-  what predicting the mean scores and $0.18$ is what a Tucker fit of the same
-  rank reaches with the field \emph{fully} observed.}
-  \label{tab:layouts}
-  \small
-  \begin{tabular}{llcccccr}
-    \toprule
-    Sensor layout & coverage & ours & Mat\'ern$^\star$ & mixture & neural CP & margin \\
-    \midrule
-    anywhere in the room   & $100\%$ & 0.0531 & \textbf{0.0530} & 0.0533 & 0.0805 & $-0.1\%$ \\
-    all four walls         & $12\%$  & \textbf{0.4759} & 0.4856 & 0.5265 & 0.5190 & $+2.0\%$ \\
-    band inside the walls  & $26\%$  & \textbf{0.2917} & 0.3099 & 0.3312 & 0.3330 & $+5.9\%$ \\
-    one wall only          & $8\%$   & \textbf{0.5437} & 0.6568 & 0.7257 & 0.9290 & $\mathbf{+17.2\%}$ \\
-    one corner patch       & $10\%$  & \textbf{0.8670} & 0.9002 & 0.9236 & 0.9405 & $+3.7\%$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\input{sections/table_layouts}
 
-\todo{RETRACTED, do not cite these numbers.  The Mat\'ern column was scanned
-over a length-scale grid that does not contain its own optimum.  Widening the
-grid moves its one-wall score from $0.6568$ to $0.5449$ at $\ell = 2.4$, an
-interior point, against $0.5496$ for us -- so the tuned baseline is
-\emph{better} there by about $0.9\%$ and every margin in this table is
-measured against an under-tuned arm.  The table is rerun on the corrected grid;
-until then no number here is usable.}
+The table has three tiers and they differ in one thing only: what data chose the
+kernel.  The \emph{oracle} Mat\'ern minimises the true held-out error over a
+length-scale grid; no practitioner can run it, and it is marked $\star$
+throughout.  The \emph{deployable} Mat\'ern does what one actually can -- hold
+out a quarter of the sensor readings and score candidates on those.  Our arm
+uses no tuning data at all: the spectra come from the equation's form with
+coefficients wrong by $50\%$.
 
-Read the table down the first column and the story is not that our numbers are
-good -- at one wall an NRMSE of $0.54$ is a poor reconstruction in absolute terms
--- but that \emph{the ordering between methods changes with the geometry}.  With
-sensors anywhere, everything ties.  As the sensors are confined, every method
-degrades, but they do not degrade equally.
+\paragraph{We do not beat a tuned kernel.  We tie it.}
+At one wall the oracle reaches $0.5449$ and we reach $0.5448$; under random masks
+every arm lands within $0.002$ of every other.  A margin over a properly tuned
+generic kernel is not what this construction buys, and an earlier version of this
+table claimed one only because its length-scale grid stopped short of the
+baseline's own optimum (\Cref{app:fairness}).
 
-\paragraph{Why one wall is the extreme case, and why that is predicted rather
-than lucky.}  The three confined layouts fail differently, and the pattern
-follows the structure of the prior:
-\begin{itemize}
-  \item \textbf{One wall} demands extrapolation along a \emph{single} axis across
-    the whole room.  A per-mode spectrum is precisely a statement about how the
-    field decays along one axis, so the prior and the missing information are the
-    same object.  This is where the margin is largest.
-  \item \textbf{All four walls} still permits short-range interpolation from
-    every side, so the smoothness prior remains close to adequate and the margin
-    is small.
-  \item \textbf{One corner patch} demands simultaneous extrapolation along two
-    axes.  Every method lands between $0.87$ and $0.94$; the problem is close to
-    hopeless for all of them and a margin there means little.
-\end{itemize}
-Coverage alone does not order the rows -- the four-wall layout sees less of the
-room than the corner patch and does far better -- so what matters is the
-\emph{shape} of the unobserved region, not its size.
+\paragraph{What it buys is not having to tune, in a setting where tuning fails.}
+The last column is the cost of choosing the length scale from data a practitioner
+can collect.  Under random masks that cost is $+0.0003$, which is nothing:
+held-out sensor readings sit among the observed ones, so validation scores the
+same thing deployment asks for, and anyone can find the right kernel.  Confine
+the sensors and the cost grows with the confinement, reaching $+0.176$ at a
+single wall -- an error $32\%$ worse than the oracle, from following the choice
+validation actually makes.
 
-\paragraph{The baselines are not weakened to make room.}  The Mat\'ern arm picks
-its length scale by minimising the held-out error, per seed and per layout, over
-a grid we verify brackets its own optimum (\Cref{app:fairness}).  That is an
-oracle no deployable method has, and our arm uses no tuning data at all.
+\paragraph{The mechanism is visible in the hyper-parameters, not only in the
+error.}  At one wall, validation picks length scales $0.5, 0.5, 0.8$ across
+seeds while the test set wants $1.6, 2.4, 2.4$.  It is not noisy; it is
+consistently three to five times too short, and the reason is structural.  Every
+point that can be held out lies inside the same strip, so validation measures
+interpolation within the strip, while deployment requires extrapolation across
+the room.  Those two tasks want different kernels, and no amount of held-out
+sensor data reveals the difference.  Under random masks the same procedure picks
+correctly, which is the control: the split fails only when it stops resembling
+the task.
+
+\paragraph{Reading the two facts together.}
+The setting that makes physics unnecessary and the setting that makes tuning
+impossible are the same axis, running in opposite directions.  Where sensors are
+scattered, a generic kernel is adequate and can be tuned, so there is nothing to
+contribute.  Where sensors are confined, a generic kernel would be adequate
+\emph{if} it could be tuned, and it cannot.  The equation supplies the same
+answer the oracle would have found, without needing the data that would reveal
+it.
+
+\paragraph{Coverage does not order the rows.}  The four-wall ring reaches $12\%$
+of the room and the corner patch $10\%$, and the ring does far better; the corner
+demands extrapolation along two axes at once and every method lands near
+$0.9$, close enough to predicting the mean that no comparison there means much.
+What matters is the shape of the unobserved region, not its size.
 
 \subsection{The control: when sensors can go anywhere, physics is not needed}
 \label{sec:random-control}

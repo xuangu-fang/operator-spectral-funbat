@@ -1,0 +1,15 @@
+\begin{table}[t]
+  \centering
+  \caption{Held-out NRMSE by sensor layout, all at $1\%$ observed, 5 seeds, identical fields, masks and noise across arms.  The two Mat\'ern columns differ only in what data chose the length scale: \emph{deployable} scores candidates on a quarter of the sensor readings, which is all a practitioner has, while \emph{oracle} scores them on the true held-out region and is marked $\star$ because no one can run it.  \emph{Tuning cost} is the gap between them -- what it costs to have to choose the length scale from data you can actually collect.  NRMSE is normalised by the held-out standard deviation, so $1.0$ is what predicting the mean scores.}
+  \label{tab:layouts}
+  \small
+  \begin{tabular}{lccccccr}
+    \toprule
+    Sensor layout & reach & ours & Mat\'ern & Mat\'ern$^\star$ & mixture & neural CP & tuning \\
+     & & (no tuning) & deployable & oracle & & & cost \\
+    \midrule
+    anywhere in the room & $100\%$ & 0.0553 & 0.0539 & 0.0536 & \textbf{0.0537} & 0.0770 & $+0.0003$ \\
+    all four walls & $12\%$ & \textbf{0.4767} & 0.5012 & 0.4468 & 0.5282 & 0.5151 & $+0.0544$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}

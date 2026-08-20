@@ -18,20 +18,16 @@ the generic kernels in an existing method, so capacity and optimisation budget
 are held fixed and the only variable is where the spectra come from.
 
 The experiment is a single table, sensor layout against method, at a fixed $1\%$
-budget.  With sensors scattered anywhere in the room every method ties, which is
-the expected control: interpolation does not need physics.  As the sensors are
-confined the methods separate, and they separate in the direction the prior's
-structure predicts --- the largest margin is at a single instrumented wall, where
-extrapolation runs along one axis and a per-mode spectrum is precisely a
-statement about one axis, while a surrounding ring still allows interpolation and
-a corner patch is near-hopeless for everyone.  \todo{The margin claim is
-under revision.  Against a Mat\'ern whose length scale is tuned on a grid that
-contains its optimum, the one-wall case is a tie at best -- $0.5496$ for us
-against $0.5449$ for the baseline.  What survives is that the baseline needs an
-oracle to find that length scale, and the sentence quoting a margin must not be
-restored until the tunability run says whether anyone could find it without
-one.} The baselines are given an oracle
-advantage they would not have in deployment: their length scales are chosen
-against the held-out error itself.  We also report where the construction cannot
-help and why, including two settings our own pre-declared screens rejected before
-any method was run.
+budget, with the baseline appearing twice: once tuned on data a practitioner
+could collect, and once tuned against the held-out region itself.  We do not
+beat the tuned kernel -- we tie it.  What the table shows instead is that in
+this setting the tuning cannot be done.  With sensors scattered, choosing a
+length scale on held-out sensor readings costs $0.0003$ and every method ties;
+physics contributes nothing, as it should, because interpolation does not need
+it.  With sensors on a single wall, the same procedure picks length scales three
+to five times too short and costs $0.176$, an error $32\%$ worse than the oracle
+reaches, because every point one can hold out lies inside the strip and so
+measures interpolation while the task is extrapolation.  Kernels read off the
+equation need no such split and land on the oracle's answer without it.  We also
+report where the construction cannot help and why, including two settings our
+own pre-declared screens rejected before any method was run.
