@@ -637,6 +637,8 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         noise_std: float = 0.08,
         routing_floor: torch.Tensor | None = None,
         basis: tuple[str, str, str] = ("fourier", "fourier", "fourier"),
+        eigenbasis: tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None]
+        | None = None,
     ):
         super().__init__()
         if spectra.ndim != 3 or spectra.shape[0] != 3:
@@ -648,20 +650,42 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         self.ranks = tuple(int(rank) for rank in ranks)
         self.family_count = spectra.shape[1]
         self.routing = routing
-        if len(basis) != 3 or any(kind not in {"fourier", "cosine"} for kind in basis):
-            raise ValueError("basis must be three entries from {fourier, cosine}")
+        if len(basis) != 3 or any(kind not in {"fourier", "cosine", "operator"} for kind in basis):
+            raise ValueError("basis must be three entries from {fourier, cosine, operator}")
+        if any(kind == "operator" for kind in basis) and eigenbasis is None:
+            raise ValueError("an 'operator' basis requires the eigenvectors in `eigenbasis`")
         self.basis = tuple(basis)
         frequency_bins = spectra.shape[-1]
         # Each mode normalizes its spectrum for the basis it actually uses.
         normalized = torch.stack([
-            (normalize_spectrum if self.basis[mode] == "fourier" else normalize_spectrum_cosine)
-            (spectra[mode].float()) for mode in range(3)
+            (normalize_spectrum if self.basis[mode] == "fourier"
+             else normalize_spectrum_cosine)(spectra[mode].float()) for mode in range(3)
         ])
         self.register_buffer("spectra", normalized)
         self.feature_size = 1 + 2 * (frequency_bins - 1)
         for mode, coordinate in enumerate(coordinates):
-            builder = real_fourier_basis if self.basis[mode] == "fourier" else real_cosine_basis
-            self.register_buffer(f"fourier_basis_{mode}", builder(coordinate, frequency_bins))
+            if self.basis[mode] == "operator":
+                # The eigenfunctions of the operator itself.  For a
+                # constant-coefficient Neumann Laplacian these *are* the
+                # cosines, so `cosine` is the special case; a variable
+                # coefficient, an irregular mesh or a barrier changes them, and
+                # the construction is otherwise unchanged.  This is the exact
+                # Mercer feature map of the induced kernel, not an
+                # approximation to it.
+                vectors = eigenbasis[mode]
+                if vectors is None or vectors.ndim != 2:
+                    raise ValueError(f"eigenbasis[{mode}] must be [node, mode]")
+                if vectors.shape[0] != len(coordinate):
+                    raise ValueError(f"eigenbasis[{mode}] has the wrong node count")
+                if vectors.shape[1] != frequency_bins:
+                    raise ValueError(
+                        f"eigenbasis[{mode}] must supply {frequency_bins} modes")
+                self.register_buffer(f"fourier_basis_{mode}", vectors.float().clone())
+            else:
+                builder = (real_fourier_basis if self.basis[mode] == "fourier"
+                           else real_cosine_basis)
+                self.register_buffer(f"fourier_basis_{mode}",
+                                     builder(coordinate, frequency_bins))
 
         if routing_floor is None:
             floor = torch.zeros(self.family_count, dtype=torch.float32)

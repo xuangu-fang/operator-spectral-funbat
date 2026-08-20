@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "pde": "d_t u + (-d/dx(a(x) d/dx) + kappa) u = 0",
+    "boundary_condition": "homogeneous Neumann (zero flux)",
+    "tensor_semantics": "time x receiver x source (Green response)",
+    "log_diffusivity_contrast": 1.0,
+    "diffusivity_min": 0.26545377180328367,
+    "diffusivity_max": 3.349431452177879,
+    "reaction": 0.15,
+    "truth_modes": 14,
+    "learner_modes": 8,
+    "learner_knows": "the equation form and the zero-flux boundary; not a(x), so both eigenvectors and decay rates are wrong"
+  },
+  "oracle_projection_residual_note": "the learner's reference basis cannot represent the true field exactly; that irreducible floor is reported in the data module",
+  "config": {
+    "seeds": [
+      0,
+      1
+    ],
+    "ratios": [
+      0.05
+    ],
+    "masks": [
+      "random"
+    ],
+    "contrast": 1.0,
+    "learner_modes": 8,
+    "ranks": [
+      4,
+      5,
+      5
+    ],
+    "steps": 600,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "wrong_contrast": 2.2,
+    "device": "cuda",
+    "tag": "smoke",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/green_response"
+  },
+  "records": [
+    {
+      "mask": "random",
+      "ratio": 0.05,
+      "observed": 518,
+      "ours_operator_basis_and_spectrum": {
+        "mean": 0.2950357273221016,
+        "std": 0.07993071526288986,
+        "values": [
+          0.21510501205921173,
+          0.37496644258499146
+        ],
+        "wins_against_ours": 0
+      },
+      "operator_basis_flat_spectrum": {
+        "mean": 0.2775925099849701,
+        "std": 0.09966152906417847,
+        "values": [
+          0.17793098092079163,
+          0.37725403904914856
+        ],
+        "wins_against_ours": 1
+      },
+      "generic_basis_and_dictionary": {
+        "mean": 0.3699945956468582,
+        "std": 0.0008697658777236938,
+        "values": [
+          0.3708643615245819,
+          0.3691248297691345
+        ],
+        "wins_against_ours": 1
+      },
+      "wrong_medium_operator": {
+        "mean": 0.3143295794725418,
+        "std": 0.06192605197429657,
+        "values": [
+          0.3762556314468384,
+          0.25240352749824524
+        ],
+        "wins_against_ours": 1
+      }
+    }
+  ]
+}
