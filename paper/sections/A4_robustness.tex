@@ -1,0 +1,44 @@
+\section{Robustness, and a mechanism test that could have failed}
+\label{app:robustness}
+
+Two questions are asked here, both against the \emph{oracle} Mat\'ern tier rather
+than the deployable one, because the interesting failure would be the derived
+prior falling behind the best a tuned kernel can do.
+
+\subsection{Does the derived prior stay level as conditions change?}
+Three one-dimensional sweeps on the one-wall layout, each varying a single thing
+and holding the rest at the main table's values: the observation ratio, the
+observation noise, and how wrong the nominal coefficients are.  The last is the
+one that matters for the claim, because the whole construction rests on being
+allowed to be wrong about the coefficients: the main table uses values wrong by
+$50\%$, and the sweep asks how much further that can be pushed before the prior
+stops being useful.
+
+\input{sections/table_robustness}
+
+\paragraph{How to read it.}  We are looking for the derived prior to track the
+oracle across the sweep, not to beat it.  A margin near zero throughout is the
+success case.  Where the prior loses badly is where the construction should not
+be used, and the coefficient sweep is the one that draws that boundary.
+
+\subsection{Does the advantage follow the axis, as the mechanism claims?}
+The explanation offered for \Cref{tab:layouts} is specific: a per-mode spectrum
+states how the field decays along one axis, and a one-wall layout forces
+extrapolation along one axis, so the two line up.  A weaker reading -- that
+physics is generically useful in hard settings -- predicts the same table.
+
+They differ on \emph{which} wall.  The field is anisotropic, $D_x = 0.02$ against
+$D_y = 0.006$, so $x$ is the quickly diffusing smooth axis and $y$ the slow rough
+one.  A generic kernel commits to a single length scale and is therefore wrong by
+more along $y$.  If the gain comes from knowing per-axis decay, the $y$ wall must
+show a larger margin than the $x$ wall; if physics is merely generically helpful,
+the two walls should agree.  The refutation condition and an isotropic control --
+where $D_x = D_y$ and the two walls \emph{must} agree -- were written into the
+script before it was run, and the verdict is computed rather than narrated.
+
+\input{sections/table_anisotropy}
+
+We state the prediction and its outcome this way because three earlier mechanism
+predictions in this project were wrong, and each was easy to re-narrate
+afterwards.  A prediction that cannot fail is not evidence for the mechanism, and
+the isotropic control is what makes this one able to fail.
