@@ -69,8 +69,17 @@ def operator_spectra(shape, dt: float, bins, atoms: int = 4):
     # centred data does not contain, and the model can only predict a constant.
     # A generic kernel has a much flatter spectrum and is not hurt this way,
     # which is why it was winning.
-    joint[0, 0, 0] = 0.0
-    separated = nonnegative_cp_spectrum(joint, rank=atoms, steps=1200, seed=17)
+    # Masked rather than zeroed.  Forcing the entry to zero asks a rank-four
+    # separable model to vanish at one corner, which it can only do by
+    # suppressing some factor's k = 0 -- and it suppresses whichever is
+    # cheapest.  Measured against the field's own per-mode spectra, that came
+    # out of the time mode: the field is nearly constant in time (k = 0 holds
+    # 0.84 of its energy) while the zeroed prior put 0.11 there and 0.51 on
+    # k = 1, so the prior was arguing with the data along time.  Masking says
+    # what we mean instead: the entry carries no information, so do not fit it.
+    mask = torch.ones_like(joint)
+    mask[0, 0, 0] = 0.0
+    separated = nonnegative_cp_spectrum(joint, rank=atoms, steps=1200, seed=17, mask=mask)
     return [normalize_spectrum_cosine(f) for f in separated.factors]
 
 

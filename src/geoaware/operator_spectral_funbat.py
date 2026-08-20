@@ -343,6 +343,7 @@ def nonnegative_cp_spectrum(
     steps: int = 1000,
     seed: int = 0,
     eps: float = 1e-10,
+    mask: torch.Tensor | None = None,
 ) -> SpectrumCP:
     """Nonnegative CP decomposition by multiplicative Euclidean-loss updates.
 
@@ -350,6 +351,15 @@ def nonnegative_cp_spectrum(
     weights retain component scale.  This routine is intentionally small and
     deterministic so the projection from a joint operator spectrum is fully
     inspectable.
+
+    ``mask`` marks entries the fit should ignore, with zero meaning ignored.
+    It exists for one specific case.  Mean-centred data lacks exactly the joint
+    mode ``(0, 0, 0)``, so the prior should not place mass there -- but forcing
+    that entry to zero and asking a rank-four separable model to reproduce the
+    zero is not the same request.  A separable model cannot vanish at one corner
+    without suppressing some factor's ``k = 0``, and it will pick whichever
+    factor is cheapest rather than the one we meant.  Masking states the
+    intention directly: the entry carries no information, so do not fit it.
     """
     if spectrum.ndim != 3 or min(spectrum.shape) < 2:
         raise ValueError("spectrum must be a nontrivial order-three tensor")
@@ -357,6 +367,15 @@ def nonnegative_cp_spectrum(
         raise ValueError("rank/steps/spectrum are invalid")
     data = spectrum.detach().double().cpu().numpy()
     data = data / max(data.sum(), eps)
+    if mask is None:
+        weight_mask = np.ones_like(data)
+    else:
+        weight_mask = mask.detach().double().cpu().numpy()
+        if weight_mask.shape != data.shape:
+            raise ValueError("mask must match the spectrum's shape")
+        if np.any(weight_mask < 0):
+            raise ValueError("mask must be nonnegative")
+        data = data * weight_mask
     rng = np.random.default_rng(seed)
     factors = [rng.random((size, rank)) + 0.2 for size in data.shape]
     weights = np.ones(rank)
@@ -369,10 +388,18 @@ def nonnegative_cp_spectrum(
             unfolded = np.moveaxis(data, mode, 0).reshape(data.shape[mode], -1)
             kr = np.einsum("ir,jr->ijr", factors[others[0]], factors[others[1]]).reshape(-1, rank)
             numerator = unfolded @ kr
-            gram = (factors[others[0]].T @ factors[others[0]]) * (
-                factors[others[1]].T @ factors[others[1]]
-            )
-            denominator = factors[mode] @ gram + eps
+            if mask is None:
+                gram = (factors[others[0]].T @ factors[others[0]]) * (
+                    factors[others[1]].T @ factors[others[1]]
+                )
+                denominator = factors[mode] @ gram + eps
+            else:
+                # With a mask the Gram shortcut no longer applies: the
+                # reconstruction has to be weighted entry by entry before it is
+                # projected back.  Forming it explicitly costs one extra
+                # matricized product per mode and keeps the update exact.
+                unfolded_mask = np.moveaxis(weight_mask, mode, 0).reshape(data.shape[mode], -1)
+                denominator = ((factors[mode] @ kr.T) * unfolded_mask) @ kr + eps
             factors[mode] *= numerator / denominator
             factors[mode] = np.maximum(factors[mode], eps)
         # Move arbitrary component scales into weights to stabilize updates.
