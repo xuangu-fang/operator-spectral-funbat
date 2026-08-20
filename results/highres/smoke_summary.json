@@ -1,0 +1,88 @@
+{
+  "note": "all layouts share the same observation budget; the matern arm is oracle-scanned over a small length-scale grid",
+  "config": {
+    "seeds": [
+      0
+    ],
+    "layouts": [
+      "boundary",
+      "block"
+    ],
+    "ratio": 0.01,
+    "noise_std": 0.05,
+    "bins": [
+      16,
+      12,
+      12
+    ],
+    "ranks": [
+      12,
+      6,
+      6
+    ],
+    "steps": 500,
+    "neural_steps": 1000,
+    "lr": 0.02,
+    "device": "cuda",
+    "tag": "smoke",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/highres"
+  },
+  "records": [
+    {
+      "layout": "boundary",
+      "observed": 2621,
+      "ratio": 0.009998321533203125,
+      "ours": {
+        "mean": 0.4991205632686615,
+        "std": 0.0,
+        "values": [
+          0.4991205632686615
+        ]
+      },
+      "matern_oracle": {
+        "mean": 0.48958125710487366,
+        "std": 0.0,
+        "values": [
+          0.48958125710487366
+        ]
+      },
+      "neural_tucker": {
+        "mean": 0.6236109733581543,
+        "std": 0.0,
+        "values": [
+          0.6236109733581543
+        ]
+      },
+      "margin_vs_best_other": -0.009539306163787842,
+      "relative_percent": -1.9484622879965394
+    },
+    {
+      "layout": "block",
+      "observed": 2621,
+      "ratio": 0.009998321533203125,
+      "ours": {
+        "mean": 0.9083274602890015,
+        "std": 0.0,
+        "values": [
+          0.9083274602890015
+        ]
+      },
+      "matern_oracle": {
+        "mean": 0.9110010862350464,
+        "std": 0.0,
+        "values": [
+          0.9110010862350464
+        ]
+      },
+      "neural_tucker": {
+        "mean": 0.9908960461616516,
+        "std": 0.0,
+        "values": [
+          0.9908960461616516
+        ]
+      },
+      "margin_vs_best_other": 0.002673625946044922,
+      "relative_percent": 0.29348219079456755
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "prediction": "margin vanishes at contrast 0 and grows with contrast; a flat curve refutes the non-stationarity account",
+  "config": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "contrasts": [
+      0.0,
+      0.25,
+      0.5,
+      1.0,
+      1.5,
+      2.0
+    ],
+    "ratio": 0.02,
+    "mask": "random",
+    "learner_modes": 8,
+    "ranks": [
+      4,
+      5,
+      5
+    ],
+    "steps": 1200,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "device": "cuda",
+    "tag": "contrast_decomposed",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/green_response"
+  },
+  "records": [
+    {
+      "contrast": 0.0,
+      "diffusivity_ratio": 1.0,
+      "ours": {
+        "mean": 0.46812018752098083,
+        "std": 0.06100436871291974
+      },
+      "generic": {
+        "mean": 0.5528131365776062,
+        "std": 0.005550318606190486
+      },
+      "operator_basis_generic_spectrum": {
+        "mean": 0.5179322063922882,
+        "std": 0.07888219285783261
+      },
+      "basis_contribution": 0.034880930185318015,
+      "spectrum_contribution": 0.04981201887130737,
+      "margin_mean": 0.08469294905662536,
+      "margin_std": 0.056641894811064485,
+      "relative_percent": 15.320357540876891,
+      "wins": 4,
+      "seeds": 5
+    },
+    {
+      "contrast": 0.25,
+      "diffusivity_ratio": 1.8847143984402919,
+      "ours": {
+        "mean": 0.4104957401752472,
+        "std": 0.07036957556675326
+      },
+      "generic": {
+        "mean": 0.501694631576538,
+        "std": 0.005263295968194007
+      },
+      "operator_basis_generic_spectrum": {
+        "mean": 0.5695480823516845,
+        "std": 0.22574214680833282
+      },
+      "basis_contribution": -0.06785345077514648,
+      "spectrum_contribution": 0.15905234217643732,
+      "margin_mean": 0.0911988914012909,
+      "margin_std": 0.07297209134478277,
+      "relative_percent": 18.178167686328468,
+      "wins": 4,
+      "seeds": 5
+    },
+    {
+      "contrast": 0.5,
+      "diffusivity_ratio": 3.5521483636881506,
+      "ours": {
+        "mean": 0.3331005096435547,
+        "std": 0.03548744510274108
+      },
+      "generic": {
+        "mean": 0.4554136574268341,
+        "std": 0.008474887811928306
+      },
+      "operator_basis_generic_spectrum": {
+        "mean": 0.4212126910686493,
+        "std": 0.06473471586754181
+      },
+      "basis_contribution": 0.034200966358184814,
+      "spectrum_contribution": 0.08811218142509458,
+      "margin_mean": 0.12231314778327942,
+      "margin_std": 0.04269687059149574,
+      "relative_percent": 26.857593264631074,
+      "wins": 5,
+      "seeds": 5
+    },
+    {
+      "contrast": 1.0,
+      "diffusivity_ratio": 12.617757997652406,
+      "ours": {
+        "mean": 0.27006384134292605,
+        "std": 0.032721293892949345
+      },
+      "generic": {
+        "mean": 0.3773896276950836,
+        "std": 0.009460836211558413
+      },
+      "operator_basis_generic_spectrum": {
+        "mean": 0.33928059637546537,
+        "std": 0.05721345941940882
+      },
+      "basis_contribution": 0.038109031319618236,
+      "spectrum_contribution": 0.06921675503253932,
+      "margin_mean": 0.10732578635215759,
+      "margin_std": 0.04009477053448123,
+      "relative_percent": 28.43898678605781,
+      "wins": 5,
+      "seeds": 5
+    },
+    {
+      "contrast": 1.5,
+      "diffusivity_ratio": 44.820148424774075,
+      "ours": {
+        "mean": 0.24510130882263184,
+        "std": 0.027271395727158487
+      },
+      "generic": {
+        "mean": 0.32425089478492736,
+        "std": 0.008323477589679914
+      },
+      "operator_basis_generic_spectrum": {
+        "mean": 0.2884272426366806,
+        "std": 0.051772182001866125
+      },
+      "basis_contribution": 0.03582365214824673,
+      "spectrum_contribution": 0.043325933814048784,
+      "margin_mean": 0.07914958596229553,
+      "margin_std": 0.035425181644224764,
+      "relative_percent": 24.409982280787453,
+      "wins": 5,
+      "seeds": 5
+    },
+    {
+      "contrast": 2.0,
+      "diffusivity_ratio": 159.20781688732126,
+      "ours": {
+        "mean": 0.23072795569896698,
+        "std": 0.029786213418774837
+      },
+      "generic": {
+        "mean": 0.289668470621109,
+        "std": 0.007256134613004963
+      },
+      "operator_basis_generic_spectrum": {
+        "mean": 0.26048682630062103,
+        "std": 0.04396544157832075
+      },
+      "basis_contribution": 0.029181644320487976,
+      "spectrum_contribution": 0.029758870601654053,
+      "margin_mean": 0.05894051492214203,
+      "margin_std": 0.036810065605923564,
+      "relative_percent": 20.347576937096882,
+      "wins": 5,
+      "seeds": 5
+    }
+  ]
+}

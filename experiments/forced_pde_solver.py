@@ -317,3 +317,149 @@ def solve_narrowband_forced(
                     "band_centre": band_centre, "band_width": band_width,
                     "forcing_scale": forcing_scale, "integrator": "exponential/DCT"},
     )
+
+
+def solve_localized_source(
+    *,
+    grid: tuple[int, int] = (64, 64),
+    diffusivity: tuple[float, float] = (0.02, 0.006),
+    reaction: float = 0.8,
+    source_centre: tuple[float, float] = (0.35, 0.6),
+    source_width: float = 0.05,
+    source_period: float = 6.0,
+    dt: float = 0.1,
+    burn_in: int = 200,
+    record_steps: int = 64,
+    background_noise: float = 0.02,
+    forcing_scale: int = 16,
+    seed: int = 0,
+) -> ForcedField:
+    """A leak: one localized, time-varying source; elsewhere the field is source-free.
+
+    This is the case the boundary-sensor scenario actually needs.  When a field
+    is stochastically forced everywhere, its interior is *not* determined by its
+    boundary -- there is independent forcing inside that no boundary
+    measurement can see -- so reconstructing the interior from wall sensors is
+    information-theoretically impossible and every method fails together.
+
+    With a localized source the rest of the domain satisfies ``L u = 0``, the
+    boundary genuinely does determine the interior, and a prior that knows the
+    operator has something real to contribute.  A small background noise is kept
+    so the task is not noiseless inverse-crime.
+    """
+    from scipy.fft import dctn, idctn
+
+    rng = np.random.default_rng(seed)
+    nx, ny = grid
+    lx = _dct_eigenvalues(nx, 1.0 / nx)[:, None]
+    ly = _dct_eigenvalues(ny, 1.0 / ny)[None, :]
+    multiplier = diffusivity[0] * lx + diffusivity[1] * ly - reaction
+    if np.any(multiplier >= 0):
+        raise ValueError("operator has a non-decaying mode")
+    decay = np.exp(multiplier * dt)
+
+    x = (np.arange(nx) + 0.5) / nx
+    y = (np.arange(ny) + 0.5) / ny
+    profile = np.exp(-0.5 * (((x[:, None] - source_centre[0]) ** 2
+                              + (y[None, :] - source_centre[1]) ** 2)
+                             / source_width ** 2))
+    profile = profile / max(profile.max(), 1e-12)
+
+    state = np.zeros(grid)
+    frames = []
+    for step in range(burn_in + record_steps):
+        time = step * dt
+        amplitude = 1.0 + 0.6 * np.sin(2 * np.pi * time / source_period)
+        forcing = amplitude * profile
+        if background_noise > 0:
+            forcing = forcing + background_noise * _smooth_noise(rng, grid, forcing_scale)
+        hat = dctn(state, norm="ortho") * decay + dctn(forcing, norm="ortho") * dt
+        state = idctn(hat, norm="ortho")
+        if not np.isfinite(state).all():
+            raise FloatingPointError(f"localized-source solver diverged at step {step}")
+        if step >= burn_in:
+            frames.append(state.copy())
+    field = torch.from_numpy(np.stack(frames)).float()
+    field = (field - field.mean()) / field.std().clamp_min(1e-8)
+    return ForcedField(
+        field=field, operator="localized_source", grid=grid, dt=dt,
+        parameters={"diffusivity": diffusivity, "reaction": reaction,
+                    "source_centre": source_centre, "source_width": source_width,
+                    "source_period": source_period,
+                    "background_noise": background_noise,
+                    "integrator": "exponential/DCT"},
+    )
+
+
+def solve_multi_leak(
+    *,
+    grid: tuple[int, int] = (64, 64),
+    diffusivity: tuple[float, float] = (0.02, 0.006),
+    reaction: float = 0.04,
+    sources: tuple[tuple[float, float, float, float], ...] = (
+        (0.30, 0.65, 0.09, 5.0),
+        (0.70, 0.35, 0.07, 8.0),
+        (0.55, 0.75, 0.06, 13.0),
+    ),
+    dt: float = 0.1,
+    burn_in: int = 300,
+    record_steps: int = 64,
+    background_noise: float = 0.02,
+    forcing_scale: int = 16,
+    seed: int = 0,
+) -> ForcedField:
+    """Several leaks at different places, each with its own time signature.
+
+    A single leak makes the field rank one -- a fixed spatial plume times a
+    scalar in time -- so the task degenerates into recognising one pattern.
+    Several leaks with different periods give a genuinely multi-component field
+    whose plumes must be separated, which is what makes boundary reconstruction
+    a real problem and what a prior that knows how each plume decays can help
+    with.  Each source is ``(x, y, width, period)``.
+
+    Away from the sources the field satisfies ``L u = 0`` up to a small
+    background, so the boundary genuinely constrains the interior.
+    """
+    from scipy.fft import dctn, idctn
+
+    rng = np.random.default_rng(seed)
+    nx, ny = grid
+    lx = _dct_eigenvalues(nx, 1.0 / nx)[:, None]
+    ly = _dct_eigenvalues(ny, 1.0 / ny)[None, :]
+    multiplier = diffusivity[0] * lx + diffusivity[1] * ly - reaction
+    if np.any(multiplier >= 0):
+        raise ValueError("operator has a non-decaying mode")
+    decay = np.exp(multiplier * dt)
+
+    x = (np.arange(nx) + 0.5) / nx
+    y = (np.arange(ny) + 0.5) / ny
+    profiles, periods = [], []
+    for cx, cy, width, period in sources:
+        blob = np.exp(-0.5 * (((x[:, None] - cx) ** 2 + (y[None, :] - cy) ** 2)
+                              / width ** 2))
+        profiles.append(blob / max(blob.max(), 1e-12))
+        periods.append(period)
+
+    state = np.zeros(grid)
+    frames = []
+    for step in range(burn_in + record_steps):
+        time = step * dt
+        forcing = np.zeros(grid)
+        for blob, period in zip(profiles, periods):
+            forcing = forcing + (1.0 + 0.8 * np.sin(2 * np.pi * time / period)) * blob
+        if background_noise > 0:
+            forcing = forcing + background_noise * _smooth_noise(rng, grid, forcing_scale)
+        hat = dctn(state, norm="ortho") * decay + dctn(forcing, norm="ortho") * dt
+        state = idctn(hat, norm="ortho")
+        if not np.isfinite(state).all():
+            raise FloatingPointError(f"multi-leak solver diverged at step {step}")
+        if step >= burn_in:
+            frames.append(state.copy())
+    field = torch.from_numpy(np.stack(frames)).float()
+    field = (field - field.mean()) / field.std().clamp_min(1e-8)
+    return ForcedField(
+        field=field, operator="multi_leak", grid=grid, dt=dt,
+        parameters={"diffusivity": diffusivity, "reaction": reaction,
+                    "sources": sources, "background_noise": background_noise,
+                    "integrator": "exponential/DCT"},
+    )

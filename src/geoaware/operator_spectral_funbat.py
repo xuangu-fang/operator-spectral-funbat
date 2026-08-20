@@ -139,6 +139,56 @@ def real_fourier_basis(coordinate: torch.Tensor, frequency_bins: int) -> torch.T
     ), dim=-1)
 
 
+class LearnableStationarySpectrum(nn.Module):
+    """A standard stationary kernel whose length scale is learned by the ELBO.
+
+    This is the baseline a practitioner actually uses, and the one FunBaT-style
+    models fit: a single named kernel with its hyper-parameters estimated from
+    the same data, rather than a dictionary of hand-picked shapes with learned
+    mixture weights.
+
+    The distinction matters for what can be claimed.  A spectral mixture is
+    dense in the space of stationary kernels, so given enough data it can
+    represent an operator-derived spectrum exactly, and any advantage over it
+    can only ever be sample efficiency.  A single Matern or squared-exponential
+    spectrum is monotone by construction and therefore cannot represent a
+    band-pass spectrum at any sample size -- a qualitatively different kind of
+    baseline, and the honest default.
+    """
+
+    FAMILIES = ("rbf", "matern12", "matern32", "matern52")
+
+    def __init__(self, family: str, frequency_bins: int, *,
+                 initial_length_scale: float = 0.3):
+        super().__init__()
+        if family not in self.FAMILIES:
+            raise ValueError(f"family must be one of {self.FAMILIES}")
+        if frequency_bins < 2 or initial_length_scale <= 0:
+            raise ValueError("frequency_bins >= 2 and a positive length scale are required")
+        self.family = family
+        self.register_buffer("frequency", torch.arange(frequency_bins, dtype=torch.float32))
+        self.raw_length_scale = nn.Parameter(
+            torch.tensor(math.log(initial_length_scale), dtype=torch.float32))
+
+    @property
+    def length_scale(self) -> torch.Tensor:
+        # Clamped only to keep the spectrum numerically representable on the
+        # frequency grid; the range spans four orders of magnitude.
+        return self.raw_length_scale.clamp(math.log(1e-2), math.log(1e2)).exp()
+
+    def forward(self) -> torch.Tensor:
+        scaled = (self.length_scale * self.frequency).square()
+        if self.family == "rbf":
+            spectrum = torch.exp(-0.5 * scaled)
+        elif self.family == "matern12":
+            spectrum = (1 + scaled).pow(-1.0)
+        elif self.family == "matern32":
+            spectrum = (1 + scaled).pow(-2.0)
+        else:
+            spectrum = (1 + scaled).pow(-3.0)
+        return (spectrum / spectrum.sum().clamp_min(1e-12))[None]
+
+
 def real_cosine_basis(coordinate: torch.Tensor, frequency_bins: int) -> torch.Tensor:
     """Neumann (no-flux) eigenbasis ``[1, sqrt(2) cos(pi k x)]``.
 
@@ -645,7 +695,7 @@ class ModeAdaptiveVariationalTucker(nn.Module):
     def __init__(
         self,
         coordinates: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-        spectra: torch.Tensor,
+        spectra: torch.Tensor | list[torch.Tensor] | tuple[torch.Tensor, ...],
         *,
         ranks: tuple[int, int, int],
         routing: Literal["global", "per_mode", "per_mode_rank", "fixed"] = "per_mode_rank",
@@ -657,29 +707,51 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         | None = None,
     ):
         super().__init__()
-        if spectra.ndim != 3 or spectra.shape[0] != 3:
-            raise ValueError("spectra must have shape [3,family,frequency]")
+        # Spectra may be one stacked [3, family, frequency] tensor when every
+        # mode uses the same frequency budget, or three separate [family,
+        # frequency_d] tensors when they do not.  The latter matters on real
+        # data: a shared budget forces every mode down to whatever the
+        # shortest one can support, which on a 15 x 95 x 267 tensor caps the
+        # 267-point time mode at 15 basis functions.
+        learnable = [s for s in (spectra if isinstance(spectra, (list, tuple)) else [])
+                     if isinstance(s, LearnableStationarySpectrum)]
+        if learnable:
+            if len(spectra) != 3 or len(learnable) != 3:
+                raise ValueError("learnable spectra must be supplied for all three modes")
+            self.learnable_spectra = nn.ModuleList(spectra)
+            per_mode = [module() for module in spectra]
+        elif isinstance(spectra, (list, tuple)):
+            if len(spectra) != 3 or any(s.ndim != 2 for s in spectra):
+                raise ValueError("per-mode spectra must be three [family,frequency] tensors")
+            if len({s.shape[0] for s in spectra}) != 1:
+                raise ValueError("all modes must offer the same number of atoms")
+            self.learnable_spectra = None
+            per_mode = [s.float() for s in spectra]
+        else:
+            self.learnable_spectra = None
+            if spectra.ndim != 3 or spectra.shape[0] != 3:
+                raise ValueError("spectra must have shape [3,family,frequency]")
+            per_mode = [spectra[mode].float() for mode in range(3)]
         if len(ranks) != 3 or any(rank < 1 for rank in ranks):
             raise ValueError("ranks must be three positive integers")
         if routing not in {"global", "per_mode", "per_mode_rank", "fixed"}:
             raise ValueError(f"unknown routing: {routing}")
         self.ranks = tuple(int(rank) for rank in ranks)
-        self.family_count = spectra.shape[1]
+        self.family_count = per_mode[0].shape[0]
         self.routing = routing
         if len(basis) != 3 or any(kind not in {"fourier", "cosine", "operator"} for kind in basis):
             raise ValueError("basis must be three entries from {fourier, cosine, operator}")
         if any(kind == "operator" for kind in basis) and eigenbasis is None:
             raise ValueError("an 'operator' basis requires the eigenvectors in `eigenbasis`")
         self.basis = tuple(basis)
-        frequency_bins = spectra.shape[-1]
+        self.frequency_bins = tuple(s.shape[-1] for s in per_mode)
         # Each mode normalizes its spectrum for the basis it actually uses.
-        normalized = torch.stack([
-            (normalize_spectrum if self.basis[mode] == "fourier"
-             else normalize_spectrum_cosine)(spectra[mode].float()) for mode in range(3)
-        ])
-        self.register_buffer("spectra", normalized)
-        self.feature_size = 1 + 2 * (frequency_bins - 1)
+        for mode in range(3):
+            normalizer = (normalize_spectrum if self.basis[mode] == "fourier"
+                          else normalize_spectrum_cosine)
+            self.register_buffer(f"spectra_{mode}", normalizer(per_mode[mode]))
         for mode, coordinate in enumerate(coordinates):
+            frequency_bins = self.frequency_bins[mode]
             if self.basis[mode] == "operator":
                 # The eigenfunctions of the operator itself.  For a
                 # constant-coefficient Neumann Laplacian these *are* the
@@ -715,8 +787,8 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         # of the number of atoms in the bank, exactly as in the CP host, so
         # banks of different sizes stay comparable.
         self.feature_sizes = tuple(
-            (1 + 2 * (frequency_bins - 1)) if self.basis[mode] == "fourier" else frequency_bins
-            for mode in range(3)
+            (1 + 2 * (self.frequency_bins[mode] - 1)) if self.basis[mode] == "fourier"
+            else self.frequency_bins[mode] for mode in range(3)
         )
         self.variational_mean = nn.ParameterList([
             nn.Parameter(0.12 * torch.randn(rank, size))
@@ -775,7 +847,10 @@ class ModeAdaptiveVariationalTucker(nn.Module):
 
     def induced_spectra(self) -> list[torch.Tensor]:
         weights = self.routing_weights()
-        return [weights[mode] @ self.spectra[mode] for mode in range(3)]
+        if self.learnable_spectra is not None:
+            # Recomputed every call so the length scales receive gradients.
+            return [weights[mode] @ self.learnable_spectra[mode]() for mode in range(3)]
+        return [weights[mode] @ getattr(self, f"spectra_{mode}") for mode in range(3)]
 
     def variational_std(self) -> list[torch.Tensor]:
         return [F.softplus(raw) + 1e-4 for raw in self.raw_variational_std]

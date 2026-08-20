@@ -1,0 +1,59 @@
+{
+  "dataset": "FunBaT US-TEMP, [latitude, longitude, year], 15x95x267, official five-fold split",
+  "note": "time mode uses a generic kernel in every arm; only the two spatial modes receive operator-derived bases and spectra",
+  "config": {
+    "folds": [
+      0
+    ],
+    "modes": 8,
+    "ranks": [
+      3,
+      5,
+      5
+    ],
+    "steps": 800,
+    "lr": 0.02,
+    "decay": 1.0,
+    "device": "cuda",
+    "tag": "smoke",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/us_temp"
+  },
+  "records": [
+    {
+      "fold": 0,
+      "train": 44755,
+      "test": 11189,
+      "raw_std": 8.673940132834078,
+      "ours": {
+        "test_rmse_normalised": 0.32451504468917847,
+        "test_rmse_raw": 2.8148240698379094,
+        "test_nrmse": 0.32385810976079826,
+        "parameters": 285
+      },
+      "operator_basis_flat_spectrum": {
+        "test_rmse_normalised": 0.3226880729198456,
+        "test_rmse_raw": 2.798977026086338,
+        "test_nrmse": 0.32203483643808,
+        "parameters": 285
+      },
+      "generic": {
+        "test_rmse_normalised": 0.31633636355400085,
+        "test_rmse_raw": 2.7438826793058393,
+        "test_nrmse": 0.3156959852118058,
+        "parameters": 288
+      }
+    }
+  ],
+  "ours": {
+    "rmse_raw_mean": 2.8148240698379094,
+    "rmse_raw_std": 0.0
+  },
+  "operator_basis_flat_spectrum": {
+    "rmse_raw_mean": 2.798977026086338,
+    "rmse_raw_std": 0.0
+  },
+  "generic": {
+    "rmse_raw_mean": 2.7438826793058393,
+    "rmse_raw_std": 0.0
+  }
+}

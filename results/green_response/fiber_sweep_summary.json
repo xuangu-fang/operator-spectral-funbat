@@ -1,0 +1,137 @@
+{
+  "question": "how many sources must be fired before the operator prior helps",
+  "config": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "sources": [
+      2,
+      4,
+      6,
+      9,
+      12,
+      18
+    ],
+    "contrast": 1.0,
+    "learner_modes": 8,
+    "ranks": [
+      4,
+      5,
+      5
+    ],
+    "steps": 1200,
+    "lr": 0.02,
+    "noise_std": 0.05,
+    "device": "cuda",
+    "tag": "fiber_sweep",
+    "output": "/home/ubuntu/project/operator-spectral-funbat/results/green_response"
+  },
+  "records": [
+    {
+      "sources_fired": 2,
+      "of_total": 24,
+      "observed_fraction": 0.08333333333333333,
+      "ours": {
+        "mean": 0.7526919484138489,
+        "std": 0.05046775476298177
+      },
+      "generic": {
+        "mean": 0.5542106091976166,
+        "std": 0.14647699168723083
+      },
+      "margin_mean": -0.1984813392162323,
+      "relative_percent": -35.813341701197785,
+      "wins": 1,
+      "seeds": 5
+    },
+    {
+      "sources_fired": 4,
+      "of_total": 24,
+      "observed_fraction": 0.16666666666666666,
+      "ours": {
+        "mean": 0.7115153908729553,
+        "std": 0.09196340602343844
+      },
+      "generic": {
+        "mean": 0.426112574338913,
+        "std": 0.04515189052738494
+      },
+      "margin_mean": -0.28540281653404237,
+      "relative_percent": -66.97826671198966,
+      "wins": 0,
+      "seeds": 5
+    },
+    {
+      "sources_fired": 6,
+      "of_total": 24,
+      "observed_fraction": 0.25,
+      "ours": {
+        "mean": 0.7141255617141724,
+        "std": 0.12473211059471338
+      },
+      "generic": {
+        "mean": 0.34715192317962645,
+        "std": 0.06161076505941595
+      },
+      "margin_mean": -0.3669736385345459,
+      "relative_percent": -105.70981003745243,
+      "wins": 0,
+      "seeds": 5
+    },
+    {
+      "sources_fired": 9,
+      "of_total": 24,
+      "observed_fraction": 0.375,
+      "ours": {
+        "mean": 0.16051141321659088,
+        "std": 0.01978361515414764
+      },
+      "generic": {
+        "mean": 0.19533370733261107,
+        "std": 0.04667368613328926
+      },
+      "margin_mean": 0.034822294116020204,
+      "relative_percent": 17.827078895669228,
+      "wins": 3,
+      "seeds": 5
+    },
+    {
+      "sources_fired": 12,
+      "of_total": 24,
+      "observed_fraction": 0.5,
+      "ours": {
+        "mean": 0.1431507334113121,
+        "std": 0.03128624082646615
+      },
+      "generic": {
+        "mean": 0.1911081314086914,
+        "std": 0.04609446957713316
+      },
+      "margin_mean": 0.0479573979973793,
+      "relative_percent": 25.094378582364314,
+      "wins": 4,
+      "seeds": 5
+    },
+    {
+      "sources_fired": 18,
+      "of_total": 24,
+      "observed_fraction": 0.75,
+      "ours": {
+        "mean": 0.1006446972489357,
+        "std": 0.014155593696400955
+      },
+      "generic": {
+        "mean": 0.14642005115747453,
+        "std": 0.052798952212851046
+      },
+      "margin_mean": 0.04577535390853882,
+      "relative_percent": 31.263036412483903,
+      "wins": 5,
+      "seeds": 5
+    }
+  ]
+}
