@@ -76,6 +76,65 @@ one order of magnitude, and the cost is $0.2394$.
 
 \input{sections/table_replication}
 
+\subsection{Against models that can learn the structure instead}
+
+A prior is only worth stating if capacity cannot replace it, and if there is not
+a simpler way to spend the same physics.  \Cref{tab:baselines-strong} answers
+both, and hands every competitor advantages our own arm does not get: each
+chooses its architecture, learning rate or residual weight against the held-out
+region, and each gets four to six times our optimisation budget.
+
+\input{sections/table_baselines}
+
+\paragraph{Capacity does not substitute for the prior at this sparsity.}
+CoSTCo is deliberately not multilinear and a Fourier-feature MLP makes no
+low-rank assumption at all, yet at $1\%$ observed they reach $0.59$ and $0.61$ at
+one wall against our $0.54$, and $0.14$ and $0.10$ under random masks against our
+$0.055$.  The gap is largest exactly where the data is least able to identify a
+model, which is what one would expect of a prior and not of a better fitter.
+
+\paragraph{The same physics is worth ten times more as a prior than as a
+penalty.}  The PINN arm is told what we are told -- the operator's form with
+coefficients wrong by $50\%$ -- and spends it on a residual penalty rather than a
+prior.  Under random masks that is an excellent trade: the residual is worth
+$0.065$ and the arm edges ahead of us.  At one wall the same residual is worth
+$0.022$, the arm lands at $0.80$ against our $0.54$, and on two of three seeds the
+oracle sweep selected a residual weight of \emph{zero}, deciding the physics did
+not help at all.
+
+The asymmetry has a reason.  A residual penalty constrains the function at
+collocation points, and the homogeneous equation has many solutions, so a network
+with enough capacity can drive $\mathcal{L}u$ to zero everywhere and still be
+wrong far from the data.  A spectral prior constrains which functions are
+\emph{a priori} plausible, which is what is left to constrain when the data has
+stopped speaking.  Both encode $\lVert \mathcal{L}u \rVert$ small; only one of
+them shapes the hypothesis space.
+
+\subsection{How much of the equation is actually needed}
+
+\input{sections/table_ladder}
+
+The main table's prior is built from one coefficient vector wrong by $50\%$.  A
+stricter question is what happens when even that is unavailable and only a range
+is known.  \Cref{tab:ladder} answers it by sampling the range, separating each
+sample and pooling the atoms, so the mixture weights infer the parameter from
+data rather than being told it.
+
+Knowing only that the coefficients lie within $\times[1/3,3]$ costs $0.0018$
+against knowing them exactly, and buys $0.194$ against a generic bank of the same
+size.  Widening the range to $\times[1/10,10]$ costs $0.033$, which is the
+degradation the construction predicts: a bank pooled over a wide enough family
+must approach a generic dictionary, and reporting where that begins is part of
+the claim rather than an embarrassment.
+
+This rung is where the construction differs in kind rather than degree from the
+alternatives in \Cref{tab:baselines-strong}.  A residual penalty needs one
+operator to penalise and an AutoIP-style GP needs one operator to condition on;
+neither has a way to spread over a family.  A pooled bank commits only to the
+range.  What committing wrongly costs is measured in \Cref{app:robustness}:
+$7\%$ at $0.3\times$ and $24\%$ at $0.1\times$, against $0.3\%$ for pooling the
+whole range.
+
 \paragraph{Geometry decides more than coverage does, and we cannot yet predict
 how.}  \Cref{tab:geometry} holds the observation budget fixed and changes one
 thing per pair.  Spreading the same $400$ cells over four corners instead of one

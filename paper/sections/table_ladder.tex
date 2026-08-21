@@ -1,0 +1,18 @@
+\begin{table}[t]
+  \centering
+  \caption{\textbf{How much of the equation is needed.}  Held-out NRMSE at $1\%$ observed, three seeds.  K1 knows only that the coefficients lie in a declared range: it samples the range, separates each sample and pools the atoms, leaving the mixture weights to infer the parameter from data.  A PINN and an AutoIP-style GP cannot work this way -- both must commit to one $\theta$ before seeing data.  The generic bank is given the same atom count as the pooled banks, and the collapsed parameterisation keeps the variational coefficient count independent of bank size, so neither comparison is confounded by parameters.}
+  \label{tab:ladder}
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    What is known & anywhere & band inside & one wall \\
+    & in the room & the walls & only \\
+    \midrule
+    K2: true $\theta^\star$ & 0.0543 & 0.3171 & 0.5450 \\
+    K1 point: one guess, $1.5\times$ off & 0.0547 & 0.3064 & 0.5387 \\
+    \textbf{K1 bank}: only $\theta^\star \in \times[1/3,3]$ & 0.0551 & 0.3096 & 0.5468 \\
+    K0 bank: only $\theta^\star \in \times[1/10,10]$ & 0.0547 & 0.3059 & 0.5783 \\
+    K$-$1: generic, same atom count & 0.0533 & 0.3526 & 0.7408 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

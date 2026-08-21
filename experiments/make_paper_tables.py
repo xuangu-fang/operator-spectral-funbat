@@ -172,5 +172,93 @@ def geometry_table():
     print("wrote table_geometry.tex")
 
 
+def baselines_table():
+    """Everything that actually competes, in one place, with what each was given."""
+    neural = load("neural_strong_summary.json")
+    pinn = load("physics_baselines_summary.json")
+    if neural is None and pinn is None:
+        print("skip baselines table"); return
+    order = ["random", "one_wall_strip", "corner_block"]
+    by_layout = {}
+    for source, keys in ((neural, ("costco_oracle", "fourier_mlp_oracle", "lrtfr_siren")),
+                         (pinn, ("pinn_oracle", "network_no_physics"))):
+        if source is None:
+            continue
+        for record in source["records"]:
+            entry = by_layout.setdefault(record["layout"], {})
+            entry["ours_pde"] = record["ours_pde"]["mean"]
+            for key in keys:
+                entry[key] = record[key]["mean"]
+    columns = [("ours_pde", r"ours"), ("pinn_oracle", r"PINN$^\star$"),
+               ("costco_oracle", r"CoSTCo$^\star$"),
+               ("fourier_mlp_oracle", r"Fourier MLP$^\star$"),
+               ("lrtfr_siren", "LRTFR"),
+               ("network_no_physics", "same net, no physics")]
+    lines = [r"\begin{table}[t]", r"  \centering",
+             r"  \caption{\textbf{Against models with far more capacity, and against "
+             r"the same physics spent differently.}  Held-out NRMSE at $1\%$ observed, "
+             r"three seeds.  Starred arms choose their architecture, learning rate or "
+             r"residual weight against the held-out region and get four to six times "
+             r"our optimisation budget; ours uses one configuration, coefficients wrong "
+             r"by $50\%$ and no tuning data.  The PINN is told exactly what we are told "
+             r"and spends it on a residual penalty instead of a prior; the last column "
+             r"is that same network with the physics switched off, so the residual's "
+             r"own contribution is measured rather than inferred.}",
+             r"  \label{tab:baselines-strong}", r"  \small",
+             r"  \begin{tabular}{l" + "c" * len(columns) + r"}", r"    \toprule",
+             r"    Sensor layout & " + " & ".join(label for _, label in columns) + r" \\",
+             r"    \midrule"]
+    for layout in order:
+        entry = by_layout.get(layout)
+        if entry is None:
+            continue
+        cells = []
+        for key, _ in columns:
+            value = entry.get(key)
+            cells.append("---" if value is None else f"{value:.4f}")
+        lines.append(f"    {PRETTY.get(layout, layout)} & " + " & ".join(cells) + r" \\")
+    lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
+    (OUT / "table_baselines.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print("wrote table_baselines.tex")
+
+
+def ladder_table():
+    """How much of the equation is actually needed."""
+    data = load("knowledge_ladder_leak_summary.json")
+    if data is None:
+        print("skip ladder table"); return
+    arms = ["K2 true coefficients", "K1 point (main table)", "K1 bank x[1/3,3]",
+            "K0 bank x[1/10,10]", "K-1 generic, matched atoms"]
+    labels = [r"K2: true $\theta^\star$", r"K1 point: one guess, $1.5\times$ off",
+              r"\textbf{K1 bank}: only $\theta^\star \in \times[1/3,3]$",
+              r"K0 bank: only $\theta^\star \in \times[1/10,10]$",
+              r"K$-$1: generic, same atom count"]
+    lines = [r"\begin{table}[t]", r"  \centering",
+             r"  \caption{\textbf{How much of the equation is needed.}  Held-out NRMSE "
+             r"at $1\%$ observed, three seeds.  K1 knows only that the coefficients lie "
+             r"in a declared range: it samples the range, separates each sample and pools "
+             r"the atoms, leaving the mixture weights to infer the parameter from data.  "
+             r"A PINN and an AutoIP-style GP cannot work this way -- both must commit to "
+             r"one $\theta$ before seeing data.  The generic bank is given the same atom "
+             r"count as the pooled banks, and the collapsed parameterisation keeps the "
+             r"variational coefficient count independent of bank size, so neither "
+             r"comparison is confounded by parameters.}",
+             r"  \label{tab:ladder}", r"  \small",
+             r"  \begin{tabular}{lccc}", r"    \toprule",
+             r"    What is known & anywhere & band inside & one wall \\",
+             r"    & in the room & the walls & only \\", r"    \midrule"]
+    present = {r["layout"]: r for r in data["records"]}
+    for arm, label in zip(arms, labels):
+        cells = []
+        for layout in ("random", "near_wall", "one_wall_strip"):
+            record = present.get(layout)
+            cells.append("---" if record is None else f"{record[arm]['mean']:.4f}")
+        lines.append(f"    {label} & " + " & ".join(cells) + r" \\")
+    lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
+    (OUT / "table_ladder.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print("wrote table_ladder.tex")
+
+
 if __name__ == "__main__":
     main_table(); replication_table(); geometry_table()
+    baselines_table(); ladder_table()

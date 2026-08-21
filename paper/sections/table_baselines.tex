@@ -1,0 +1,15 @@
+\begin{table}[t]
+  \centering
+  \caption{\textbf{Against models with far more capacity, and against the same physics spent differently.}  Held-out NRMSE at $1\%$ observed, three seeds.  Starred arms choose their architecture, learning rate or residual weight against the held-out region and get four to six times our optimisation budget; ours uses one configuration, coefficients wrong by $50\%$ and no tuning data.  The PINN is told exactly what we are told and spends it on a residual penalty instead of a prior; the last column is that same network with the physics switched off, so the residual's own contribution is measured rather than inferred.}
+  \label{tab:baselines-strong}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    Sensor layout & ours & PINN$^\star$ & CoSTCo$^\star$ & Fourier MLP$^\star$ & LRTFR & same net, no physics \\
+    \midrule
+    anywhere in the room & 0.0547 & 0.0522 & 0.1367 & 0.1039 & 0.0905 & 0.1174 \\
+    one wall ($x$) & 0.5387 & 0.8008 & 0.5924 & 0.6060 & 0.8966 & 0.8229 \\
+    one corner patch & 1.0346 & 1.1755 & 1.4478 & 1.0734 & 1.0123 & 1.2270 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
