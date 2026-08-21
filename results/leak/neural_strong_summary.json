@@ -1,0 +1,62 @@
+{
+  "seeds": [
+    0
+  ],
+  "neural_steps": 150,
+  "records": [
+    {
+      "layout": "one_wall_strip",
+      "observed": 2621,
+      "chosen_configs": {
+        "costco": [
+          {
+            "config": {
+              "channels": 128,
+              "rank": 8
+            },
+            "lr": 0.001
+          }
+        ],
+        "fourier_mlp": [
+          {
+            "config": {
+              "bands": 6,
+              "depth": 4,
+              "width": 256
+            },
+            "lr": 0.0003
+          }
+        ]
+      },
+      "ours_pde": {
+        "mean": 0.5922141075134277,
+        "std": 0.0,
+        "values": [
+          0.5922141075134277
+        ]
+      },
+      "costco_oracle": {
+        "mean": 0.6143962740898132,
+        "std": 0.0,
+        "values": [
+          0.6143962740898132
+        ]
+      },
+      "fourier_mlp_oracle": {
+        "mean": 0.6030173897743225,
+        "std": 0.0,
+        "values": [
+          0.6030173897743225
+        ]
+      },
+      "lrtfr_siren": {
+        "mean": 0.978949248790741,
+        "std": 0.0,
+        "values": [
+          0.978949248790741
+        ]
+      },
+      "ours_vs_best_neural": 0.010803282260894775
+    }
+  ]
+}
