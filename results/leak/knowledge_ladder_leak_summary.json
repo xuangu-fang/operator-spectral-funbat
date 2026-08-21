@@ -1,0 +1,51 @@
+{
+  "samples": 8,
+  "atoms_per_sample": 2,
+  "seeds": [
+    0
+  ],
+  "records": [
+    {
+      "layout": "one_wall_strip",
+      "observed": 2621,
+      "pooled_atoms": 16,
+      "K2 true coefficients": {
+        "mean": 0.6132215261459351,
+        "std": 0.0,
+        "values": [
+          0.6132215261459351
+        ]
+      },
+      "K1 point (main table)": {
+        "mean": 0.5922141075134277,
+        "std": 0.0,
+        "values": [
+          0.5922141075134277
+        ]
+      },
+      "K1 bank x[1/3,3]": {
+        "mean": 0.623698353767395,
+        "std": 0.0,
+        "values": [
+          0.623698353767395
+        ]
+      },
+      "K0 bank x[1/10,10]": {
+        "mean": 0.6796504855155945,
+        "std": 0.0,
+        "values": [
+          0.6796504855155945
+        ]
+      },
+      "K-1 generic, matched atoms": {
+        "mean": 0.8432265520095825,
+        "std": 0.0,
+        "values": [
+          0.8432265520095825
+        ]
+      },
+      "k1_bank_minus_k2": 0.010476827621459961,
+      "k1_bank_minus_generic": 0.2195281982421875
+    }
+  ]
+}
