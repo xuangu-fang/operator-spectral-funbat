@@ -29,7 +29,8 @@ RESIDUAL_STD = (0.02, 0.2)
 
 
 def coordinates(indices, shape):
-    return (indices.double() + 0.5) / torch.tensor(shape, dtype=torch.float64)
+    sizes = torch.tensor(shape, dtype=torch.float64, device=indices.device)
+    return (indices.double() + 0.5) / sizes
 
 
 def run_once(shape, observed, targets, collocation, test, truth, *, scales,

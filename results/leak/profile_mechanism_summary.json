@@ -1,0 +1,127 @@
+{
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "records": [
+    {
+      "condition": "as published (Dx=0.02, Dy=0.006)",
+      "profile_share_x": 0.04393223033729263,
+      "profile_share_y": 0.6426767402073522,
+      "walls": {
+        "one_wall_strip": {
+          "ours": 0.5403770009676615,
+          "oracle": 0.5437888503074646,
+          "ours_values": [
+            0.5245399475097656,
+            0.5483735203742981,
+            0.5482175350189209
+          ],
+          "oracle_values": [
+            0.5361719131469727,
+            0.5491843223571777,
+            0.5460103154182434
+          ]
+        },
+        "one_wall_strip_y": {
+          "ours": 1.1383292277654011,
+          "oracle": 0.8533748785654703,
+          "ours_values": [
+            1.2400038242340088,
+            1.0561681985855103,
+            1.1188156604766846
+          ],
+          "oracle_values": [
+            0.892857015132904,
+            0.8017295002937317,
+            0.8655381202697754
+          ]
+        }
+      },
+      "predicted_better_wall": "one_wall_strip",
+      "actually_better_wall": "one_wall_strip",
+      "prediction_holds": true,
+      "gap": 0.5979522267977396
+    },
+    {
+      "condition": "isotropic (Dx=Dy=0.013)",
+      "profile_share_x": 0.13456672297141237,
+      "profile_share_y": 0.38609888101992035,
+      "walls": {
+        "one_wall_strip": {
+          "ours": 0.7308252453804016,
+          "oracle": 0.7421513398488363,
+          "ours_values": [
+            0.7216902375221252,
+            0.7356833815574646,
+            0.735102117061615
+          ],
+          "oracle_values": [
+            0.7368987202644348,
+            0.7450156211853027,
+            0.7445396780967712
+          ]
+        },
+        "one_wall_strip_y": {
+          "ours": 1.2116715908050537,
+          "oracle": 0.9015212059020996,
+          "ours_values": [
+            1.2535642385482788,
+            1.1707409620285034,
+            1.210709571838379
+          ],
+          "oracle_values": [
+            0.9255613684654236,
+            0.8737620115280151,
+            0.9052402377128601
+          ]
+        }
+      },
+      "predicted_better_wall": "one_wall_strip",
+      "actually_better_wall": "one_wall_strip",
+      "prediction_holds": true,
+      "gap": 0.4808463454246521
+    },
+    {
+      "condition": "swapped (Dx=0.006, Dy=0.02)",
+      "profile_share_x": 0.3541623030938382,
+      "profile_share_y": 0.18245402348932363,
+      "walls": {
+        "one_wall_strip": {
+          "ours": 0.9274172782897949,
+          "oracle": 0.9201594591140747,
+          "ours_values": [
+            0.9169426560401917,
+            0.944724440574646,
+            0.9205847382545471
+          ],
+          "oracle_values": [
+            0.9172417521476746,
+            0.927862823009491,
+            0.9153738021850586
+          ]
+        },
+        "one_wall_strip_y": {
+          "ours": 1.0181831916173298,
+          "oracle": 0.9262269934018453,
+          "ours_values": [
+            1.0362999439239502,
+            1.0007330179214478,
+            1.0175166130065918
+          ],
+          "oracle_values": [
+            0.9347842335700989,
+            0.9224113821983337,
+            0.9214853644371033
+          ]
+        }
+      },
+      "predicted_better_wall": "one_wall_strip_y",
+      "actually_better_wall": "one_wall_strip",
+      "prediction_holds": false,
+      "gap": -0.09076591332753492
+    }
+  ],
+  "conditions_passed": 2
+}
