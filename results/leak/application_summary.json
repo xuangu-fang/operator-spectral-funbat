@@ -1,0 +1,45 @@
+{
+  "success_radius": 0.1,
+  "seeds": [
+    0,
+    1
+  ],
+  "ratio": 0.01,
+  "records": [
+    {
+      "layout": "one_wall_strip",
+      "sensors": 2621,
+      "seeds": 2,
+      "ours_pde": {
+        "median_distance": 0.40294439097892054,
+        "mean_distance": 0.40294439097892054,
+        "success_rate": 0.0,
+        "nrmse": 0.8255060613155365,
+        "distances": [
+          0.3310678643566271,
+          0.47482091760121403
+        ]
+      },
+      "matern_deployable": {
+        "median_distance": 0.46152642697314555,
+        "mean_distance": 0.46152642697314555,
+        "success_rate": 0.0,
+        "nrmse": 0.9344487190246582,
+        "distances": [
+          0.4747431424620594,
+          0.4483097114842317
+        ]
+      },
+      "matern_fixed": {
+        "median_distance": 0.42020602441937854,
+        "mean_distance": 0.42020602441937854,
+        "success_rate": 0.0,
+        "nrmse": 0.823190301656723,
+        "distances": [
+          0.3385342398331759,
+          0.5018778090055812
+        ]
+      }
+    }
+  ]
+}
