@@ -49,7 +49,7 @@ SWEEP_LABEL = {"ratio": "fraction of entries observed",
 
 def robustness() -> None:
     """The three one-dimensional sweeps, against the oracle Matern tier."""
-    path = LEAK / "leak_robustness_summary.json"
+    path = LEAK / "robustness_summary.json"
     if not path.exists():
         print("skip robustness: run not finished"); return
     data = json.loads(path.read_text())
@@ -58,7 +58,7 @@ def robustness() -> None:
         lines += [r"\begin{table}[h]", r"  \centering",
                   rf"  \caption{{Sweep over the {SWEEP_LABEL.get(sweep, sweep)}, "
                   r"one-wall layout.  The Mat\'ern column is the oracle tier, "
-                  r"tuned against the held-out region.}}",
+                  r"tuned against the held-out region.}",
                   rf"  \label{{tab:sweep-{sweep}}}", r"  \small",
                   r"  \begin{tabular}{lcccc}", r"    \toprule",
                   rf"    {SWEEP_LABEL.get(sweep, sweep)} & ours & Mat\'ern$^\star$ "

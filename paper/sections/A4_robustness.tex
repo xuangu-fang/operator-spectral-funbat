@@ -21,6 +21,25 @@ oracle across the sweep, not to beat it.  A margin near zero throughout is the
 success case.  Where the prior loses badly is where the construction should not
 be used, and the coefficient sweep is the one that draws that boundary.
 
+\paragraph{What the sweeps say.}  Sample count and noise are both benign: across
+a $17\times$ range of observations and a $20\times$ range of noise the derived
+prior stays within $3\%$ of the oracle.  Note also what \emph{neither} arm does
+-- going from $786$ observations to $13\,107$ leaves the error at one wall
+essentially unchanged ($0.545$ to $0.561$).  Under a confined layout the binding
+constraint is the geometry, not the sample size, which is why adding sensors to
+a wall is not a substitute for a prior.
+
+Coefficient error is the sweep that draws a boundary, and it is strongly
+asymmetric.  Overestimating the diffusivities is nearly free -- $3\times$ is
+slightly \emph{better} than nominal at $+1.3\%$ and $10\times$ costs $2.2\%$ --
+while underestimating is not: $0.3\times$ costs $7\%$ and $0.1\times$ costs
+$24\%$.  The physics says why.  Overestimating diffusion makes the prior too
+smooth, which merely over-regularises; underestimating it leaves the prior
+permitting high-frequency structure the field does not have, and under
+extrapolation that structure is invented rather than merely tolerated.  The
+usable range on this field is roughly $1\times$ to $10\times$, and the main
+table's $1.5\times$ sits inside it.
+
 \subsection{Does the advantage follow the axis, as the mechanism claims?}
 The explanation offered for \Cref{tab:layouts} is specific: a per-mode spectrum
 states how the field decays along one axis, and a one-wall layout forces
@@ -38,7 +57,39 @@ script before it was run, and the verdict is computed rather than narrated.
 
 \input{sections/table_anisotropy}
 
-We state the prediction and its outcome this way because three earlier mechanism
-predictions in this project were wrong, and each was easy to re-narrate
-afterwards.  A prediction that cannot fail is not evidence for the mechanism, and
-the isotropic control is what makes this one able to fail.
+\paragraph{The prediction failed, and the control rules out the rescue.}
+The $y$ wall does not show a larger margin.  It shows a catastrophic loss: our
+arm scores $1.2652$ against $0.8445$ for the oracle Mat\'ern, losing on all five
+seeds, while at the $x$ wall the two arms are level.  If anisotropy were the
+cause, making the field isotropic should have removed the gap.  It does not --
+the isotropic control loses by $36.8\%$ at the $y$ wall and ties at the $x$ wall,
+a gap of $-37.2$ points where the mechanism requires approximately zero.  So the
+axis-alignment story offered for \Cref{tab:layouts} is not supported, and we
+withdraw it as an explanation.  Which wall the sensors sit on matters enormously,
+and we do not currently know why.
+
+\paragraph{What the failure did reveal.}
+Across every experiment in this paper, exactly one arm ever scores worse than
+predicting the mean, and it is always ours: $1.0212$ at the corner patch,
+$1.2652$ and $1.2240$ at the two $y$-wall conditions.  No baseline ever exceeds
+$0.95$.  This is the more useful finding, and it is not about anisotropy.  A
+generic kernel with a long length scale degrades gracefully: when the geometry
+defeats it, it shrinks toward the mean and stops there, which is why the oracle's
+chosen length scale at one wall is $2.4$ -- an aggressive shrinkage, not a good
+fit.  Our prior has no such fallback.  Its scale is fixed by the nominal
+coefficients, so where the data cannot pin the field down it keeps extrapolating
+with the confidence the equation gave it, and produces something worse than
+saying nothing.
+
+The practical consequence is a deployment rule we can state and a reviewer can
+check: this construction should be paired with a fallback that detects when the
+posterior is extrapolating beyond what the observations constrain and reverts to
+shrinkage.  We do not have that mechanism, and until it exists the honest scope
+of the method is the layouts where it ties the oracle rather than the ones where
+it might have helped most.
+
+We report the prediction and its refutation in this form because three earlier
+mechanism predictions in this project were also wrong, and each was easy to
+re-narrate afterwards.  A prediction that cannot fail is not evidence, and the
+isotropic control is what made this one able to fail -- and what stopped us from
+attributing the result to anisotropy after the fact.

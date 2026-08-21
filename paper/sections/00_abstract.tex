@@ -28,6 +28,8 @@ it.  With sensors on a single wall, the same procedure picks length scales three
 to five times too short and costs $0.176$, an error $32\%$ worse than the oracle
 reaches, because every point one can hold out lies inside the strip and so
 measures interpolation while the task is extrapolation.  Kernels read off the
-equation need no such split and land on the oracle's answer without it.  We also
-report where the construction cannot help and why, including two settings our
-own pre-declared screens rejected before any method was run.
+equation need no such split and land on the oracle's answer without it.  We also report where the construction cannot help, including a failure mode we
+did not anticipate: in the geometries beyond it, it does worse than predicting
+the mean, which no baseline does.  A pre-registered test of our own explanation
+for which geometries those are was refuted by its own control, and we report the
+refutation rather than the explanation.

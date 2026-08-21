@@ -73,11 +73,27 @@ contribute.  Where sensors are confined, a generic kernel would be adequate
 answer the oracle would have found, without needing the data that would reveal
 it.
 
-\paragraph{Coverage does not order the rows.}  The four-wall ring reaches $12\%$
-of the room and the corner patch $10\%$, and the ring does far better; the corner
-demands extrapolation along two axes at once and every method lands near
-$0.9$, close enough to predicting the mean that no comparison there means much.
-What matters is the shape of the unobserved region, not its size.
+\paragraph{Coverage does not order the rows, and we cannot yet say what does.}
+The four-wall ring reaches $12\%$ of the room and the corner patch $10\%$, and the
+ring does far better, so the shape of the unobserved region matters more than its
+size.  We tested one specific account of \emph{which} shapes -- that a per-mode
+spectrum states decay along an axis, so layouts forcing extrapolation along a
+single axis are the ones it helps -- and it failed: moving the same strip from
+the $x$ wall to the $y$ wall turns a tie into a $50\%$ loss, and an isotropic
+control shows the gap is not about the axes' diffusivities
+(\Cref{app:robustness}).  We therefore report the ordering as an observation
+rather than as something we can predict in advance.
+
+\paragraph{The failure mode is not graceful, and that is the sharpest caveat.}
+In every experiment here, the only arm that ever scores worse than predicting the
+mean is ours -- $1.0212$ at the corner patch and above $1.2$ at the $y$ wall,
+against a worst case of $0.95$ for any baseline.  A long-length-scale Mat\'ern
+gives up and shrinks toward the mean; the oracle's choice of $\ell = 2.4$ at one
+wall is exactly that, aggressive shrinkage rather than a good fit.  Our prior's
+scale is fixed by the equation, so where the observations cannot pin the field
+down it keeps extrapolating and produces something worse than saying nothing.
+Before deployment this construction needs a fallback that detects that regime; we
+do not have one.
 
 \subsection{The control: when sensors can go anywhere, physics is not needed}
 \label{sec:random-control}
