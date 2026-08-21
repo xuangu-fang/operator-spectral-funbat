@@ -124,10 +124,13 @@ def main() -> None:
     p.add_argument("--max-test", type=int, default=60_000,
                    help="held-out cells are subsampled to keep evaluation affordable")
     p.add_argument("--tag", default="leak3d")
+    p.add_argument("--device",
+        default="cuda" if torch.cuda.is_available() else "cpu",
+        help="an idle GPU makes these sweeps roughly an order of magnitude cheaper")
     p.add_argument("--output", type=Path, default=ROOT / "results" / "leak")
     a = p.parse_args()
     a.output.mkdir(parents=True, exist_ok=True)
-    device = torch.device("cpu")
+    device = torch.device(a.device)
 
     shape = tuple(solve_multi_leak_3d(seed=0, **FIELD).field.shape)
     budget = int(round(a.ratio * int(np.prod(shape))))

@@ -58,10 +58,13 @@ def main() -> None:
     p.add_argument("--lr", type=float, default=0.02)
     p.add_argument("--scaling-ratios", type=float, nargs="+",
                    default=[0.005, 0.01, 0.02, 0.04])
+    p.add_argument("--device",
+        default="cuda" if torch.cuda.is_available() else "cpu",
+        help="an idle GPU makes these sweeps roughly an order of magnitude cheaper")
     p.add_argument("--output", type=Path, default=ROOT / "results" / "leak")
     a = p.parse_args()
     a.output.mkdir(parents=True, exist_ok=True)
-    device = torch.device("cpu")
+    device = torch.device(a.device)
 
     check = verify_against_autograd()
     print(f"  kernel derivatives verified against autograd: {check}", flush=True)

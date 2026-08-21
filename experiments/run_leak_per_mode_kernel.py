@@ -37,7 +37,11 @@ from geoaware.operator_spectral_funbat import (  # noqa: E402
 from forced_pde_solver import solve_multi_leak  # noqa: E402
 import run_leak_sensors as base  # noqa: E402
 
-PER_MODE_GRID = (0.32, 0.8, 1.6, 2.4)
+# Three values rather than four.  The full four-value grid is 64 combinations
+# per seed per layout, which is several GPU-hours for a control question that a
+# coarser grid answers just as well: whether letting the axes differ at all
+# closes the gap, not which exact triple is optimal.
+PER_MODE_GRID = (0.32, 1.0, 2.4)
 SHARED = 1.6
 
 
@@ -59,10 +63,13 @@ def main() -> None:
     p.add_argument("--noise-std", type=float, default=0.05)
     p.add_argument("--steps", type=int, default=1000)
     p.add_argument("--lr", type=float, default=0.02)
+    p.add_argument("--device",
+        default="cuda" if torch.cuda.is_available() else "cpu",
+        help="an idle GPU makes these sweeps roughly an order of magnitude cheaper")
     p.add_argument("--output", type=Path, default=ROOT / "results" / "leak")
     a = p.parse_args()
     a.output.mkdir(parents=True, exist_ok=True)
-    device = torch.device("cpu")
+    device = torch.device(a.device)
 
     shape = tuple(solve_multi_leak(seed=0, **base.FIELD).field.shape)
     budget = int(round(a.ratio * int(np.prod(shape))))
