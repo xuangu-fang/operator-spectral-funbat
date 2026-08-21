@@ -117,6 +117,22 @@ def sensor_mask(shape, layout: str, budget: int, seed: int, device):
         region = y < 5
     elif layout == "corner_block":
         region = (x < 20) & (y < 20)
+    elif layout == "two_walls_lr":
+        # Both walls normal to x.  The interior is now between two observed
+        # faces rather than beyond one, so extrapolation becomes interpolation
+        # at the same distance.
+        region = (x < 5) | (x >= nx - 5)
+    elif layout == "two_walls_tb":
+        region = (y < 5) | (y >= ny - 5)
+    elif layout == "two_walls_adjacent":
+        # Two faces meeting at a corner: twice the reach of one wall, but the
+        # unobserved region still lies beyond both rather than between them.
+        region = (x < 5) | (y < 5)
+    elif layout == "four_corners":
+        # Same reach as corner_block (400 cells) and the same total area, but
+        # spread over four patches instead of one, so the unobserved region is
+        # surrounded rather than adjacent.
+        region = (((x < 10) | (x >= nx - 10)) & ((y < 10) | (y >= ny - 10)))
     else:
         raise ValueError(f"unknown layout {layout}")
     candidates = torch.nonzero(region, as_tuple=False).squeeze(-1)

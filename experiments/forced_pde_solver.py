@@ -406,6 +406,7 @@ def solve_multi_leak(
     record_steps: int = 64,
     background_noise: float = 0.02,
     forcing_scale: int = 16,
+    drift: tuple[float, float] = (0.0, 0.0),
     seed: int = 0,
 ) -> ForcedField:
     """Several leaks at different places, each with its own time signature.
@@ -451,6 +452,26 @@ def solve_multi_leak(
             forcing = forcing + background_noise * _smooth_noise(rng, grid, forcing_scale)
         hat = dctn(state, norm="ortho") * decay + dctn(forcing, norm="ortho") * dt
         state = idctn(hat, norm="ortho")
+        if drift[0] or drift[1]:
+            # Advection is not diagonal in the cosine basis, so it is applied by
+            # operator splitting: a first-order upwind step in real space after
+            # the spectral diffusion-reaction step.  Walls are no-flux, so the
+            # gradient is taken as zero across them.  The scheme is stable while
+            # |v| dt / h < 1, which is checked below rather than assumed.
+            for axis, speed in enumerate(drift):
+                if not speed:
+                    continue
+                spacing = 1.0 / grid[axis]
+                if abs(speed) * dt / spacing >= 1.0:
+                    raise ValueError(
+                        f"advection violates CFL on axis {axis}: "
+                        f"|v| dt / h = {abs(speed) * dt / spacing:.2f} >= 1")
+                forward = np.diff(state, axis=axis, append=np.take(
+                    state, [-1], axis=axis)) / spacing
+                backward = np.diff(state, axis=axis, prepend=np.take(
+                    state, [0], axis=axis)) / spacing
+                gradient = backward if speed > 0 else forward
+                state = state - dt * speed * gradient
         if not np.isfinite(state).all():
             raise FloatingPointError(f"multi-leak solver diverged at step {step}")
         if step >= burn_in:

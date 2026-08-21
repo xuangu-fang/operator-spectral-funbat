@@ -36,8 +36,10 @@ def load(name):
 
 
 PRETTY = {"random": "anywhere\nin the room", "wall_ring": "all four\nwalls",
-          "near_wall": "band inside\nthe walls", "one_wall_strip": "one wall\nonly",
-          "corner_block": "one corner\npatch"}
+          "near_wall": "band inside\nthe walls", "one_wall_strip": "one wall\n($x$)",
+          "corner_block": "one corner\npatch", "one_wall_strip_y": "one wall\n($y$)",
+          "two_walls_lr": "left and\nright walls", "two_walls_tb": "top and\nbottom walls",
+          "two_walls_adjacent": "two adjacent\nwalls", "four_corners": "four corner\npatches"}
 
 
 def layout_picture(layout: str, size: int = 64):
@@ -48,6 +50,11 @@ def layout_picture(layout: str, size: int = 64):
             "wall_ring": depth < 2,
             "near_wall": (depth >= 3) & (depth < 8),
             "one_wall_strip": x < 5,
+            "one_wall_strip_y": y < 5,
+            "two_walls_lr": (x < 5) | (x >= size - 5),
+            "two_walls_tb": (y < 5) | (y >= size - 5),
+            "two_walls_adjacent": (x < 5) | (y < 5),
+            "four_corners": ((x < 10) | (x >= size - 10)) & ((y < 10) | (y >= size - 10)),
             "corner_block": (x < 20) & (y < 20)}[layout]
 
 
