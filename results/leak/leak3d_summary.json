@@ -1,0 +1,70 @@
+{
+  "field": {
+    "grid": "(32, 32, 32)",
+    "diffusivity": "(0.02, 0.006, 0.012)",
+    "reaction": "0.04",
+    "sources": "((0.3, 0.65, 0.4, 0.1, 15.0), (0.7, 0.35, 0.6, 0.09, 25.0), (0.55, 0.75, 0.3, 0.08, 40.0))",
+    "dt": "0.6",
+    "burn_in": "200",
+    "record_steps": "32",
+    "background_noise": "0.02"
+  },
+  "nominal": {
+    "diffusivity": [
+      0.03,
+      0.012,
+      0.018
+    ],
+    "reaction": 0.06
+  },
+  "bins": [
+    8,
+    8,
+    8,
+    8
+  ],
+  "ranks": [
+    5,
+    4,
+    4,
+    4
+  ],
+  "seeds": [
+    0
+  ],
+  "records": [
+    {
+      "layout": "one_face",
+      "observed": 10486,
+      "chosen_length_scales": [
+        0.32
+      ],
+      "oracle_length_scales": [
+        0.8
+      ],
+      "ours_pde": {
+        "mean": 0.7147314548492432,
+        "std": 0.0,
+        "values": [
+          0.7147314548492432
+        ]
+      },
+      "matern_oracle": {
+        "mean": 0.7490186095237732,
+        "std": 0.0,
+        "values": [
+          0.7490186095237732
+        ]
+      },
+      "matern_deployable": {
+        "mean": 0.8458280563354492,
+        "std": 0.0,
+        "values": [
+          0.8458280563354492
+        ]
+      },
+      "tuning_cost": 0.09680944681167603,
+      "gap_to_oracle": 0.03428715467453003
+    }
+  ]
+}

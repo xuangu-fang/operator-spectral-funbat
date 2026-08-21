@@ -484,3 +484,83 @@ def solve_multi_leak(
                     "sources": sources, "background_noise": background_noise,
                     "integrator": "exponential/DCT"},
     )
+
+
+def solve_multi_leak_3d(
+    *,
+    grid: tuple[int, int, int] = (32, 32, 32),
+    diffusivity: tuple[float, float, float] = (0.02, 0.006, 0.012),
+    reaction: float = 0.04,
+    sources: tuple[tuple[float, float, float, float, float], ...] = (
+        (0.30, 0.65, 0.40, 0.10, 15.0),
+        (0.70, 0.35, 0.60, 0.09, 25.0),
+        (0.55, 0.75, 0.30, 0.08, 40.0),
+    ),
+    dt: float = 0.6,
+    burn_in: int = 200,
+    record_steps: int = 32,
+    background_noise: float = 0.02,
+    forcing_scale: int = 8,
+    seed: int = 0,
+) -> ForcedField:
+    """The leak room in three spatial dimensions.
+
+    This is the geometry the motivating applications actually have.  In two
+    dimensions a wall-mounted array is a line and the unobserved region is a
+    half-plane; in three it is a *face* and the unobserved region is a half
+    volume, so the same fraction of observed cells buys a great deal less.  It
+    is also where a per-mode construction has the most to gain or lose, since
+    there are now three spatial spectra to get right instead of two.
+
+    Each source is ``(x, y, z, width, period)``.  Boundaries are no-flux on all
+    six faces, so the cosine eigenbasis carries over unchanged.
+    """
+    from scipy.fft import dctn, idctn
+
+    rng = np.random.default_rng(seed)
+    nx, ny, nz = grid
+    lx = _dct_eigenvalues(nx, 1.0 / nx)[:, None, None]
+    ly = _dct_eigenvalues(ny, 1.0 / ny)[None, :, None]
+    lz = _dct_eigenvalues(nz, 1.0 / nz)[None, None, :]
+    multiplier = (diffusivity[0] * lx + diffusivity[1] * ly
+                  + diffusivity[2] * lz - reaction)
+    if np.any(multiplier >= 0):
+        raise ValueError("operator has a non-decaying mode")
+    decay = np.exp(multiplier * dt)
+
+    x = (np.arange(nx) + 0.5) / nx
+    y = (np.arange(ny) + 0.5) / ny
+    z = (np.arange(nz) + 0.5) / nz
+    profiles, periods = [], []
+    for cx, cy, cz, width, period in sources:
+        squared = ((x[:, None, None] - cx) ** 2 + (y[None, :, None] - cy) ** 2
+                   + (z[None, None, :] - cz) ** 2)
+        blob = np.exp(-0.5 * squared / width ** 2)
+        profiles.append(blob / max(blob.max(), 1e-12))
+        periods.append(period)
+
+    state = np.zeros(grid)
+    frames = []
+    for step in range(burn_in + record_steps):
+        time = step * dt
+        forcing = np.zeros(grid)
+        for blob, period in zip(profiles, periods):
+            forcing = forcing + (1.0 + 0.8 * np.sin(2 * np.pi * time / period)) * blob
+        if background_noise > 0:
+            forcing = forcing + background_noise * _smooth_noise(rng, grid, forcing_scale)
+        hat = dctn(state, norm="ortho") * decay + dctn(forcing, norm="ortho") * dt
+        state = idctn(hat, norm="ortho")
+        if not np.isfinite(state).all():
+            raise FloatingPointError(f"3-D multi-leak solver diverged at step {step}")
+        if step >= burn_in:
+            frames.append(state.copy())
+    field = torch.from_numpy(np.stack(frames)).float()
+    field = (field - field.mean()) / field.std().clamp_min(1e-8)
+    return ForcedField(
+        field=field,
+        operator="multi_leak_3d",
+        parameters={"diffusivity": diffusivity, "reaction": reaction,
+                    "sources": sources, "seed": seed},
+        grid=grid,
+        dt=dt,
+    )

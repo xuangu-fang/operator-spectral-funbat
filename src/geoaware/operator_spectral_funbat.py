@@ -361,8 +361,8 @@ def nonnegative_cp_spectrum(
     factor is cheapest rather than the one we meant.  Masking states the
     intention directly: the entry carries no information, so do not fit it.
     """
-    if spectrum.ndim != 3 or min(spectrum.shape) < 2:
-        raise ValueError("spectrum must be a nontrivial order-three tensor")
+    if spectrum.ndim < 2 or min(spectrum.shape) < 2:
+        raise ValueError("spectrum must be a nontrivial tensor of order two or more")
     if rank < 1 or steps < 1 or torch.any(spectrum < 0):
         raise ValueError("rank/steps/spectrum are invalid")
     data = spectrum.detach().double().cpu().numpy()
@@ -376,22 +376,34 @@ def nonnegative_cp_spectrum(
         if np.any(weight_mask < 0):
             raise ValueError("mask must be nonnegative")
         data = data * weight_mask
+    order = data.ndim
     rng = np.random.default_rng(seed)
     factors = [rng.random((size, rank)) + 0.2 for size in data.shape]
     weights = np.ones(rank)
 
+    def khatri_rao(indices: list[int]) -> np.ndarray:
+        """Column-wise Kronecker product of the listed factors, C-flattened.
+
+        The order of ``indices`` must match the order the corresponding axes
+        appear in the unfolding, or the update silently pairs the wrong rows.
+        """
+        product = factors[indices[0]]
+        for index in indices[1:]:
+            product = (product[:, None, :] * factors[index][None, :, :]).reshape(-1, rank)
+        return product
+
     # Euclidean nonnegative CP multiplicative updates using matricized tensor
     # times Khatri-Rao products.  The order below matches NumPy C flattening.
     for _ in range(steps):
-        for mode in range(3):
-            others = [axis for axis in range(3) if axis != mode]
+        for mode in range(order):
+            others = [axis for axis in range(order) if axis != mode]
             unfolded = np.moveaxis(data, mode, 0).reshape(data.shape[mode], -1)
-            kr = np.einsum("ir,jr->ijr", factors[others[0]], factors[others[1]]).reshape(-1, rank)
+            kr = khatri_rao(others)
             numerator = unfolded @ kr
             if mask is None:
-                gram = (factors[others[0]].T @ factors[others[0]]) * (
-                    factors[others[1]].T @ factors[others[1]]
-                )
+                gram = np.ones((rank, rank))
+                for index in others:
+                    gram = gram * (factors[index].T @ factors[index])
                 denominator = factors[mode] @ gram + eps
             else:
                 # With a mask the Gram shortcut no longer applies: the
@@ -404,12 +416,14 @@ def nonnegative_cp_spectrum(
             factors[mode] = np.maximum(factors[mode], eps)
         # Move arbitrary component scales into weights to stabilize updates.
         weights = np.ones(rank)
-        for mode in range(3):
+        for mode in range(order):
             norms = np.linalg.norm(factors[mode], axis=0).clip(min=eps)
             factors[mode] /= norms
             weights *= norms
 
-    reconstruction = np.einsum("r,ir,jr,kr->ijk", weights, *factors)
+    letters = "ijklmnopqrstuv"[:order]
+    reconstruction = np.einsum(
+        "r," + ",".join(f"{c}r" for c in letters) + "->" + letters, weights, *factors)
     relative_error = float(np.linalg.norm(data - reconstruction) / np.linalg.norm(data))
     torch_factors = tuple(
         torch.from_numpy(factor.T).float() for factor in factors
@@ -740,40 +754,50 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         # data: a shared budget forces every mode down to whatever the
         # shortest one can support, which on a 15 x 95 x 267 tensor caps the
         # 267-point time mode at 15 basis functions.
+        # The number of modes follows the coordinates.  Three is the case the
+        # paper reports; a room observed in three spatial dimensions plus time
+        # is four, and nothing in the construction cares which.
+        self.order = len(coordinates)
+        if self.order < 2:
+            raise ValueError("a Tucker host needs at least two modes")
         learnable = [s for s in (spectra if isinstance(spectra, (list, tuple)) else [])
                      if isinstance(s, LearnableStationarySpectrum)]
         if learnable:
-            if len(spectra) != 3 or len(learnable) != 3:
-                raise ValueError("learnable spectra must be supplied for all three modes")
+            if len(spectra) != self.order or len(learnable) != self.order:
+                raise ValueError("learnable spectra must be supplied for every mode")
             self.learnable_spectra = nn.ModuleList(spectra)
             per_mode = [module() for module in spectra]
         elif isinstance(spectra, (list, tuple)):
-            if len(spectra) != 3 or any(s.ndim != 2 for s in spectra):
-                raise ValueError("per-mode spectra must be three [family,frequency] tensors")
+            if len(spectra) != self.order or any(s.ndim != 2 for s in spectra):
+                raise ValueError(
+                    f"per-mode spectra must be {self.order} [family,frequency] tensors")
             if len({s.shape[0] for s in spectra}) != 1:
                 raise ValueError("all modes must offer the same number of atoms")
             self.learnable_spectra = None
             per_mode = [s.float() for s in spectra]
         else:
             self.learnable_spectra = None
-            if spectra.ndim != 3 or spectra.shape[0] != 3:
-                raise ValueError("spectra must have shape [3,family,frequency]")
-            per_mode = [spectra[mode].float() for mode in range(3)]
-        if len(ranks) != 3 or any(rank < 1 for rank in ranks):
-            raise ValueError("ranks must be three positive integers")
+            if spectra.ndim != 3 or spectra.shape[0] != self.order:
+                raise ValueError(
+                    f"spectra must have shape [{self.order},family,frequency]")
+            per_mode = [spectra[mode].float() for mode in range(self.order)]
+        if len(ranks) != self.order or any(rank < 1 for rank in ranks):
+            raise ValueError(f"ranks must be {self.order} positive integers")
         if routing not in {"global", "per_mode", "per_mode_rank", "fixed"}:
             raise ValueError(f"unknown routing: {routing}")
         self.ranks = tuple(int(rank) for rank in ranks)
         self.family_count = per_mode[0].shape[0]
         self.routing = routing
-        if len(basis) != 3 or any(kind not in {"fourier", "cosine", "operator"} for kind in basis):
-            raise ValueError("basis must be three entries from {fourier, cosine, operator}")
+        if (len(basis) != self.order
+                or any(kind not in {"fourier", "cosine", "operator"} for kind in basis)):
+            raise ValueError(
+                f"basis must be {self.order} entries from " + "{fourier, cosine, operator}")
         if any(kind == "operator" for kind in basis) and eigenbasis is None:
             raise ValueError("an 'operator' basis requires the eigenvectors in `eigenbasis`")
         self.basis = tuple(basis)
         self.frequency_bins = tuple(s.shape[-1] for s in per_mode)
         # Each mode normalizes its spectrum for the basis it actually uses.
-        for mode in range(3):
+        for mode in range(self.order):
             normalizer = (normalize_spectrum if self.basis[mode] == "fourier"
                           else normalize_spectrum_cosine)
             self.register_buffer(f"spectra_{mode}", normalizer(per_mode[mode]))
@@ -815,7 +839,7 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         # banks of different sizes stay comparable.
         self.feature_sizes = tuple(
             (1 + 2 * (self.frequency_bins[mode] - 1)) if self.basis[mode] == "fourier"
-            else self.frequency_bins[mode] for mode in range(3)
+            else self.frequency_bins[mode] for mode in range(self.order)
         )
         self.variational_mean = nn.ParameterList([
             nn.Parameter(0.12 * torch.randn(rank, size))
@@ -830,7 +854,7 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         self.log_noise_std = nn.Parameter(torch.tensor(math.log(noise_std)))
 
         if routing == "fixed":
-            if fixed_routing is None or len(fixed_routing) != 3:
+            if fixed_routing is None or len(fixed_routing) != self.order:
                 raise ValueError("fixed routing requires three [rank,family] tensors")
             for mode, value in enumerate(fixed_routing):
                 if value.shape != (self.ranks[mode], self.family_count):
@@ -844,7 +868,7 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         elif routing == "global":
             self.routing_logits = nn.Parameter(torch.zeros(self.family_count))
         elif routing == "per_mode":
-            self.routing_logits = nn.Parameter(torch.zeros(3, self.family_count))
+            self.routing_logits = nn.Parameter(torch.zeros(self.order, self.family_count))
         else:
             self.routing_logits = nn.ParameterList([
                 nn.Parameter(torch.zeros(rank, self.family_count)) for rank in self.ranks
@@ -860,24 +884,27 @@ class ModeAdaptiveVariationalTucker(nn.Module):
     def routing_weights(self) -> list[torch.Tensor]:
         """Per mode, a ``[rank, family]`` simplex of atom weights."""
         if self.routing == "fixed":
-            return [getattr(self, f"fixed_routing_{mode}") for mode in range(3)]
+            return [getattr(self, f"fixed_routing_{mode}") for mode in range(self.order)]
         if self.routing == "global":
             weight = self._add_floor(torch.softmax(self.routing_logits, dim=-1))
             return [weight[None].expand(rank, -1) for rank in self.ranks]
         if self.routing == "per_mode":
             weight = self._add_floor(torch.softmax(self.routing_logits, dim=-1))
-            return [weight[mode][None].expand(self.ranks[mode], -1) for mode in range(3)]
+            return [weight[mode][None].expand(self.ranks[mode], -1)
+                    for mode in range(self.order)]
         return [
             self._add_floor(torch.softmax(self.routing_logits[mode], dim=-1))
-            for mode in range(3)
+            for mode in range(self.order)
         ]
 
     def induced_spectra(self) -> list[torch.Tensor]:
         weights = self.routing_weights()
         if self.learnable_spectra is not None:
             # Recomputed every call so the length scales receive gradients.
-            return [weights[mode] @ self.learnable_spectra[mode]() for mode in range(3)]
-        return [weights[mode] @ getattr(self, f"spectra_{mode}") for mode in range(3)]
+            return [weights[mode] @ self.learnable_spectra[mode]()
+                    for mode in range(self.order)]
+        return [weights[mode] @ getattr(self, f"spectra_{mode}")
+                for mode in range(self.order)]
 
     def variational_std(self) -> list[torch.Tensor]:
         return [F.softplus(raw) + 1e-4 for raw in self.raw_variational_std]
@@ -898,17 +925,24 @@ class ModeAdaptiveVariationalTucker(nn.Module):
     def _factor_values(
         self, indices: torch.Tensor, coefficients: list[torch.Tensor],
     ) -> list[torch.Tensor]:
-        if indices.ndim != 2 or indices.shape[1] != 3:
-            raise ValueError("indices must have shape [entry,3]")
+        if indices.ndim != 2 or indices.shape[1] != self.order:
+            raise ValueError(f"indices must have shape [entry,{self.order}]")
         return [
             (self._collapsed_features(mode, indices[:, mode]) * coefficients[mode][None]).sum(-1)
-            for mode in range(3)
+            for mode in range(self.order)
         ]
 
     def _contract(self, factors: list[torch.Tensor]) -> torch.Tensor:
-        partial = torch.einsum("na,abc->nbc", factors[0], self.core)
-        partial = torch.einsum("nb,nbc->nc", factors[1], partial)
-        return (factors[2] * partial).sum(-1)
+        """Fold the per-mode factors into the core, one mode at a time.
+
+        Written with an ellipsis so it holds for any number of modes: after
+        folding mode ``k`` the partial result is ``[entry, r_{k+1}, ...]`` and
+        the next fold consumes its leading rank axis.
+        """
+        partial = torch.einsum("na,a...->n...", factors[0], self.core)
+        for mode in range(1, self.order - 1):
+            partial = torch.einsum("nb,nb...->n...", factors[mode], partial)
+        return (factors[-1] * partial).sum(-1)
 
     def kl_to_prior(self) -> torch.Tensor:
         total = self.core.new_zeros(())
