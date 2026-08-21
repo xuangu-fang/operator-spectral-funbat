@@ -157,6 +157,12 @@ def main() -> None:
 
             rows.setdefault("ours_pde", []).append(fit(ours))
             oracle = {ls: fit(matern_spectra(BINS, ls)) for ls in LENGTH_SCALES}
+            # Keep every candidate, not only the winner.  A practitioner who
+            # declines to tune and simply fixes a sensible length scale is a
+            # competitor that also uses no tuning data, and the only way to
+            # judge them is to see how one value fares across every layout.
+            for ls, score in oracle.items():
+                rows.setdefault(f"fixed_{ls}", []).append(score)
             best = min(oracle, key=oracle.get)
             rows.setdefault("matern_oracle", []).append(oracle[best])
             rows.setdefault("_oracle_ls", []).append(best)
