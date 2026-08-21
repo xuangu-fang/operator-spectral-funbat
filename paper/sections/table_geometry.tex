@@ -1,0 +1,23 @@
+\begin{table}[t]
+  \centering
+  \caption{\textbf{Matched geometries, 3 seeds.}  Each pair changes one factor and holds the observation budget fixed.  The first pair is the paper's open problem: moving the same strip from one wall to the other turns a tie with the oracle into a large loss, and an isotropic control (\Cref{app:robustness}) shows this is not about the axes' diffusivities.  Rows where our arm exceeds $1.0$ are worse than predicting the mean.}
+  \label{tab:geometry}
+  \small
+  \begin{tabular}{llcccr}
+    \toprule
+    Pair & layout & ours & Mat\'ern & Mat\'ern$^\star$ & ours vs \\
+    & & (no tuning) & deployable & oracle & oracle \\
+    \midrule
+    which wall, same $8\%$ reach & one wall ($x$) & 0.5387 & 0.7719 & 0.5438 & $+0.0050$ \\
+     & one wall ($y$) & \underline{1.2723} & 0.8832 & 0.8534 & $-0.4189$ \\
+    \addlinespace
+    which pair of walls, same $16\%$ & left and right walls & 0.5078 & 0.6174 & 0.4977 & $-0.0102$ \\
+     & top and bottom walls & 0.8725 & 0.8134 & 0.7751 & $-0.0975$ \\
+    \addlinespace
+    one patch or four, same $400$ cells & one corner patch & \underline{1.0346} & 0.9728 & 0.9002 & $-0.1344$ \\
+     & four corner patches & 0.8124 & 0.8161 & 0.7681 & $-0.0443$ \\
+    \addlinespace
+    two adjacent walls, for reference & two adjacent walls & 0.5407 & 0.6314 & 0.5394 & $-0.0013$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}

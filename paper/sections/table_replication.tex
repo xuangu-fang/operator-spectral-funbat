@@ -1,0 +1,24 @@
+\begin{table}[t]
+  \centering
+  \caption{\textbf{The tuning cost tracks the sensor geometry, not the operator or the dimension.}  Same three tiers as \Cref{tab:layouts}.  Every row with scattered sensors pays almost nothing for having to tune; every confined row pays heavily.  The advection family is included because we expected it to fail: the construction uses an axis-wise even magnitude spectrum and advection tilts the spectrum off centre.  At Peclet ${\approx}5$ it does not fail.}
+  \label{tab:replication}
+  \small
+  \begin{tabular}{llcccr}
+    \toprule
+    Field & sensors & ours & Mat\'ern & Mat\'ern$^\star$ & tuning \\
+    & & (no tuning) & deployable & oracle & cost \\
+    \midrule
+    reaction-diffusion & anywhere in the room & 0.0534 & 0.0515 & 0.0513 & $+0.0002$ \\
+    reaction-diffusion & one wall ($x$) & 0.5448 & 0.6573 & 0.5431 & $+0.1142$ \\
+    diffusion-dominated & anywhere in the room & 0.0361 & 0.0354 & 0.0350 & $+0.0004$ \\
+    diffusion-dominated & one wall ($x$) & 0.3405 & 0.5569 & 0.3282 & $+0.2287$ \\
+    advection-diffusion & anywhere in the room & 0.0251 & 0.0304 & 0.0263 & $+0.0040$ \\
+    advection-diffusion & one wall ($x$) & 0.5241 & 0.7075 & 0.5027 & $+0.2048$ \\
+    \midrule
+    3-D room ($32^4$, 2 seeds) & anywhere in the room & 0.1610 & 0.1589 & 0.1589 & $+0.0000$ \\
+     & two opposite faces & 0.5787 & 0.8203 & 0.5835 & $+0.2368$ \\
+     & one face & 0.6581 & 0.8783 & 0.6389 & $+0.2394$ \\
+     & one corner cube & 0.9091 & 0.9905 & 0.9604 & $+0.0301$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}

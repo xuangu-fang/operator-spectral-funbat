@@ -64,6 +64,32 @@ sensor data reveals the difference.  Under random masks the same procedure picks
 correctly, which is the control: the split fails only when it stops resembling
 the task.
 
+\paragraph{The same dissociation holds for other operators and in three
+dimensions.}  \Cref{tab:replication} repeats the two extreme layouts on a
+diffusion-dominated field, an advection-dominated one, and a three-dimensional
+room.  Scattered sensors cost between $0.0000$ and $0.0040$ to tune; confined
+sensors cost between $0.11$ and $0.24$.  The three-dimensional case is the
+sharpest instance: with sensors anywhere, validation picks exactly the length
+scale the held-out region wanted and the tuning cost is $0.0000$; with sensors on
+one face it picks $0.12$--$0.32$ where the answer wanted $2.4$--$3.5$, an error of
+one order of magnitude, and the cost is $0.2394$.
+
+\input{sections/table_replication}
+
+\paragraph{Geometry decides more than coverage does, and we cannot yet predict
+how.}  \Cref{tab:geometry} holds the observation budget fixed and changes one
+thing per pair.  Spreading the same $400$ cells over four corners instead of one
+helps every method and nearly closes our gap to the oracle ($-0.134$ to
+$-0.044$), so a surrounded unobserved region is easier than an adjacent one.  But
+the first pair is unresolved: the same strip on the $x$ wall ties the oracle and
+on the $y$ wall loses by $0.42$, and the isotropic control in
+\Cref{app:robustness} rules out the axes' diffusivities as the cause.  Two
+adjacent walls, which include the same $y$ face, tie the oracle -- so it is not
+the face that is fatal but extrapolating along $y$ alone.  We report this as an
+open problem rather than dressing it as a finding.
+
+\input{sections/table_geometry}
+
 \paragraph{Reading the two facts together.}
 The setting that makes physics unnecessary and the setting that makes tuning
 impossible are the same axis, running in opposite directions.  Where sensors are
