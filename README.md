@@ -1,164 +1,145 @@
-# Operator-Spectral Priors for Sparse Physical Field Reconstruction
+# Operator-Spectral Priors for Sparse Field Reconstruction
 
-**Given only the *form* of the PDE a field obeys -- not its coefficients, not its
-solution -- derive a valid GP kernel for every mode of a functional tensor
-decomposition, leaving four numbers to learn instead of a whole kernel.**
+**In many physical settings the sensors cannot be placed where the answer is
+wanted.** They mount on a wall, a duct, whatever surface is reachable, and the
+interior is never observed. Reconstruction is then extrapolation rather than
+interpolation, and a smoothness prior — which says only that distant points
+correlate weakly — has nothing left to say about it.
 
-## Headline result
-
-Fifteen seeds, 1% of entries observed, fields from an independent forced-PDE
-solver.  All arms share the field, mask, noise, host model, ranks, optimizer and
-step budget, **and each arm runs at the routing setting that is best for it**;
-the only variable is where the per-mode spectra come from.
-
-| | held-out NRMSE |
-|---|---|
-| **PDE-form kernels (ours)** | **0.4217 ± 0.0470** |
-| generic dictionary (parameter-matched) | 0.4464 ± 0.0545 |
-| nearest neighbour | 0.5699 |
-| discrete CP / Tucker completion (EM) | ≥ 0.98 — no better than the mean |
-| kernel ridge, *oracle*-tuned length scale | 0.4887 |
-| fully observed Tucker ceiling (shared by all arms) | 0.1791 |
-
-Paired margin `+0.0247 ± 0.0235` (5.5% relative), **13/15 seeds**, sign test
-`p = 0.0037`, Wilcoxon `p = 0.00058`.  The operator bank also wins at 2%
-(14/15) and 5% (13/15).
-
-> An earlier version of this table ran both arms at per-mode/rank routing and
-> reported 15/15 with an 8.0% margin.  That setting over-fits at 1% and costs the
-> generic dictionary twice what it costs the operator bank, so it overstated the
-> effect by about 1.6x.  The superseded numbers are kept in
-> `results/forced_pde/headline_legacy_pmr_summary.json`.
-
-![headline](results/forced_pde/figure_headline.png)
-
-The margin shrinks to 0.003 by 5% observed.  That is the shape the claim
-predicts: a prior should matter where the data does not determine the answer and
-stop mattering once it does.
-
-## The method, in full
-
-1. The operator's symbol gives the solution's joint spectrum,
-   `S_op(w) = |L_hat(w)|^-2 S_w(w)`, using the form with nominal coefficients.
-2. Project it onto `Q = 4` nonnegative separable atoms per mode.
-3. Learn a *single global* mixture weight over those atoms -- four logits shared
-   by every mode and rank -- and the resulting spectrum *is* the kernel:
-   `k(x,x') = sum_k s(k) psi_k(x) psi_k(x')` is PSD for any nonnegative `s`,
-   where `psi_k` are the operator's eigenfunctions under the relevant boundary
-   condition.
-
-Four learnable numbers, not a kernel.  Both the separation and the restriction to
-*global* routing are load-bearing: at 1% observed, separation buys 0.025 over
-using the marginal spectrum directly (0.4383 vs 0.4631) and per-mode/rank routing
-costs 0.023 by over-fitting (0.4613).
-
-## Two details that turned out to be load-bearing
-
-**The eigenbasis follows the boundary condition.**  Periodic domains give complex
-exponentials; no-flux boundaries give cosines.  Real initial-value data is not
-periodic in time -- on one dataset the first-to-last-frame jump was 5.6x a
-typical adjacent step -- and switching the basis moved held-out NRMSE from 1.30
-to 1.08 on an otherwise identical run.
-
-**The host must be Tucker, not CP.**  Real 2-D fields are fields of blobs, not
-outer products; they are not low CP-rank at any rank sparse observations could
-identify, though their multilinear rank is small.
-
-## When this does not work
-
-The method needs an operator that suppresses much of the spectrum, which is the
-same condition that makes the field low rank -- so failures are predictable and
-we screen for them before adopting a dataset.  Rejected, with measurements:
-Kolmogorov turbulence and PDEBench 2-D diffusion-reaction (both need 63% of the
-modes per axis for 95% of the energy), and radially band-pass operators, which
-are the *worst* case rather than the best because a ring is maximally
-non-separable.
-
-See [`docs/RESULTS_LOG_ZH.md`](docs/RESULTS_LOG_ZH.md) for all numbers and
-[`docs/PAPER_TECHNICAL_REPORT_ZH.md`](docs/PAPER_TECHNICAL_REPORT_ZH.md) section
-14 for the formulation revision history.
+This repository derives per-mode GP kernels from the **form** of the governing
+equation (not its coefficients, not its solution) and drops them into a
+functional tensor decomposition in place of its generic kernels. Model,
+capacity, optimiser and step budget are held fixed; the only variable is where
+the spectra come from.
 
 ---
 
-## Repository history
+## What this actually shows
 
-This repository is Track 3 of the [Physics-Informed Tensor Learning Hub](https://github.com/xuangu-fang/Geo-Aware-Tensor). It contains two deliberately separated levels:
+### 1. Where sensors are scattered, physics is unnecessary. Where sensors are confined, tuning is impossible.
 
-1. **Kernel dictionary sanity:** a global nonnegative mixture of Matérn/resolvent, heat, geodesic, and Euclidean kernels learned with a finite-feature ELBO.
-2. **Advanced POC:** derive a joint physical spectrum from a PDE/operator, separate it into positive mode-wise spectra, and let different functional tensor modes/ranks adapt different GP kernels.
+The paper's quantity is the **tuning cost**: what it costs to choose a kernel
+using only data a practitioner can collect (a split of the sensor readings)
+rather than against the held-out region (an oracle nobody can run).
 
-The dictionary is a tested optimization and identifiability scaffold, not the final novelty claim.
+| sensor layout | tuning cost, reaction–diffusion | diffusion-dominated | advection–diffusion |
+|---|---|---|---|
+| anywhere in the room | **+0.0000** | **+0.0008** | **+0.0031** |
+| all four walls | +0.0519 | +0.0320 | +0.0046 |
+| band inside the walls | +0.1219 | +0.0090 | +0.1154 |
+| **one wall only** | **+0.2281** | **+0.3411** | **+0.1996** |
+| one corner patch | +0.0726 | +0.0581 | +0.1501 |
 
-## The question this project asks
+The mechanism is visible in the hyper-parameter itself, not only in the error:
+at one wall, validation on the sensors picks length scales of 0.5–0.8 while the
+held-out region wants 1.6–2.4. Every point you can hold out lies inside the
+same strip, so validation scores **interpolation** while deployment demands
+**extrapolation**. In the 3-D room the same split picks 0.12 where the answer
+wants 3.5 — an order of magnitude.
 
-Not *do you know the solution*, but **how much do you know about the operator that governs
-the field**?  That admits a ladder, and the level that matters in practice is not the top one:
+### 2. The same physics is worth ten times more as a prior than as a residual penalty
 
-| Level | What is known | Bank construction |
-|---|---|---|
-| K2 | PDE form **and** coefficients | separate a single `S_op(theta*)` |
-| **K1** | **PDE form only, coefficients unknown** | draw `theta_1..theta_M` from a declared range, separate each, pool the atoms |
-| K0 | physics class only | as above, wider prior |
-| K-1 | nothing | generic dictionary |
+Both arms are told the equation's form with coefficients wrong by 50%. Neither
+is told where the leaks are.
 
-The claim K1 licenses: *we do not need you to know the coefficients, only which equation it
-is.*  All results below are at **K2** and validate the mechanism; the K1 experiment is
-designed but not yet run (see `docs/PAPER_TECHNICAL_REPORT_ZH.md` section 10).
+| sensor layout | ours (prior) | PINN* (residual penalty) | same network, physics off |
+|---|---|---|---|
+| anywhere in the room | 0.0547 | **0.0522** | 0.1174 |
+| one wall only | **0.5387** | 0.8008 | 0.8229 |
 
-## Current POC result (level K2)
+At one wall the residual is worth 0.022 and on two of three seeds the oracle
+sweep chose a residual weight of **zero**. A residual constrains the function at
+collocation points, and the homogeneous equation has many solutions; a spectral
+prior constrains which functions are *a priori* plausible, which is what is left
+once the data has stopped speaking.
 
-The submission confirmation uses a bank-size-independent, collapsed spectral
-mixture posterior, five untouched seeds (201--205), 2% observations and a fixed
-400-step budget.  On the mathematically matched anisotropic-diffusion case,
-operator per-mode/rank kernels reach `0.118±0.058` NRMSE versus
-`0.157±0.099` for generic per-mode/rank kernels (5/5 paired wins), while matching
-the oracle mean.  Induced-spectrum cosine improves from `0.926` to `0.977`.
+### 3. A declared range for the coefficients is nearly as good as knowing them
 
-The strict audit identifies a second, narrower contribution.  A free generic
-dictionary is not a support guarantee; reserving a fixed 25% generic spectral
-floor repairs a deleted-support prior from `0.615` to `0.130` NRMSE on
-anisotropic diffusion (5/5 wins), with a matched-prior cost of about `0.012`.
-This is a robustness--specificity tradeoff, not automatic kernel discovery.
-Full signed-grid separation still exposes tilted advection coupling (rank-4
-error about `0.18`, versus `0.0043` for anisotropic diffusion); advection is a
-limitation, not the main example. Historical expanded-feature results remain
-separate in `results/advanced_poc_r1_r5/`.
+| what is known | one wall |
+|---|---|
+| the true coefficients | 0.5450 |
+| **only that they lie in ×[1/3, 3]** | **0.5468** |
+| only that they lie in ×[1/10, 10] | 0.5783 |
+| no physics (generic, same atom count) | 0.7408 |
 
-![submission confirmation](results/submission_confirmation/submission_confirmation_nrmse.png)
+This is where the construction differs *in kind* from the alternatives: a PINN
+must pick one operator to penalise and an AutoIP-style GP must pick one to
+condition on. A pooled bank commits only to a range and lets the mixture weights
+infer within it.
 
-## Target formulation
+---
 
-The method has exactly two components.
+## What this does **not** show
 
-**M1 — operator knowledge to a valid kernel bank.** For `L u = w`, construct
-`S_op(omega; theta) = |L_hat(omega; theta)|^-2 S_w(omega)` and approximate its even/magnitude
-component as a nonnegative sum of separable spectra. Each one-dimensional nonnegative
-spectrum is a valid PSD stationary kernel, so nonnegative CP -> parameter pooling -> routing
-softmax preserves PSD throughout. The knowledge level only decides *which* `theta` feed this
-chain; the chain itself is unchanged.
+Reported here because it is load-bearing for reading everything above.
 
-**M2 — mixture under a guaranteed support floor.** A convex combination cannot create
-frequency support that no atom has, so a fixed, non-closable fraction of generic spectral
-mass is reserved. It is insurance for descending the ladder.
+- **We do not beat a well-tuned kernel; we match it.** Against a Matérn whose
+  length scale is chosen on the held-out region, the one-wall case is a tie
+  (0.5448 against 0.5449). An earlier draft claimed +17.2% and was wrong: the
+  baseline's length-scale grid did not contain its own optimum. **Retracted.**
+- **In 2-D, simply fixing a sensible constant nearly matches us.** A practitioner
+  who never tunes and commits to ℓ = 1.6 is at most 0.0135 behind on any layout.
+- **The failure mode is not graceful.** Across every experiment here, the only
+  arm that ever scores worse than predicting the mean is ours (1.03 at a corner
+  patch, 1.27 at the other wall); no baseline exceeds 0.95. A long-length-scale
+  Matérn shrinks toward the mean and stops; our scale is fixed by the equation,
+  so where the observations stop constraining the field it keeps extrapolating.
+  **This needs a fallback before deployment and does not have one.**
+- **A standard physics-informed GP is *faster* than us at this scale** (1.7–8.0 s
+  against 20–25 s). Do not write that it "does not scale" at 2-D sizes.
 
-Everything else (CP likelihood, finite-Fourier ELBO+SGD, the collapsed parameterisation,
-routing granularity) is model machinery or a fairness control, not a claim. The current
-real-feature implementation does not represent full signed cross-mode phase, which is why the
-headline family is anisotropic reaction-diffusion rather than advection.
+---
 
 ## Repository map
 
-- `src/geoaware/domain_kernels.py`: geometry/operator kernel features.
-- `src/geoaware/variational_domain_gp.py`: explicit finite-feature variational GP.
-- `experiments/track3_*`: migrated dictionary and residual experiments.
-- `results/`: migrated kernel-dictionary evidence.
-- `docs/PAPER_TECHNICAL_REPORT_ZH.md`: paper-level Chinese Introduction, positioning, Method and confirmation report (current submission baseline; GitHub-renderable math).
-- `paper/`: LaTeX project for the paper itself (`cd paper && make`); notation macros in `paper/macros.tex` mirror the Chinese report's symbol table.
-- `docs/TECHNICAL_REPORT.md`: historical expanded POC and earlier domain-kernel baseline.
-- `docs/SUBMISSION_PLAN_ZH.md`: two-week submission plan — prior-not-model positioning, the pre-declared dataset screen (including rejected datasets), the four main experiments, and three kill gates.
-- `docs/DATASETS_AND_RESOURCES.md`: local/shared data, official PDE resources,
-  operator-spectrum audit fields, external-data baselines, and priority gates.
-- `docs/ITERATIONS.md`: advanced-POC research diary.
-- `docs/SHARED_PROTOCOL.md`: hub-level evaluation discipline.
+| path | what it is |
+|---|---|
+| `docs/HANDOVER_TECHNICAL_ZH.md` | **start here** — full derivation, related work, baselines, experiment settings, dataset provenance |
+| `docs/FUTURE_BRANCHES_ZH.md` | parked directions and open puzzles |
+| `src/geoaware/operator_spectral_funbat.py` | spectrum construction, nonnegative CP, Tucker host |
+| `experiments/forced_pde_solver.py` | field generation, 2-D and 3-D |
+| `experiments/run_leak_sensors.py` | main table, layout definitions, shared fit routine |
+| `experiments/make_*.py` | every table and figure, generated from recorded JSON |
+| `tools/check_github_math.py` | formula-rendering check; run after editing any document |
+| `paper/` | LaTeX source, `make` to build |
 
-Matched/operator-friendly data is labeled as mechanism sanity. The next publication gate requires a PDE solution dataset not sampled directly from the same finite atom family.
+## Reproducing the main table
+
+No dataset download is required — the fields are solved locally in about a
+second per seed.
+
+```bash
+python experiments/run_leak_sensors.py --seeds 0 1 2 3 4 --tag leak_main3tier
+python experiments/make_paper_tables.py     # writes paper/sections/table_*.tex
+python experiments/make_leak_figures.py     # writes results/leak/figure_*.png
+```
+
+A GPU is used automatically when available (`--device`), and makes the sweeps
+roughly an order of magnitude cheaper.
+
+## Settings that every table shares
+
+```python
+FIELD  = grid 64x64, D = (0.02, 0.006), r = 0.04, three leaks,
+         dt = 0.6, 200 burn-in steps, 64 recorded frames, background noise 0.02
+NOMINAL = D = (0.03, 0.012), r = 0.06        # deliberately wrong by 50%
+BINS   = (12, 12, 12)   RANKS = (8, 5, 5)   observed 1%   noise std 0.05
+Adam, lr 0.02, 1000 steps, 3-sample ELBO
+```
+
+Within a seed every arm shares the field, the mask and the noise, so every
+comparison is paired. NRMSE is normalised by the held-out standard deviation,
+so **1.0 is exactly what predicting the mean scores**.
+
+## House rules that earned themselves
+
+1. **Check that every hyper-parameter grid brackets its own optimum.** The one
+   retraction in this project came from a grid that did not. Tuning a baseline
+   *up* is an intervention a reader can see; tuning it *too little* produces a
+   number that looks like a measurement.
+2. **Write the mechanism prediction and its refutation condition into the script
+   before running it.** Four mechanism predictions here have been refuted by
+   their own controls, and each was easy to re-narrate afterwards.
+3. **Generate tables and figures from recorded JSON.** Hand transcription is how
+   a retracted number survives a revision.
+4. **Run the feasibility screens before comparing methods**, not after.

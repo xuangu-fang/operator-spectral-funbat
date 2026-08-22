@@ -1,0 +1,552 @@
+# 交接技术文稿：算子谱先验用于受限传感器布局下的场重构
+
+写给接手这个项目的人。目标是让你**不需要读完 71 个实验脚本**就能知道：
+这个方法在做什么、每一步公式是怎么来的、哪些实验是可信的、
+数据从哪来、以及哪些坑我已经踩过。
+
+> **公式渲染**：本文所有公式已通过 `tools/check_github_math.py`。
+> 改动后请重新运行——GitHub 上 `$$` 块前面没有空行就**不会渲染**，
+> 这个仓库为此坏过 54 处公式，源码看着好好的，网页上是散着美元符号的散文。
+
+---
+
+## 1. 来龙去脉：这个 idea 怎么走到今天
+
+### 1.1 起点
+
+张量补全在极稀疏观测下（$\le 1\%$）有一个绕不开的问题：低秩结构**不足以**定解。
+模型还必须决定每个连续因子**有多光滑**、**是否振荡**、**各轴是否共享尺度**，
+而这些正是数据不够时最先崩掉的东西。
+
+标准做法（FunBaT 等）是给每个 mode 配一个通用 Matérn/RBF 核，或者从同一批稀缺数据里学核。
+我们的观察是：**方程的形式几乎总是已知的**，哪怕系数不知道、解不知道。
+一个工程师往往不知道场长什么样，却知道自己面对的是扩散、输运还是波动。
+
+### 1.2 三次转向（每次都是被自己的实验逼的）
+
+**转向一：从"随机稀疏"到"受限布局"。**
+在随机掩码下，我们和通用核**打平**（0.053 vs 0.053）。
+这不是失败而是应该的：随机采样下每个未观测点都有邻居，重构是**内插**，
+光滑先验已经是充分描述。物理只在**外推**时才有话说，
+而外推来自**传感器只能装在墙上/某个局部**这一现实约束。
+
+**转向二：从"我们赢 baseline"到"这里没人能调参"。**
+一度报出"单面墙 +17.2%"。后来发现那是我把 Matérn 的长度尺度网格
+`(0.12, 0.32, 0.8)` 扫窄了——它自己的最优在 $\ell = 2.4$。
+放宽后 Matérn 从 0.6568 降到 0.5449，我们 0.5448，**打平**。
+这个头条**已撤回**。
+
+真正站得住的是另一件事：受限布局下**超参无法从数据中选出**。
+你能留出来做验证的点全在传感器所在的那一小块里，
+它衡量的是**块内内插**，而任务是**横跨房间外推**——两者要的核不是一回事。
+
+**转向三：承认"固定一个常数"也不需要调参。**
+一个实践者可以既不调参、也不用方程，直接固定一个中庸的 $\ell$。
+实测 2D 上 $\ell = 1.6$ 相对我们最差只差 0.0135。
+所以在 2D 上，**物理相对"随手固定一个合理常数"几乎没买到东西**。
+剩下的价值集中在：跨场景时那个"合理常数"是多少会变（3D 上需要的 $\ell$ 跨 20–30 倍），
+而方程自动给出它。
+
+### 1.3 现在的 claim（只剩这三条）
+
+1. **调参代价随传感器受限程度单调上升**，且与算子族无关：
+   散布传感器 $+0.000\ldots+0.003$，单面墙 $+0.20\ldots+0.34$。
+   这是 **setting 的性质**，与我们的方法好坏无关。
+2. **同一份物理，当先验比当残差惩罚值钱一个数量级**：
+   单面墙上谱先验值 $0.26$，PINN 残差值 $0.02$。
+3. **只需要方程形式 + 系数的一个范围**：
+   知道 $\theta^\star \in \times[1/3, 3]$ 相对知道真值只差 $0.0018$，
+   而 PINN 和 AutoIP **必须承诺一个具体的 $\theta$**。
+
+---
+
+## 2. 核心推导（完整展开）
+
+### 2.1 从算子到解的功率谱
+
+设场 $u$ 由常系数线性算子 $\mathcal{L}$ 驱动，受随机强迫 $w$：
+
+$$
+\mathcal{L} u = w .
+$$
+
+做时空 Fourier 变换，记 $\hat{\mathcal{L}}(\boldsymbol{\xi})$ 为算子的**符号**
+（$\boldsymbol{\xi} = (\omega, k_x, k_y)$）。线性系统的输出谱是
+
+$$
+S_u(\boldsymbol{\xi}) \;=\; \bigl\lvert \hat{\mathcal{L}}(\boldsymbol{\xi}) \bigr\rvert^{-2} \, S_w(\boldsymbol{\xi}) .
+$$
+
+取 $w$ 为白噪（$S_w \equiv \sigma^2$），得到本文一切的出发点：
+
+$$
+S_{\mathrm{op}}(\boldsymbol{\xi}) \;\propto\; \bigl\lvert \hat{\mathcal{L}}(\boldsymbol{\xi}) \bigr\rvert^{-2} .
+$$
+
+**主线算子**是各向异性反应-扩散
+
+$$
+\partial_t u \;=\; D_x \partial_{xx} u + D_y \partial_{yy} u - r u + w ,
+$$
+
+其符号为 $\hat{\mathcal{L}} = i\omega + r + D_x k_x^2 + D_y k_y^2$，于是
+
+$$
+S_{\mathrm{op}}(\omega, k_x, k_y) \;=\; \frac{1}{\omega^2 + \bigl(r + D_x k_x^2 + D_y k_y^2\bigr)^2} .
+$$
+
+**离散版本**（代码里真正用的）。在 $n$ 个格点、无流边界下，
+二阶差分算子的特征值不是 $k^2$ 而是
+
+$$
+\lambda(k) \;=\; \frac{2 - 2\cos(\pi k / n)}{h^2}, \qquad h = 1/n .
+$$
+
+> 实现：`run_leak_sensors.neumann_eigenvalues`。
+> **这一步曾经出过大错**：早期版本用手写的 index-space 系数 $(1.0, 0.3)$，
+> 而物理系数是 $(0.02, 0.006)$，导致先验衰减快了约 4 倍。
+> 必须从**离散算子的特征值**构造，不能从连续 $k^2$ 直接套。
+
+时间维取 $\omega_j = \pi j / (T \Delta t)$，$T$ 是记录帧数。合起来：
+
+$$
+S_{\mathrm{op}}[j, a, b] \;=\; \Bigl(\omega_j^2 + \bigl(r + D_x \lambda_x(a) + D_y \lambda_y(b)\bigr)^2\Bigr)^{-1} .
+$$
+
+### 2.2 结构冲突：为什么不能直接用这个联合谱
+
+$S_{\mathrm{op}}$ 是三维张量，而 functional tensor 模型要的是**每个 mode 一条一维谱**
+（每个 mode 一个独立的 GP kernel）。二者不兼容，因为
+
+$$
+S_{\mathrm{op}}(\omega, k_x, k_y) \;\neq\; S_t(\omega)\, S_x(k_x)\, S_y(k_y)
+$$
+
+对任何一组一维函数都成立——分母里的 $\bigl(r + D_x k_x^2 + D_y k_y^2\bigr)^2$
+**天然不可分**。
+
+这就是本方法要解决的技术核心：**把一个不可分的联合谱投影成可分的、且仍然合法（非负）的每维谱**。
+
+### 2.3 非负 CP 分离
+
+用秩 $Q$ 的**非负** CP 分解逼近联合谱：
+
+$$
+S_{\mathrm{op}} \;\approx\; \sum_{q=1}^{Q} c_q \; s^{(t)}_q \otimes s^{(x)}_q \otimes s^{(y)}_q ,
+\qquad s^{(d)}_q \ge 0 .
+$$
+
+非负是**必须的**而非美观：谱必须非负才对应一个合法的（半正定）核。
+若用普通 CP，因子可以取负，得到的"核"不是核。
+
+求解用乘性更新（Euclidean loss），第 $d$ 个 mode 的更新为
+
+$$
+s^{(d)} \;\leftarrow\; s^{(d)} \odot \frac{X_{(d)} \, K_{(d)}}{s^{(d)} \bigl(K_{(d)}^\top K_{(d)}\bigr) + \varepsilon} ,
+$$
+
+其中 $X_{(d)}$ 是沿 mode $d$ 的展开矩阵，$K_{(d)}$ 是其余因子的 Khatri–Rao 积。
+
+> 实现：`nonnegative_cp_spectrum`。已泛化到**任意阶**（3D 场景需要 4 阶）。
+
+**掩码版本。** 数据做了去均值，这恰好抹掉了**联合模态** $(0,0,0)$。
+早期实现是把该元素**置零**再分离，这是个真实的 bug：
+
+一个秩 $Q$ 的**可分**模型无法只在一个角上取零，它只能通过压掉**某个因子的 $k=0$** 来实现，
+而它会压掉最"便宜"的那个。实测压掉的是时间维——
+真实场沿时间近乎常数（$k=0$ 占 0.837 的能量），而置零版先验只给了 0.107，
+把 0.514 压在 $k=1$ 上，**先验在和数据对着干**。
+
+正确做法是让 CP **忽略**该元素而不是拟合一个零。带掩码 $M$ 时 Gram 捷径失效，
+必须显式加权：
+
+$$
+s^{(d)} \;\leftarrow\; s^{(d)} \odot \frac{\bigl(M_{(d)} \odot X_{(d)}\bigr) K_{(d)}}{\bigl(M_{(d)} \odot (s^{(d)} K_{(d)}^\top)\bigr) K_{(d)} + \varepsilon} .
+$$
+
+逐模态 KL（与真实场的经验谱相比）：时间维 $1.578 \to 0.455$，总和 $2.358 \to 1.711$
+（对照：调好的 Matérn 是 4.204）。重构 $0.5496 \to 0.5448$。
+
+### 2.4 从谱到核：Mercer 与有限特征
+
+给定一维谱 $s_d$ 和一组正交基 $\lbrace \phi_{dq} \rbrace$，核由 Mercer 展开给出：
+
+$$
+k_d(z, z') \;=\; \sum_{q} s_d(q) \, \phi_{dq}(z) \, \phi_{dq}(z') .
+$$
+
+关键点：当 $\lbrace \phi_{dq} \rbrace$ **就是算子的本征函数**时，
+这个有限展开不是近似而是**精确的** Mercer 特征映射。
+所以这里用 inducing points 反而是**严格的降级**——
+它会用低秩近似去逼近一个本来就精确的有限秩表示。
+
+实现上，特征取
+
+$$
+\Phi_d(z) \;=\; \bigl[\, \sqrt{s_d(0)}\,\phi_{d0}(z), \; \ldots, \; \sqrt{s_d(Q)}\,\phi_{dQ}(z) \,\bigr] ,
+$$
+
+于是 $k_d(z,z') = \Phi_d(z)^\top \Phi_d(z')$ 自动半正定。
+
+> 实现：`ModeAdaptiveVariationalTucker._collapsed_features`。
+> $\sqrt{\cdot}$ 在 0 处导数无穷，代码只在**构造特征时**做 $10^{-12}$ 截断，
+> 保持"严格零支撑"控制实验的语义，同时避免 NaN 梯度。
+
+### 2.5 边界条件决定本征基（这一条是 load-bearing 的）
+
+算子的本征基由**边界条件**决定，不是由符号决定：
+
+- 周期边界 $\Rightarrow$ 复指数 $e^{i 2\pi k x}$；
+- **无流（Neumann）边界** $\Rightarrow$ 余弦 $\phi_k(x) = \sqrt{2}\cos(\pi k x)$，$\phi_0 \equiv 1$。
+
+房间的墙是无流的，初值数据沿时间也**不是周期的**。
+强行施加 $f(0) = f(1)$ 是一个很大的非物理约束。
+
+**实测**（单面墙，3 seeds，只换基）：周期 Fourier **0.5781** vs 无流余弦 **0.5448**。
+
+归一化也随之改变。周期基下平均逐点方差是 $s_0 + 2\sum_{k>0} s_k$；
+余弦基下每个特征的均方都是 1，所以是 $\sum_k s_k$。
+
+> 实现：`real_cosine_basis`、`normalize_spectrum_cosine`。用错归一化会引入一个
+> 系统性的整体尺度偏差，而它看起来像"方法不好"。
+
+### 2.6 宿主模型：为什么必须是 Tucker
+
+真实二维场是**一堆 blob**，不是外积。它的 multilinear rank 小，但 CP rank 不小——
+稀疏观测能识别的秩下根本表示不了。所以宿主用 Tucker：
+
+$$
+u(t, x, y) \;\approx\; \sum_{p,q,r} G_{pqr} \, f^{(t)}_p(t) \, f^{(x)}_q(x) \, f^{(y)}_r(y) ,
+$$
+
+每个 $f^{(d)}_\bullet$ 是上面构造的核下的 GP。**逐 mode 独立的秩**是刻意的：
+multilinear rank 为 $[2, 11, 11]$ 的场需要 $2 \cdot 11 \cdot 11 = 242$ 的核，
+而强行取等秩 11 需要 $1331$——这个差别决定模型在真实观测量下是否可辨识。
+
+**collapsed 参数化**（公平性关键）。若每个 atom 各配一套系数，
+8-atom bank 的变分参数是 4-atom 的两倍，方法对比就混入了参数预算差异。
+collapsed 形式先混合谱、再用**一套**系数，变分系数量 $2DR(1 + 2K)$
+**与 bank 大小无关**。所有表都用 collapsed。
+
+### 2.7 混合权重与知识档位
+
+每个 mode 的谱是 bank 内 atom 的凸组合，权重 $\pi$ 由 softmax 参数化并从数据学：
+
+$$
+s_d \;=\; \sum_{q} \pi_{dq} \, s_{dq}, \qquad \pi_{dq} \ge 0, \quad \textstyle\sum_q \pi_{dq} = 1 .
+$$
+
+`routing="global"` 表示三个 mode 共享一组 $\pi$。
+（`per_mode` / `per_mode_rank` 在 1% 观测下**过拟合**，实测更差，主表一律用 global。）
+
+**知识档位**由 bank 怎么造来定义：
+
+| 档 | 学习者知道什么 | bank 构造 |
+|---|---|---|
+| K2 | 真值 $\theta^\star$ | 分离 $S_{\mathrm{op}}(\theta^\star)$，得 $Q$ 个 atom |
+| K1 | $\theta^\star \in \Theta_1$（预先声明的范围） | 从 $\Theta_1$ 采 $M$ 组，各自分离，atom **池化** |
+| K0 | $\theta^\star \in \Theta_0 \supset \Theta_1$ | 同上，范围更宽 |
+| K$-$1 | 无算子信息 | generic dictionary |
+
+在 K1/K0 下，$\pi$ 实际在做**软参数推断**——它在"物理可达的谱"张成的集合内选择，
+而不是在无约束核空间里搜索。
+
+**这正是与 PINN / AutoIP 的结构性差别**：那两者必须先承诺一个具体的 $\theta$
+才能写出残差或虚拟观测，没有在参数族上摊开的机制。
+
+### 2.8 推断
+
+变分下界，因子系数取对角高斯后验，重参数化采样：
+
+$$
+\mathcal{F} \;=\; \mathbb{E}_{q}\bigl[\log p(\mathbf{y} \mid \mathbf{a})\bigr] \;-\; \mathrm{KL}\bigl(q(\mathbf{a}) \,\Vert\, p(\mathbf{a})\bigr) .
+$$
+
+先验是标准正态（尺度已经吸进特征的 $\sqrt{s_d}$ 里），所以 KL 有闭式。
+只在观测到的 entry 上计算，$64^3$ 的张量在训练中从不被物化。
+
+---
+
+## 3. 相关工作（以及本文**不**主张什么）
+
+| 工作 | 它做什么 | 关键差别 |
+|---|---|---|
+| [FunBaT (2023)](https://arxiv.org/abs/2311.04829) | 连续坐标张量补全，GP latent functions + Tucker，message passing 推断 | 用**通用**逐 mode 核；不从算子谱构造 atom。我们把宿主、秩、预算全部锁死，只换谱的来源 |
+| [RR-FBTC (2025)](https://arxiv.org/abs/2512.21486) | functional Bayesian tensor completion + 自动 rank 学习 | 贡献在逼近能力与 rank 学习；本文**固定 rank** |
+| [EPGP (ICML 2023)](https://proceedings.mlr.press/v202/harkonen23a.html) | Ehrenpreis–Palamodov 构造 GP，样本**严格满足**常系数线性 PDE | 需要**完整已知**的方程（含系数）；本文只近似解的二阶谱，换来对 K1/K0 的支持 |
+| [Tensor GPs (2025)](https://arxiv.org/abs/2510.13772) | 一维 GP factors + 张量分解**求解**非线性 PDE | collocation 求解，需要完整方程；本文做**有噪极稀疏补全** |
+| [AutoIP (ICML 2022)](https://proceedings.mlr.press/v162/long22a.html) | 把微分方程作为 collocation 点上的**虚拟观测**并入 GP | **最近的亲戚**：物理同样进先验而非损失。差别在承载者——它保留全 GP，要分解 $(n+m)\times(n+m)$ 稠密矩阵；我们放进低秩张量的逐维谱，从不形成该矩阵。**且它必须承诺单个 $\theta$** |
+| [Spectral Mixture (ICML 2013)](https://proceedings.mlr.press/v28/wilson13.html) | 参数化谱密度，在平稳核类中**稠密** | 因为稠密，任何固定构造都不可能在**表达力**上胜出，只可能在**样本效率**上。所以我们把它作为 baseline，而不是声称谱表示是新的 |
+| PINN 类 | 把 PDE 残差加进损失 | 见 §5：同一份物理，当先验和当惩罚差一个数量级 |
+
+**本文不主张**"GP + tensor"或"PDE-informed GP"是新的。可守的最窄定位是：
+
+> 把算子族**不可分**的联合谱做**非负、保 PSD** 的低秩投影，得到逐维 GP kernel，
+> 使得在"只知方程形式、不知系数"时仍可用；并给出何时该用、何时不该用的判据。
+
+---
+
+## 4. Baseline：每一个是什么、给了什么待遇
+
+**通用原则：所有 baseline 的待遇都比我们好。** 我们这一臂永远是：
+一组配置、系数错 50%、零调参数据。
+
+### 4.1 核类（跑在**我们的**宿主里，因此是消融不是 baseline）
+
+这一点很重要，我一度弄混过：这些臂用的是我们的余弦本征基、Tucker 宿主、
+collapsed 参数化、逐维特征预算——**本文论证的每一项设计都无偿给了它们**。
+所以它们隔离的是"谱从哪来"这一项，是**消融**。
+
+| 臂 | $\ell$ 由什么数据选 | 可部署？ |
+|---|---|---|
+| Matérn 可部署 | 传感器读数的 1/4 留出验证 | ✅ |
+| Matérn oracle$^\star$ | **真实留出区域**（测试集） | ❌ 上界 |
+| Matérn 固定 | 不选，固定 $\ell = 1.6$ | ✅ |
+| 逐维常数 oracle$^\star$ | 27 种组合在测试集上选 | ❌ 上界 |
+
+谱密度 $s(k) = (1 + (\ell k)^2)^{-2}$，即一维 Matérn-$3/2$。
+
+> **网格必须夹住 baseline 自己的最优**。原网格 `(0.12, 0.32, 0.8)` 没夹住
+> （最优在 2.4），直接导致一个被撤回的头条。现网格
+> `(0.12, 0.32, 0.8, 1.6, 2.4, 3.5)`，最优 2.4 是内点。
+> **任何新网格都要检查最优是否落在端点。**
+
+### 4.2 神经类（真正的对手）
+
+| 臂 | 结构 | 给的待遇 |
+|---|---|---|
+| **CoSTCo** (KDD'19) | 每 index 嵌入 → 跨 rank 轴卷积 → 跨 mode 卷积 → MLP。**刻意非多线性** | 3 架构 × 2 学习率，**测试集选**；6 倍预算 |
+| **Fourier-MLP** | 位置编码 + MLP，**无低秩假设** | 同上 |
+| LRTFR/SIREN | sine 因子 + Tucker 核（Continuous-Tensor-Toolbox） | 6 倍预算 |
+
+> 实现：`neural_baselines.py`、`neural_functional_tucker.py`、`run_leak_neural.py`。
+> 旧版只有 LRTFR，它在受限布局上都在 0.9 附近，**根本没在竞争**——
+> 留它当唯一神经对照会让论文看起来"赢了容量"，其实只赢了一个小模型。
+
+### 4.3 物理类（最该比的）
+
+| 臂 | 怎么用方程 | 给的待遇 |
+|---|---|---|
+| **PINN** | 损失加 $\lVert \mathcal{L}_\theta u \rVert^2$ 于 collocation 点，autograd 求导 | 5 权重 × 2 学习率**测试集选**，4 倍预算，**权重 0 在候选里**（可以拒绝物理） |
+| **AutoIP 式** | $\mathcal{L}u = 0$ 作为虚拟观测并入 GP | 3 组长度尺度 × 4 residual noise **测试集选**，含"等于关闭"的档 |
+
+> 实现：`pinn_baseline.py`、`physics_informed_gp.py`。
+> AutoIP 需要核的**四阶混合导数**。解析式**必须对拍自动微分**
+> （`verify_against_autograd`，现吻合到 $2\times10^{-16}$），
+> 而且**光验证零件不够**——我的分块转置写错过，
+> 所以另加了"在自己的无噪观测上条件化必须复现观测"的端到端检验。
+
+---
+
+## 5. 主实验与完整 setting
+
+### 5.1 共享 setting（所有表）
+
+```python
+FIELD = dict(grid=(64, 64), diffusivity=(0.02, 0.006), reaction=0.04,
+             sources=((0.30, 0.65, 0.09, 15.0), (0.70, 0.35, 0.07, 25.0),
+                      (0.55, 0.75, 0.06, 40.0)),
+             dt=0.6, burn_in=200, record_steps=64, background_noise=0.02)
+NOMINAL = dict(diffusivity=(0.03, 0.012), reaction=0.06)  # 故意错 1.5 倍
+LENGTH_SCALES = (0.12, 0.32, 0.8, 1.6, 2.4, 3.5)
+BINS   = (12, 12, 12)     # 每 mode 频率数
+RANKS  = (8, 5, 5)        # Tucker 逐 mode 秩
+```
+
+- 张量 $[t, x, y] = 64 \times 64 \times 64$，去均值并除以标准差；
+- 观测比例 $1\%$（2621 个点），观测噪声 std $0.05$；
+- 优化：Adam，lr $0.02$，1000 步，ELBO 3 样本，梯度裁剪 10；
+- **同一 seed 内所有臂共享场、掩码、噪声**，所以每个比较都是配对的；
+- 指标：held-out NRMSE，按留出集标准差归一化，**所以 $1.0$ 恰好是预测均值的分数**。
+
+### 5.2 布局定义（`sensor_mask`）
+
+| 名称 | 区域 | 可达 |
+|---|---|---|
+| `random` | 全域 | 100% |
+| `wall_ring` | $\mathrm{depth} < 2$ | 12% |
+| `near_wall` | $3 \le \mathrm{depth} < 8$ | 26% |
+| `one_wall_strip` | $x < 5$ | 8% |
+| `one_wall_strip_y` | $y < 5$ | 8% |
+| `two_walls_lr` / `two_walls_tb` | $x < 5$ 或 $x \ge n_x - 5$ / 同理 $y$ | 16% |
+| `two_walls_adjacent` | $x < 5$ 或 $y < 5$ | 15% |
+| `corner_block` | $x < 20$ 且 $y < 20$ | 10% |
+| `four_corners` | 四角各 $10 \times 10$ | 10% |
+
+**所有布局的观测预算相同**，只有排布不同。
+
+### 5.3 可信的主实验清单
+
+| 实验 | 脚本 | 结果文件 | seeds |
+|---|---|---|---|
+| **主表**：5 布局 × 3 档 | `run_leak_sensors.py` | `leak_main3tier_summary.json` | 5 |
+| **算子网格**：3 族 × 5 布局 | `run_leak_operators.py --tag operator_grid` | `operator_grid_summary.json` | 3 |
+| **3D 房间** $32^4$ | `run_leak_3d.py` | `leak3d_fixed_summary.json` | 2 |
+| **知识档位** K2/K1/K0/K$-$1 | `run_leak_knowledge_ladder.py` | `knowledge_ladder_leak_summary.json` | 3 |
+| **强神经 baseline** | `run_leak_neural.py` | `neural_strong_summary.json` | 3 |
+| **PINN 对比** | `run_leak_physics_baselines.py` | `physics_baselines_summary.json` | 3 |
+| **固定核对照** | `run_leak_fixed_kernel.py` | `fixed_kernel_summary.json` | 3 |
+| **配对几何** | `run_leak_sensors.py --tag leak_geometry` | `leak_geometry_summary.json` | 3 |
+| **稳健性**（样本量/噪声/系数） | `run_leak_robustness.py` | `robustness_summary.json` | 3 |
+| **剖面机制** | `run_leak_profile_mechanism.py` | `profile_mechanism_summary.json` | 3 |
+
+表与图**全部由脚本从 JSON 生成**，不手抄：
+`make_paper_tables.py`、`make_leak_figures.py`、`make_headline_figure.py`、
+`make_reconstruction_figure.py`、`make_appendix_tables.py`。
+**这张主表被撤回过一次，手抄正是撤回过的数字混进修订版的典型途径。**
+
+### 5.4 三个最重要的数字
+
+**（一）调参代价随受限程度上升，与算子族无关**
+
+| 布局 | 反应-扩散 | 扩散主导 | 平流-扩散 |
+|---|---|---|---|
+| 随机 | $+0.0000$ | $+0.0008$ | $+0.0031$ |
+| 单面墙 | $+0.2281$ | $+0.3411$ | $+0.1996$ |
+
+**（二）同一份物理，先验 vs 残差**
+
+| 布局 | ours | PINN$^\star$ | 同一网络关掉物理 | 残差买到 |
+|---|---|---|---|---|
+| 随机 | 0.0547 | **0.0522** | 0.1174 | $+0.0652$ |
+| 单面墙 | **0.5387** | 0.8008 | 0.8229 | $+0.0220$ |
+
+单面墙上三个 seed 有两个**自己选了残差权重 0**。
+
+**（三）知识档位（单面墙）**
+
+| 档 | NRMSE |
+|---|---|
+| K2 真系数 | 0.5450 |
+| K1 bank $\times[1/3,3]$ | **0.5468** |
+| K0 bank $\times[1/10,10]$ | 0.5783 |
+| K$-$1 generic（同 16 atom） | 0.7408 |
+
+### 5.5 必须一并报告的负面结果
+
+- **角块布局**：反应-扩散场上我们 1.0346，**比预测均值还差**，输给所有 baseline。
+  但在扩散主导场上我们 0.7037 **赢 oracle 0.095**——所以这是**场的性质**，不是方法的普遍缺陷。
+- **失败不体面**：全部实验里唯一超过 NRMSE 1.0 的臂始终是我们，baseline 最差只到 0.95。
+  长尺度 Matérn 打不过时会收缩到均值并停下；我们的尺度被方程钉死，会继续外推。
+  **部署前需要一个"检测正在超出观测约束范围并转为收缩"的回退机制，目前没有。**
+- **2D 上固定常数几乎追平我们**（$\ell = 1.6$，最差差 0.0135）。
+- **AutoIP 在 2D 尺度上比我们快**（1.7–8.0 秒 vs 20–25 秒）。
+  "标准 GP 不 scale"在这个规模上**不成立**，不要这样写。
+
+---
+
+## 6. 数据从哪来
+
+### 6.1 主线数据：自己解，不需要下载
+
+**当前论文的全部主实验都不依赖任何外部数据集。** 场由本仓库的求解器生成：
+
+```bash
+# 2D 主线场（每个 seed 约 1 秒）
+python -c "
+import sys; sys.path[:0]=['experiments']
+from forced_pde_solver import solve_multi_leak
+f = solve_multi_leak(seed=0, grid=(64,64), diffusivity=(0.02,0.006), reaction=0.04,
+                     sources=((0.30,0.65,0.09,15.0),(0.70,0.35,0.07,25.0),
+                              (0.55,0.75,0.06,40.0)),
+                     dt=0.6, burn_in=200, record_steps=64, background_noise=0.02).field
+print(f.shape)"
+
+# 3D 房间（约 1.4 秒，32^4 ≈ 105 万格点）
+python -c "
+import sys; sys.path[:0]=['experiments']
+from forced_pde_solver import solve_multi_leak_3d
+print(solve_multi_leak_3d(seed=0).field.shape)"
+```
+
+求解器：`experiments/forced_pde_solver.py`
+- DCT 谱方法 + 指数积分器做扩散-反应（无流边界，余弦基对角化）；
+- 平流用**算子分裂**：谱步之后在实空间做一阶迎风，**CFL 条件运行时检查**；
+- `_smooth_noise` 用高斯滤波白噪。
+  > **踩过的坑**：早期用 `np.kron` 复制块来造强迫，其谱是 sinc、**带硬零点**，
+  > 导致先验与数据在"强迫"上不一致——而我一度以为是算子错了。
+
+**为什么用自己的场是合理的**：真值来自**独立的**有限差分/谱积分，
+**不是**从模型自己的先验里采样；而且给模型的名义系数是**故意错 1.5 倍**的。
+
+### 6.2 若要换真实数据集
+
+本项目评估过以下外部来源。**每一个都必须先过 §6.3 的筛查**。
+
+| 数据集 | 链接 | 适合什么 | 已知风险 |
+|---|---|---|---|
+| **PDEBench** | https://github.com/pdebench/PDEBench | diffusion / reaction-diffusion / advection，官方生成器给出确切 PDE 参数 | 2D diffusion-reaction 已实测**不通过筛查**：各空间轴需 63% 的模态才够 95% 能量，全观测秩-40 CP 仍留 0.298 相对误差 |
+| **Kolmogorov flow (MNO)** | https://github.com/neuraloperator/markov_neural_operator | 周期域算子谱清楚，可测 Reynolds shift | $\mathrm{Re}=40$ 已实测**不通过**：同样 63%，broad-spectrum turbulence |
+| **OpenFWI** | https://openfwi-lanl.github.io/ | wave / 高频压力测试 | full signed phase 与非平稳介质可能超出实值可分核；允许得到明确负结论 |
+| **The Well** | https://github.com/PolymathicAI/the_well | 统一接口，acoustic / active matter | 先用固定小子集，**manifest 要先冻结**，不按结果选 trajectory |
+| **CFDBench** | https://github.com/luo-yining/CFDBench | 通用 CFD 与边界条件 shift | 精确算子未知，**不能**描述成"已知 operator prior" |
+| **RealPDEBench** | https://github.com/AI4Science-WestlakeU/RealPDEBench | 最终 sim-to-real | 不应在核选择阶段消费真实 test |
+
+处理脚本入口：`experiments/pdebench_data.py`（PDEBench 读取与筛查）、
+`src/geoaware/the_well_pilot.py`（The Well 小子集）、
+`src/geoaware/tensor_data.py`（通用张量化与掩码）。
+
+### 6.3 上数据集之前必须跑的三个筛查（预先声明，先跑再比方法）
+
+1. **低秩可行性**：按拟采用的秩做**全观测** Tucker 拟合，相对误差须**明显低于 1**。
+   否则任何核都无关紧要，所有臂都会落在平凡基线附近。
+2. **谱集中度**：各轴携带 95% 能量所需的模态比例。实测 $\ge 63\%$ 的都不通过。
+3. **边界可观测性**（受限布局特有）：
+
+$$
+\rho \;=\; \frac{E_{\partial} / E_{\text{total}}}{N_{\partial} / N_{\text{total}}} \;\ge\; 0.5 ,
+$$
+
+   其中 $E_{\partial}$ 是边界区域的能量、$N_{\partial}$ 是其格点数。
+
+   > **阈值必须用被拒设计来标定**。原来写的是 $\rho \ge 1$，
+   > 而主线场自己是 $0.986$——那个阈值会把它一并判掉，**没有区分力**。
+   > 用真正被拒的设计（单个窄羽流，$\rho = 0.160$，墙面 SNR 7.6）标定后，
+   > 在用的场是 $0.986$ / $1.035$（SNR 19），阈值取在空档里才有意义。
+
+---
+
+## 7. 代码地图
+
+```
+src/geoaware/operator_spectral_funbat.py   核心：谱构造、非负CP、Tucker宿主（998 行）
+  ├─ operator_joint_spectrum        算子符号 → 联合谱
+  ├─ nonnegative_cp_spectrum        非负CP分离（任意阶，支持掩码）
+  ├─ real_cosine_basis              无流边界本征基
+  ├─ normalize_spectrum_cosine      余弦基下的归一化
+  └─ ModeAdaptiveVariationalTucker  宿主（任意阶，global/per_mode/per_mode_rank routing）
+
+experiments/
+  forced_pde_solver.py              场生成（2D/3D，可选平流）
+  run_leak_sensors.py               主表 + 布局定义 + fit_gp（其他脚本都 import 它）
+  run_leak_operators.py             算子族 × 布局网格
+  run_leak_3d.py                    3D 房间
+  run_leak_knowledge_ladder.py      K2/K1/K0/K−1
+  run_leak_neural.py                CoSTCo / Fourier-MLP / LRTFR
+  run_leak_physics_baselines.py     PINN
+  run_leak_autoip.py                AutoIP 式物理信息 GP（精度 + 代价）
+  make_*.py                         全部表与图的生成器
+tools/check_github_math.py          公式渲染检查（改文档后必跑）
+```
+
+复现主表：
+
+```bash
+python experiments/run_leak_sensors.py --seeds 0 1 2 3 4 --tag leak_main3tier
+python experiments/make_paper_tables.py
+```
+
+---
+
+## 8. 给接手者的忠告
+
+1. **任何超参网格都要检查最优是否在端点。** 这个项目最大的一次撤回就是因为没检查。
+   反过来的错误（把 baseline 调得过强）大家都会防；
+   **调得不够**产生的数字**看起来像测量结果**，没有任何东西会提示你。
+2. **机制解释先写进脚本，再跑。** 本项目至今有 4 次机制预测被自己的对照推翻，
+   每一次事后都很容易重新叙述。判定条件要写成代码里的布尔值。
+3. **报告负面结果。** 角块超过 1.0、$y$ 墙崩溃、2D 上固定常数追平——
+   这些都在文档和论文里。掩盖它们会在审稿时以更大的代价回来。
+4. **改完文档跑 `tools/check_github_math.py`。**
+5. **未来方向见 `docs/FUTURE_BRANCHES_ZH.md`**（泄漏源定位、归纳式表征、
+   以及两个尚未解释的现象）。
