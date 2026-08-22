@@ -25,7 +25,12 @@ from physics_informed_gp import PhysicsInformedGP, verify_against_autograd  # no
 import run_leak_sensors as base  # noqa: E402
 
 SCALES = ((0.30, 0.20, 0.20), (0.60, 0.35, 0.35), (1.00, 0.60, 0.60))
-RESIDUAL_STD = (0.02, 0.2)
+# The last value is large enough to switch the physics off.  The field is
+# source-driven, so Lu = f is not zero near a leak, and an arm forced to impose
+# Lu = 0 everywhere is being handicapped rather than tested.  The PINN arm was
+# allowed to decline the physics by choosing weight zero and did so on two of
+# three seeds; this arm gets the same option.
+RESIDUAL_STD = (0.02, 0.2, 2.0, 50.0)
 
 
 def coordinates(indices, shape):
@@ -39,10 +44,19 @@ def run_once(shape, observed, targets, collocation, test, truth, *, scales,
                               diffusivity=base.NOMINAL["diffusivity"],
                               reaction=base.NOMINAL["reaction"],
                               time_span=shape[0] * dt, residual_std=residual_std)
-    started = time.time(); tracemalloc.start()
+    started = time.time()
+    on_gpu = observed.is_cuda
+    if on_gpu:
+        torch.cuda.reset_peak_memory_stats(); torch.cuda.synchronize()
+    else:
+        tracemalloc.start()
     prediction = model.fit_predict(coordinates(observed, shape), targets.double(),
                                    collocation, coordinates(test, shape), chunk=5000)
-    peak = tracemalloc.get_traced_memory()[1]; tracemalloc.stop()
+    if on_gpu:
+        torch.cuda.synchronize()
+        peak = torch.cuda.max_memory_allocated()
+    else:
+        peak = tracemalloc.get_traced_memory()[1]; tracemalloc.stop()
     error = float(torch.sqrt(torch.mean((prediction - truth.double()).square()))
                   / truth.double().std().clamp_min(1e-8))
     return error, time.time() - started, peak / 2 ** 20
@@ -106,15 +120,15 @@ def main() -> None:
             best = min(scored, key=lambda key: scored[key][0])
             rows.setdefault("autoip_oracle", []).append(scored[best][0])
             costs.append({"seconds": scored[best][1], "peak_mb": scored[best][2],
-                          "scales": list(best[0]), "residual_std": best[1]})
+                          "scales": list(best[0]), "residual_std": best[1],
+                          "physics_switched_off": best[1] >= RESIDUAL_STD[-1]})
 
             # The same GP with the physics removed, so the equation's own
             # contribution is measured rather than inferred.
             empty = torch.zeros(0, 3, dtype=torch.float64, device=device)
             plain = min(run_once(shape, observed, targets, empty, test, truth,
-                                 scales=scales, residual_std=residual,
-                                 dt=base.FIELD["dt"])[0] for scales in SCALES
-                        for residual in RESIDUAL_STD[:1])
+                                 scales=scales, residual_std=RESIDUAL_STD[0],
+                                 dt=base.FIELD["dt"])[0] for scales in SCALES)
             rows.setdefault("gp_no_physics", []).append(plain)
 
         cell = {"layout": layout, "observed": budget, "collocation": a.collocation,

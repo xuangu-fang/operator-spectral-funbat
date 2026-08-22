@@ -92,6 +92,8 @@ def main() -> None:
     p.add_argument("--device",
         default="cuda" if torch.cuda.is_available() else "cpu",
         help="an idle GPU makes these sweeps roughly an order of magnitude cheaper")
+    p.add_argument("--tag", default="operator_families",
+                   help="separate tags keep partial grids from overwriting each other")
     p.add_argument("--output", type=Path, default=ROOT / "results" / "leak")
     a = p.parse_args()
     a.output.mkdir(parents=True, exist_ok=True)
@@ -155,7 +157,7 @@ def main() -> None:
                   f"tuning cost {cell['tuning_cost']:+.4f}  "
                   f"ours vs oracle {cell['gap_to_oracle']:+.4f}", flush=True)
 
-    (a.output / "operator_families_summary.json").write_text(json.dumps(
+    (a.output / f"{a.tag}_summary.json").write_text(json.dumps(
         {"families": {k: {kk: str(vv) for kk, vv in v.items()} for k, v in FAMILIES.items()},
          "seeds": a.seeds, "records": records}, indent=2))
 

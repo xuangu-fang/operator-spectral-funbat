@@ -15,7 +15,7 @@
 论文只需要证明一件事：
 
 $$
-\text{PDE 形式}\;\longrightarrow\;\text{谱}\;\longrightarrow\;\text{逐维 kernel}\;\longrightarrow\;\text{更好的稀疏重构}
+\mathcal{L} \;\longrightarrow\; S_{\mathrm{op}} \;\longrightarrow\; \lbrace k_d \rbrace_{d=1}^{D}\;\longrightarrow\;\hat{\mathcal{X}}
 $$
 
 **不需要**证明它对任意边界、任意高频、任意算子族都成立。那些是 ablation，不是主线。
