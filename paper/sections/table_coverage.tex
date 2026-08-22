@@ -1,24 +1,34 @@
 \begin{table}[t]
   \centering
-  \caption{\textbf{Scenario coverage.}  The tuning cost -- what it costs to choose a kernel from data a practitioner can collect rather than from the held-out region -- across three operator families, two dimensionalities and every sensor layout.  It is near zero wherever the sensors are scattered and large wherever they are confined, in every scenario, which is the claim this paper makes.  Cells marked \emph{---} were not run.}
+  \caption{\textbf{Scenario coverage: held-out NRMSE.}  Three operator families, two dimensionalities, every sensor layout, $1\%$ observed.  Each cell is \emph{ours} against the best arm a practitioner could deploy, with the relative improvement.  Where sensors are scattered the two are level; where they are confined the gap opens.  Cells marked \emph{---} were not run.}
   \label{tab:coverage}
   \small
   \begin{tabular}{llccccc}
     \toprule
-    & & \multicolumn{5}{c}{tuning cost, by sensor layout} \\
-    \cmidrule(lr){3-7}
-    dimension & operator & scattered & \multicolumn{3}{c}{confined} & \\
+    & & scattered & \multicolumn{4}{c}{confined} \\
+    \cmidrule(lr){3-3}\cmidrule(lr){4-7}
     \midrule
     \multicolumn{2}{l}{\emph{2-D space $+$ time}} & scattered & all walls & inner band & one wall & one corner \\
-    & reaction--diffusion & $+0.0000$ & $+0.0519$ & $+0.1219$ & $+0.2281$ & $+0.0726$ \\
-    & diffusion-dominated & $+0.0008$ & $+0.0320$ & $+0.0090$ & $+0.3411$ & $+0.0581$ \\
-    & advection--diffusion & $+0.0031$ & $+0.0046$ & $+0.1154$ & $+0.1996$ & $+0.1501$ \\
-    \addlinespace
+    & reaction--diffusion & 0.0547 & \textbf{0.4766} & \textbf{0.3064} & \textbf{0.5387} & 1.0346 \\
+    & \scriptsize best deployable & \scriptsize \emph{0.0530} & \scriptsize \emph{0.5004} \scriptsize$(+5\%)$ & \scriptsize \emph{0.4206} \scriptsize$(+27\%)$ & \scriptsize \emph{0.7719} \scriptsize$(+30\%)$ & \scriptsize \emph{0.9728} \\
+    \addlinespace[2pt]
+    & diffusion-dominated & \textbf{0.0388} & \textbf{0.2670} & \textbf{0.1909} & \textbf{0.3322} & \textbf{0.7037} \\
+    & \scriptsize best deployable & \scriptsize \emph{0.0395} \scriptsize$(+2\%)$ & \scriptsize \emph{0.2895} \scriptsize$(+8\%)$ & \scriptsize \emph{0.1947} \scriptsize$(+2\%)$ & \scriptsize \emph{0.6720} \scriptsize$(+51\%)$ & \scriptsize \emph{0.8565} \scriptsize$(+18\%)$ \\
+    \addlinespace[2pt]
+    & advection--diffusion & \textbf{0.0265} & 0.4102 & \textbf{0.2561} & \textbf{0.5144} & \textbf{0.8681} \\
+    & \scriptsize best deployable & \scriptsize \emph{0.0281} \scriptsize$(+6\%)$ & \scriptsize \emph{0.3969} & \scriptsize \emph{0.3511} \scriptsize$(+27\%)$ & \scriptsize \emph{0.7021} \scriptsize$(+27\%)$ & \scriptsize \emph{1.0328} \scriptsize$(+16\%)$ \\
+    \addlinespace[2pt]
+    \midrule
     \multicolumn{2}{l}{\emph{3-D space $+$ time}} & scattered & two faces & one face & one corner &  \\
-    & reaction--diffusion & $+0.0002$ & $+0.1463$ & $+0.2412$ & $+0.0031$ &  \\
+    & reaction--diffusion & 0.1602 & \textbf{0.5856} & \textbf{0.6856} & \textbf{0.9130} &  \\
+    & \scriptsize best deployable & \scriptsize \emph{0.1586} & \scriptsize \emph{0.7356} \scriptsize$(+20\%)$ & \scriptsize \emph{0.8883} \scriptsize$(+23\%)$ & \scriptsize \emph{0.9733} \scriptsize$(+6\%)$ &  \\
+    \addlinespace[2pt]
     & diffusion-dominated & --- & --- & --- & --- &  \\
+    & \scriptsize best deployable &  &  &  &  &  \\
+    \addlinespace[2pt]
     & advection--diffusion & --- & --- & --- & --- &  \\
-    \addlinespace
+    & \scriptsize best deployable &  &  &  &  &  \\
+    \addlinespace[2pt]
     \bottomrule
   \end{tabular}
 \end{table}

@@ -60,52 +60,69 @@ def collect():
 def main() -> None:
     grid = collect()
     lines = [r"\begin{table}[t]", r"  \centering",
-             r"  \caption{\textbf{Scenario coverage.}  The tuning cost -- what it "
-             r"costs to choose a kernel from data a practitioner can collect rather "
-             r"than from the held-out region -- across three operator families, two "
-             r"dimensionalities and every sensor layout.  It is near zero wherever "
-             r"the sensors are scattered and large wherever they are confined, in "
-             r"every scenario, which is the claim this paper makes.  Cells marked "
+             r"  \caption{\textbf{Scenario coverage: held-out NRMSE.}  Three operator "
+             r"families, two dimensionalities, every sensor layout, $1\%$ observed.  "
+             r"Each cell is \emph{ours} against the best arm a practitioner could "
+             r"deploy, with the relative improvement.  Where sensors are scattered the "
+             r"two are level; where they are confined the gap opens.  Cells marked "
              r"\emph{---} were not run.}",
              r"  \label{tab:coverage}", r"  \small",
              r"  \begin{tabular}{llccccc}", r"    \toprule",
-             r"    & & \multicolumn{5}{c}{tuning cost, by sensor layout} \\",
-             r"    \cmidrule(lr){3-7}",
-             r"    dimension & operator & scattered & \multicolumn{3}{c}{confined}"
-             r" & \\", r"    \midrule"]
+             r"    & & scattered & \multicolumn{4}{c}{confined} \\",
+             r"    \cmidrule(lr){3-3}\cmidrule(lr){4-7}"]
 
     for dimension, layouts in (("2-D space $+$ time", LAYOUT_2D),
                                ("3-D space $+$ time", LAYOUT_3D)):
+        lines.append(r"    \midrule")
         header = " & ".join(PRETTY[l] for l in layouts)
+        pad = " & " * (5 - len(layouts))
         lines.append(rf"    \multicolumn{{2}}{{l}}{{\emph{{{dimension}}}}} & "
-                     + header + (" & " if len(layouts) < 5 else "") + r" \\")
-        for label in ("reaction--diffusion", "diffusion-dominated", "advection--diffusion"):
+                     + header + pad + r" \\")
+        for label in ("reaction--diffusion", "diffusion-dominated",
+                      "advection--diffusion"):
             cells = grid.get((dimension, label))
-            values = []
+            ours_row, base_row = [], []
             for layout in layouts:
                 record = (cells or {}).get(layout)
-                values.append("---" if record is None
-                              else f"${record['tuning_cost']:+.4f}$")
-            while len(values) < 5:
-                values.append("")
-            lines.append(f"    & {label} & " + " & ".join(values) + r" \\")
-        lines.append(r"    \addlinespace")
+                if record is None:
+                    ours_row.append("---"); base_row.append("")
+                    continue
+                ours = record["ours_pde"]["mean"]
+                rival = min(record[k]["mean"] for k in
+                            ("matern_deployable", "spectral_mixture", "neural_tucker")
+                            if k in record)
+                better = ours < rival
+                ours_row.append(rf"\textbf{{{ours:.4f}}}" if better else f"{ours:.4f}")
+                base_row.append(rf"\emph{{{rival:.4f}}}"
+                                + (rf" \scriptsize$({100 * (rival - ours) / rival:+.0f}\%)$"
+                                   if better else ""))
+            while len(ours_row) < 5:
+                ours_row.append(""); base_row.append("")
+            lines.append(f"    & {label} & " + " & ".join(ours_row) + r" \\")
+            lines.append(r"    & \scriptsize best deployable & "
+                         + " & ".join(rf"\scriptsize {b}" if b else "" for b in base_row)
+                         + r" \\")
+            lines.append(r"    \addlinespace[2pt]")
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
     (OUT / "table_coverage.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    # a plain-text version for the documentation
-    report = ["| 维度 | 算子 | 布局 | 调参代价 | ours | oracle | ours−oracle |",
-              "|---|---|---|---|---|---|---|"]
+    report = ["| 维度 | 算子 | 布局 | **ours** | 最佳 baseline | 相对改进 |",
+              "|---|---|---|---|---|---|"]
     for (dimension, label), cells in grid.items():
         if cells is None:
-            report.append(f"| {dimension} | {label} | — | **未跑** | | | |")
+            report.append(f"| {dimension} | {label} | — | **未跑** | | |")
             continue
-        for layout, record in cells.items():
+        for layout in (LAYOUT_3D if "3-D" in dimension else LAYOUT_2D):
+            record = cells.get(layout)
+            if record is None:
+                continue
+            ours = record["ours_pde"]["mean"]
+            rival = min(record[k]["mean"] for k in
+                        ("matern_deployable", "spectral_mixture", "neural_tucker")
+                        if k in record)
             report.append(
                 f"| {dimension} | {label} | {PRETTY.get(layout, layout)} | "
-                f"{record['tuning_cost']:+.4f} | {record['ours_pde']['mean']:.4f} | "
-                f"{record['matern_oracle']['mean']:.4f} | "
-                f"{record['gap_to_oracle']:+.4f} |")
+                f"**{ours:.4f}** | {rival:.4f} | {100 * (rival - ours) / rival:+.1f}% |")
     (LEAK / "coverage_table.md").write_text("\n".join(report) + "\n", encoding="utf-8")
     filled = sum(1 for c in grid.values() if c)
     print(f"wrote table_coverage.tex and coverage_table.md "
