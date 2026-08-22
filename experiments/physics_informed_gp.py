@@ -95,15 +95,24 @@ class PhysicsInformedGP:
 
     def fit_predict(self, observed, targets, collocation, test, *, chunk=20000):
         n, m = len(observed), len(collocation)
+        # Everything is built where the observations already live; a matrix
+        # assembled on the wrong device is the whole cost of this method.
+        where = dict(dtype=observed.dtype, device=observed.device)
+        collocation = collocation.to(observed.device)
         top = torch.cat([self.k_uu(observed, observed) + (self.noise + self.jitter)
-                         * torch.eye(n, dtype=observed.dtype),
+                         * torch.eye(n, **where),
                          self.k_ur(observed, collocation)], 1)
-        bottom = torch.cat([self.k_ur(collocation, observed).T,
+        # The lower-left block is cov(Lu(collocation), u(observed)), which is the
+        # transpose of cov(u(observed), Lu(collocation)) -- not of the same
+        # function called with the arguments swapped, since L acts on the second
+        # argument only.
+        bottom = torch.cat([self.k_ur(observed, collocation).T,
                             self.k_rr(collocation, collocation)
                             + (self.residual + self.jitter)
-                            * torch.eye(m, dtype=observed.dtype)], 1)
+                            * torch.eye(m, **where)], 1)
         joint = torch.cat([top, bottom], 0)
-        values = torch.cat([targets, torch.zeros(m, dtype=targets.dtype)])
+        values = torch.cat([targets, torch.zeros(m, dtype=targets.dtype,
+                                                 device=targets.device)])
         weights = torch.linalg.solve(joint, values)
         out = []
         for start in range(0, len(test), chunk):
