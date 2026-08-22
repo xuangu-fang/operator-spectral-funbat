@@ -4,6 +4,9 @@
 这个方法在做什么、每一步公式是怎么来的、哪些实验是可信的、
 数据从哪来、以及哪些坑我已经踩过。
 
+**想先把东西跑起来** → [`GETTING_STARTED_ZH.md`](GETTING_STARTED_ZH.md)（约 20 分钟出第一张主表）。
+**想知道未来做什么** → [`FUTURE_BRANCHES_ZH.md`](FUTURE_BRANCHES_ZH.md)。
+
 > **公式渲染**：本文所有公式已通过 `tools/check_github_math.py`。
 > 改动后请重新运行——GitHub 上 `$$` 块前面没有空行就**不会渲染**，
 > 这个仓库为此坏过 54 处公式，源码看着好好的，网页上是散着美元符号的散文。
@@ -663,12 +666,44 @@ experiments/
 tools/check_github_math.py          公式渲染检查（改文档后必跑）
 ```
 
-复现主表：
+### 7.1 配置系统（换实验不要改 Python）
+
+所有会变的设置都在 `configs/*.yaml`，变体用 `inherits` 只写差异：
+
+```yaml
+# configs/my_study.yaml
+inherits: base
+field:
+  reaction: 0.004
+nominal:
+  reaction: 0.006
+```
 
 ```bash
-python experiments/run_leak_sensors.py --seeds 0 1 2 3 4 --tag leak_main3tier
+python experiments/run_leak_sensors.py --config my_study --tag my_study
+python experiments/run_leak_sensors.py --config base --set evaluation.ratio=0.02
+```
+
+三条刻意的设计：
+
+- **未知键报错**，不静默忽略——超参名打错和"没效果"在结果上无法区分。
+  这个检查上线时立刻抓到 `base.yaml` 从未声明 `drift`，导致平流变体根本覆盖不了它。
+- **覆盖可追溯**：`config_name`、`overrides` 和展开后的完整配置都写进结果 JSON。
+- **不原地修改**：`operator_spectra` 和 `fit_gp` 把系数与预算作为参数传入。
+  重构前有三个脚本靠**改写另一个模块的全局变量**来切换算子族再改回去——
+  两个研究共用一个进程时就会出错，而且看不出某次运行到底用了什么。
+
+现成变体：`base`、`diffusion_dominated`、`advection_diffusion`、`room3d`、`isotropic_control`。
+
+### 7.2 复现主表
+
+```bash
+python experiments/run_leak_sensors.py --config base --tag leak_main3tier
 python experiments/make_paper_tables.py
 ```
+
+> 重构后与已落盘结果**逐位一致**（单面墙 seed 0：0.523953 vs 0.523953，差 0）。
+> 任何进一步的重构都应该这样验证，而不是假设。
 
 ---
 

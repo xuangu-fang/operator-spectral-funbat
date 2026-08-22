@@ -94,7 +94,9 @@ Reported here because it is load-bearing for reading everything above.
 
 | path | what it is |
 |---|---|
-| `docs/HANDOVER_TECHNICAL_ZH.md` | **start here** — full derivation, related work, baselines, experiment settings, dataset provenance |
+| `docs/GETTING_STARTED_ZH.md` | **run something first** — from an empty machine to the main table in about twenty minutes |
+| `docs/HANDOVER_TECHNICAL_ZH.md` | full derivation with algorithm boxes, related work, baselines, experiment settings, dataset provenance |
+| `configs/*.yaml` | every setting worth varying; a new study is a YAML file, not an edit |
 | `docs/FUTURE_BRANCHES_ZH.md` | parked directions and open puzzles |
 | `src/geoaware/operator_spectral_funbat.py` | spectrum construction, nonnegative CP, Tucker host |
 | `experiments/forced_pde_solver.py` | field generation, 2-D and 3-D |
@@ -109,10 +111,20 @@ No dataset download is required — the fields are solved locally in about a
 second per seed.
 
 ```bash
-python experiments/run_leak_sensors.py --seeds 0 1 2 3 4 --tag leak_main3tier
+python experiments/run_leak_sensors.py --config base --tag leak_main3tier
 python experiments/make_paper_tables.py     # writes paper/sections/table_*.tex
 python experiments/make_leak_figures.py     # writes results/leak/figure_*.png
 ```
+
+A different field is a config, not a code change:
+
+```bash
+python experiments/run_leak_sensors.py --config advection_diffusion --tag advection
+python experiments/run_leak_sensors.py --config base --set evaluation.ratio=0.02
+```
+
+Unknown keys are refused rather than ignored, and the resolved config is written
+into every summary, so a number can always be traced back to what produced it.
 
 A GPU is used automatically when available (`--device`), and makes the sweeps
 roughly an order of magnitude cheaper.
