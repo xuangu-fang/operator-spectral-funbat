@@ -1,16 +1,105 @@
 # Operator-Spectral Priors for Sparse Field Reconstruction
 
-**In many physical settings the sensors cannot be placed where the answer is
-wanted.** They mount on a wall, a duct, whatever surface is reachable, and the
-interior is never observed. Reconstruction is then extrapolation rather than
-interpolation, and a smoothness prior — which says only that distant points
-correlate weakly — has nothing left to say about it.
+## The problem
 
-This repository derives per-mode GP kernels from the **form** of the governing
-equation (not its coefficients, not its solution) and drops them into a
-functional tensor decomposition in place of its generic kernels. Model,
-capacity, optimiser and step budget are held fixed; the only variable is where
-the spectra come from.
+A gas leak in a plant. You want the concentration **everywhere in the room** —
+where it is worst, which way it is spreading, whether to evacuate. But you do
+not get to choose where the sensors go:
+
+- the middle of the room holds equipment and walkways, so nothing can be run or
+  hung there;
+- the only places you can drill are **walls**, often just the one reachable
+  face;
+- a combustion chamber instruments its liner, a pipeline its outer wall, a
+  contaminated aquifer a handful of boreholes.
+
+So the measurements sit in a small, **contiguous, badly placed** part of the
+domain, and the reconstruction is wanted everywhere else. In a great many
+physical-field problems, sensor placement is decided by what is reachable, not
+by what is informative.
+
+## Why this is not the usual tensor-completion setting
+
+The literature assumes **uniformly random** missingness. The difference is not
+one of degree:
+
+| | random missingness | confined layout |
+|---|---|---|
+| does an unobserved point have observed neighbours? | always | mostly **none** |
+| what the task actually is | **interpolation** | **extrapolation** |
+| is a smoothness prior enough? | **yes** | **no** |
+| measured, at 1% observed | three methods tie at 0.053 | generic methods reach 0.67–0.96 |
+
+That last row is our own measurement: under random masks this method **ties**
+generic kernels exactly. That is not a disappointment — it is correct. There,
+physics has nothing to add.
+
+## What a smoothness prior says when it has to extrapolate
+
+A stationary kernel says one thing: **correlation decays with distance**.
+
+While interpolating that is sufficient — the target has a neighbour, and "close
+to its neighbour" is the answer. While extrapolating, the same sentence becomes:
+far from the sensors, correlation vanishes, **so the field is near its mean**.
+
+That is a statement about *our ignorance*, not about the field. It is not wrong;
+it simply says nothing. You can watch it happen — a Matérn tuned on the sensors'
+own readings reconstructs the wall strip and then **collapses to zero** across
+the rest of the room ([figure](results/leak/figure_reconstruction.png), third
+panel).
+
+## What the physics supplies is exactly the missing sentence
+
+The key observation: **the form of the equation is almost always known**, even
+when the coefficients are not and the solution certainly is not. An engineer
+rarely knows the field, but usually knows whether they are looking at diffusion,
+transport, or a wave.
+
+For a dissipative operator, the equation states directly how the field decays
+along each axis:
+
+$$\mathcal{L}u = w \quad\Longrightarrow\quad S_u(\xi) = |\hat{\mathcal{L}}(\xi)|^{-2} S_w(\xi)$$
+
+> A smooth kernel knows only that distant points correlate weakly.
+> The operator knows **what the distant values should be**.
+
+Concretely: anisotropic diffusion has symbol $i\omega + r + D_x k_x^2 + D_y k_y^2$.
+With $D_x \neq D_y$ the two spatial directions **decay differently** — smooth
+along one axis, rough along the other. A generic kernel committed to a single
+length scale has no way to express that, and the equation supplies it for free.
+
+## And in this setting you cannot even tune your way out
+
+The obvious objection is that generic kernels have hyper-parameters too, so just
+tune them. **In a confined layout you cannot, for a structural reason.**
+
+Tuning needs validation data resembling the prediction target. With sensors on
+one wall, every point you can hold out is *also on that wall*. Validation
+therefore scores **interpolation inside the strip** while deployment demands
+**extrapolation across the room** — and the split cannot see the difference.
+
+| layout | length scale validation picks | what the held-out region wants | tuning cost |
+|---|---|---|---|
+| anywhere in the room | 0.8 | 0.8 | **+0.0003** |
+| one wall | 0.5, 0.5, 0.8 | **1.6, 2.4, 2.4** | **+0.1760** |
+| one face, 3-D room | 0.12 | **3.5** | **+0.2412** |
+
+Scattered sensors let validation find the right kernel, and tuning is free.
+Confined sensors make it pick a length scale three to five times too short (in
+3-D, thirty times), consistently, because it is measuring the wrong thing.
+
+**So in this setting, needing no tuning data is itself the contribution.**
+
+## What this work does
+
+> Project the operator family's **non-separable** joint spectrum onto per-mode
+> one-dimensional spectra — nonnegatively, so the result is still a valid
+> positive semi-definite kernel — and drop those into a functional tensor
+> decomposition in place of its generic kernels. It needs the **form** of the
+> equation and a **range** for the coefficients; no tuning data at all.
+
+Model, capacity, optimiser and step budget are held fixed. The only variable is
+where the spectra come from.
 
 ---
 
