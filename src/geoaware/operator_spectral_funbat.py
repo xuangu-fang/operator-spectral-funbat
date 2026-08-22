@@ -746,6 +746,7 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         basis: tuple[str, str, str] = ("fourier", "fourier", "fourier"),
         eigenbasis: tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None]
         | None = None,
+        eigenfunctions: tuple | None = None,
     ):
         super().__init__()
         # Spectra may be one stacked [3, family, frequency] tensor when every
@@ -795,6 +796,10 @@ class ModeAdaptiveVariationalTucker(nn.Module):
         if any(kind == "operator" for kind in basis) and eigenbasis is None:
             raise ValueError("an 'operator' basis requires the eigenvectors in `eigenbasis`")
         self.basis = tuple(basis)
+        # Optional closed forms for an `operator` basis, so the model can be
+        # evaluated between grid nodes.  Without them the eigenvectors are known
+        # only where they were computed.
+        self.eigenfunctions = tuple(eigenfunctions) if eigenfunctions else None
         self.frequency_bins = tuple(s.shape[-1] for s in per_mode)
         # Each mode normalizes its spectrum for the basis it actually uses.
         for mode in range(self.order):
@@ -909,6 +914,57 @@ class ModeAdaptiveVariationalTucker(nn.Module):
     def variational_std(self) -> list[torch.Tensor]:
         return [F.softplus(raw) + 1e-4 for raw in self.raw_variational_std]
 
+    def continuous_features(self, mode: int, coordinate: torch.Tensor) -> torch.Tensor:
+        """Features at arbitrary coordinates in [0,1], not only at grid nodes.
+
+        The construction is continuous by nature -- the eigenfunctions of a
+        constant-coefficient Neumann Laplacian are cosines, defined everywhere --
+        but the fast path stores them evaluated on the grid and indexes that
+        matrix, which is why :meth:`_collapsed_features` takes node indices.
+        This evaluates the eigenfunctions instead, so the model can be queried
+        off-grid the way a coordinate network can.
+
+        It works only when the basis is one whose functional form is known.  An
+        ``operator`` basis supplied as a matrix of eigenvectors -- from a
+        discretised operator on a mesh, or with variable coefficients -- exists
+        only at the nodes, and no amount of care recovers it between them; that
+        case raises rather than interpolating silently.
+        """
+        kind = self.basis[mode]
+        if kind == "operator" and getattr(self, "eigenfunctions", None) is None:
+            raise NotImplementedError(
+                f"mode {mode} uses an 'operator' basis given as a matrix of "
+                "eigenvectors, which is defined only at the grid nodes.  Pass "
+                "`eigenfunctions=` at construction with a callable mapping "
+                "coordinates to features if the basis has a closed form, or use "
+                "basis='cosine'/'fourier'.")
+        if kind == "operator":
+            basis = self.eigenfunctions[mode](coordinate, self.frequency_bins[mode])
+        else:
+            builder = real_fourier_basis if kind == "fourier" else real_cosine_basis
+            basis = builder(coordinate, self.frequency_bins[mode])
+        basis = basis.to(dtype=self.core.dtype, device=self.core.device)
+        root = self.induced_spectra()[mode].clamp_min(1e-12).sqrt()
+        # A Fourier basis pairs a cosine and a sine with each spectral value; a
+        # cosine basis has one feature per value.  This must match the branch in
+        # _collapsed_features or the two paths disagree off-grid.
+        if self.basis[mode] == "fourier":
+            amplitude = torch.cat((root[:, :1], root[:, 1:], root[:, 1:]), dim=-1)
+        else:
+            amplitude = root
+        return basis[:, None, :] * amplitude[None]
+
+    def posterior_mean_continuous(self, coordinates: torch.Tensor) -> torch.Tensor:
+        """Posterior mean at arbitrary continuous coordinates, shape [entry, D]."""
+        if coordinates.ndim != 2 or coordinates.shape[1] != self.order:
+            raise ValueError(f"coordinates must have shape [entry,{self.order}]")
+        factors = [
+            (self.continuous_features(mode, coordinates[:, mode])
+             * self.variational_mean[mode][None]).sum(-1)
+            for mode in range(self.order)
+        ]
+        return self._contract(factors)
+
     def _collapsed_features(self, mode: int, node_index: torch.Tensor) -> torch.Tensor:
         """``[entry, rank, feature]`` features of the routed mixture spectrum."""
         mixed = self.induced_spectra()[mode]
@@ -927,6 +983,11 @@ class ModeAdaptiveVariationalTucker(nn.Module):
     ) -> list[torch.Tensor]:
         if indices.ndim != 2 or indices.shape[1] != self.order:
             raise ValueError(f"indices must have shape [entry,{self.order}]")
+        if indices.is_floating_point() and not torch.equal(indices, indices.round()):
+            raise ValueError(
+                "indices are grid node indices, and non-integer values were "
+                "silently floored by earlier versions.  Use "
+                "posterior_mean_continuous() for arbitrary coordinates in [0,1].")
         return [
             (self._collapsed_features(mode, indices[:, mode]) * coefficients[mode][None]).sum(-1)
             for mode in range(self.order)
