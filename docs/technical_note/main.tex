@@ -1,0 +1,874 @@
+% 中文技术札记 —— 用 xelatex 编译（需要 ctex 与 Noto CJK 字体）
+%   make            在本目录生成 main.pdf 并复制到 docs/
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[UTF8,scheme=plain]{ctex}
+\setCJKmainfont{Noto Serif CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmonofont{Noto Sans Mono CJK SC}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage{cleveref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+
+\crefname{section}{第}{第}
+\crefformat{section}{第#2#1#3节}
+\crefname{table}{表}{表}
+\crefname{figure}{图}{图}
+\crefname{equation}{式}{式}
+\crefname{algorithm}{算法}{算法}
+
+\newcommand{\Lop}{\mathcal{L}}
+\newcommand{\Sop}{S_{\mathrm{op}}}
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\NRMSE}{\mathrm{NRMSE}}
+
+\title{\textbf{算子谱先验：受限传感器布局下的稀疏物理场重构}\\[4pt]
+\large 技术札记（交接版）}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-2.4em}
+
+\begin{abstract}
+\noindent
+在很多物理场重构问题里，传感器的位置由工程可达性决定，而不是由信息量决定：
+只能贴在墙面、管壁或少数几个可达点上。此时重构不再是相邻观测之间的\textbf{内插}，
+而是向从未观测过的区域\textbf{外推}，而平稳光滑核在这个任务上几乎无话可说——
+它只知道"远处相关性低"，于是把远处预测成均值，那是关于我们无知的陈述，
+不是关于场的陈述。
+
+本札记给出一套从\textbf{方程形式}构造先验的方法：算子的符号给出解的联合功率谱，
+把这个\textbf{不可分}的联合谱做\textbf{非负、保半正定}的低秩投影，
+得到函数式张量分解每个 mode 的一维 GP 核。它只需要方程的形式和系数的一个范围，
+\textbf{不需要任何调参数据}。
+
+在三个算子族、二维与三维、九种传感器布局上：传感器散布时本方法与通用核\textbf{打平}
+（这是应该的，内插不需要物理）；受限到单面墙时重构误差相对实际可部署的最好方法
+下降 $22.8\%$ 至 $50.6\%$。我们同时如实报告方法失效的场景与两个尚未解释的现象。
+\end{abstract}
+
+\tableofcontents
+\bigskip
+
+%=====================================================================
+%=====================================================================
+\section{记号}
+\label{sec:notation}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+符号 & 含义 & 形状 / 取值 \\
+\midrule
+$D$ & mode 数 & 二维场 $D=3$（$t,x,y$），三维场 $D=4$ \\
+$n_d$ & 第 $d$ 个 mode 的格点数 & $64$（二维），$32$（三维） \\
+$K_d$ & 第 $d$ 个 mode 的频率数 & $12$（二维），$8$（三维） \\
+$R_d$ & 第 $d$ 个 mode 的 Tucker 秩 & $(8,5,5)$ / $(5,4,4,4)$ \\
+$Q$ & bank 中的 atom 数 & $4$ \\
+$\theta$ & 算子系数 $(D_x, D_y, r)$ & 真值 $\theta^\star$ 不可见 \\
+\midrule
+$z_d$ & 第 $d$ 个 mode 的连续坐标 & $z_d \in [0,1]$ \\
+$\mathbf{i}(n)$ & 第 $n$ 个观测的多重索引 & $\mathbf{i}(n) \in \prod_d \{1,\dots,n_d\}$ \\
+$\Omega$ & 观测索引集合 & $\lvert\Omega\rvert = 2621$（$1\%$） \\
+$\bar{\Omega}$ & 留出索引集合 & 其余全部 \\
+$\mathbf{y}$ & 带噪读数 & $\mathbb{R}^{\lvert\Omega\rvert}$ \\
+\midrule
+$\Sop$ & 算子给出的联合谱 & $K_1 \times \cdots \times K_D$ \\
+$s_{dq}$ & 第 $d$ 个 mode 的第 $q$ 条谱 & $\mathbb{R}_{\ge 0}^{K_d}$ \\
+$\pi_{dq}$ & 混合权重 & 单纯形，$\sum_q \pi_{dq}=1$ \\
+$\bar{s}_d$ & 混合后的谱 $\sum_q \pi_{dq}s_{dq}$ & $\mathbb{R}_{\ge 0}^{K_d}$ \\
+$\Phi_d$ & 本征基（无流余弦） & $n_d \times K_d$ \\
+$\Psi_d$ & Mercer 特征 $\Phi_d \odot \sqrt{\bar{s}_d}$ & $n_d \times K_d$ \\
+\midrule
+$f^{(d)}_r$ & 第 $d$ 个 mode 第 $r$ 个因子函数 & GP \\
+$\mathbf{a}^{(d)}_r$ & 该因子的展开系数 & $\mathbb{R}^{K_d}$ \\
+$\mathbf{A}$ & 全部系数 $\{\mathbf{a}^{(d)}_r\}$ & $\sum_d R_d K_d = 216$ 个 \\
+$\mathcal{G}$ & Tucker 核 & $R_1 \times \cdots \times R_D$ \\
+$\sigma$ & 观测噪声标准差 & 标量，可学 \\
+\midrule
+$\mathbf{m}^{(d)}_r,\ \mathbf{v}^{(d)}_r$ & 变分后验的均值与方差 & $\mathbb{R}^{K_d}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{引言与动机}
+
+\subsection{一个具体场景}
+
+一个厂房里有气体泄漏。你想知道\textbf{整个房间}的浓度分布——哪里最浓、
+往哪个方向扩、要不要疏散。但你能装传感器的地方由不得你选：
+
+\begin{itemize}[nosep,leftmargin=1.6em]
+  \item 房间中央是设备和通道，不能布线也不能悬挂；
+  \item 能开孔的只有墙面，而且往往只有可达的那一面；
+  \item 燃烧室只能在壁面开测点，管道监测只能贴外壁，
+        地下水污染监测只能打有限几口井。
+\end{itemize}
+
+于是观测集中在域的一小块\textbf{连续且位置很差}的区域里，
+而需要重建的是\textbf{其余全部}。这个约束在物理场重构中是常态而非例外。
+
+\subsection{为什么这不是标准的张量补全设定}
+
+张量补全文献默认的缺失模式是\textbf{均匀随机}。两者的差别不是程度问题，
+是性质问题（\cref{tab:setting}）。
+
+\begin{table}[t]
+\centering
+\caption{两种缺失模式的差别。最后一行是本文的实测。}
+\label{tab:setting}
+\begin{tabular}{lll}
+\toprule
+ & 随机缺失 & 受限布局 \\
+\midrule
+未观测点有没有观测过的邻居 & 总是有 & 大部分一个都没有 \\
+任务本质 & 内插 & \textbf{外推} \\
+光滑先验够不够 & 够 & 不够 \\
+实测（$1\%$ 观测） & 三种方法打平在 $0.053$ & 通用方法崩到 $0.67$--$0.96$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+最后一行值得强调：\textbf{随机掩码下本方法与通用核完全打平}。
+这不是失败，而是应该的——那个设定里物理确实没有可加的东西。
+
+\subsection{光滑先验在外推时说了什么}
+
+平稳核（Matérn / RBF）只说一句话：\textbf{相关性随距离衰减}。
+
+内插时这句话够用：目标点旁边就有观测，"和邻居相似"直接给出答案。
+外推时，同一句话变成：离观测区一远，相关性趋于零，\textbf{所以场趋于其均值}。
+
+这是关于\emph{我们的无知}的陈述，不是关于\emph{场}的陈述。
+它没说错，但它什么也没说。而且这件事能直接看见：
+用传感器自己的读数调出来的 Matérn，重建出墙边条带之后，整个房间塌回零
+（\cref{fig:recon} 第三列）。
+
+\subsection{物理提供的恰好是缺的那句话}
+
+关键观察是：\textbf{方程的形式几乎总是已知的}，哪怕系数不知道、解更不知道。
+工程师往往不知道场长什么样，却知道自己面对的是扩散、输运还是波动。
+
+对耗散算子，方程直接给出场沿每个轴如何衰减：
+
+\begin{equation}
+\Lop u = w \quad\Longrightarrow\quad
+S_u(\bxi) = \bigl\lvert \hat{\Lop}(\bxi) \bigr\rvert^{-2} S_w(\bxi).
+\label{eq:transfer}
+\end{equation}
+
+一句话概括二者的差别：
+
+\begin{quote}
+光滑核只知道"远处相关性低"；算子知道"\textbf{远处的值应该是多少}"。
+\end{quote}
+
+举一个能直接对上的例子：各向异性扩散的符号是
+$i\omega + r + D_x k_x^2 + D_y k_y^2$。$D_x \neq D_y$ 意味着两个空间方向的
+\textbf{衰减律不同}——沿一个轴平滑、沿另一个轴粗糙。
+一个共享单一长度尺度的通用核没有办法表达这件事，而方程免费给出它。
+
+\subsection{而且在这个设定里连"调参"都做不到}
+
+最直接的反驳是："通用核也有超参，调一调不就行了？"
+在受限布局下调不了，原因是结构性的。
+
+调参需要\textbf{与预测目标相像的验证数据}。传感器全在一面墙上时，
+你能留出来做验证的每一个点\emph{也在那面墙上}。
+于是验证衡量的是\textbf{条带内部的内插}，而部署要求的是\textbf{横跨整个房间的外推}，
+而这个划分看不到这个差别。实测见 \cref{tab:tuning}。
+
+\begin{table}[t]
+\centering
+\caption{验证选出的长度尺度与实际需要的值。同一网格、同一宿主，只差谁来选。}
+\label{tab:tuning}
+\begin{tabular}{lll}
+\toprule
+布局 & 验证（传感器读数）选出 & 留出区域实际需要 \\
+\midrule
+房间内任意 & $0.8$ & $0.8$ \\
+单面墙 & $0.5,\ 0.5,\ 0.8$ & $\mathbf{1.6,\ 2.4,\ 2.4}$ \\
+三维房间单面墙 & $0.12$ & $\mathbf{3.5}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+散布传感器时验证选得准；受限时它一致地选出短 $3$--$5$ 倍
+（三维上短 $30$ 倍）的尺度。这不是噪声，是系统性的——它衡量的本来就是另一件事。
+\textbf{而方程直接给出核，不需要选。}
+
+%=====================================================================
+\section{背景}
+
+\subsection{函数式张量分解}
+
+把物理场离散成张量 $\mathcal{X} \in \mathbb{R}^{n_1 \times \cdots \times n_D}$，
+低秩分解利用多向相关性。\emph{函数式}版本把离散因子表换成连续函数，
+于是未观测坐标可以被插值而不是查表。以 Tucker 为例：
+
+\begin{equation}
+u(z_1, \dots, z_D) \;\approx\; \sum_{r_1, \dots, r_D}
+  \mathcal{G}_{r_1 \cdots r_D} \prod_{d=1}^{D} f^{(d)}_{r_d}(z_d),
+\label{eq:tucker}
+\end{equation}
+
+其中每个 $f^{(d)}_{r}$ 是一个一维 GP。核心问题随之而来：
+\textbf{这些 GP 的核从哪来？}标准做法是给每个 mode 配一个通用 Matérn / RBF 核，
+或者从同一批稀缺数据里学核。本文改变的正是这一点，其余全部保持不变。
+
+\subsection{为什么宿主必须是 Tucker 而不是 CP}
+
+真实二维场是一堆 blob，不是外积。它的 multilinear rank 小，但 CP rank 不小——
+在稀疏观测能识别的秩下根本表示不了。CP 宿主下任何核都帮不上忙，
+因为模型压根表示不了这个场。
+
+Tucker 还允许\textbf{逐 mode 独立的秩}，这不是美观而是必要：
+multilinear rank 为 $[2, 11, 11]$ 的场需要 $2 \cdot 11 \cdot 11 = 242$ 的核，
+而强行取等秩 $11$ 需要 $1331$——这个差别决定模型在真实观测量下是否可辨识。
+
+%=====================================================================
+\section{问题设定}
+\label{sec:setting}
+
+给定：
+
+\begin{itemize}[nosep,leftmargin=1.6em]
+  \item 一个真实场 $\mathcal{X}$，由算子 $\Lop_{\theta^\star}$ 驱动，$\theta^\star$ 未知；
+  \item 一个观测索引集合 $\Omega$，其位置由\textbf{可达性}决定（贴墙、贴面、局部块），
+        而不是随机采样；
+  \item 带噪读数 $y_i = \mathcal{X}[\omega_i] + \varepsilon_i$，$\omega_i \in \Omega$；
+  \item 算子的\textbf{族}（扩散 / 输运 / 波动）已知，
+        系数只知道落在一个预先声明的范围 $\Theta$ 内。
+\end{itemize}
+
+目标：在留出集合 $\bar{\Omega} = \text{全体} \setminus \Omega$ 上最小化
+
+\begin{equation}
+\NRMSE = \frac{\bigl\lVert \hat{u}[\bar{\Omega}] - \mathcal{X}[\bar{\Omega}] \bigr\rVert_2}
+              {\sqrt{\lvert \bar{\Omega} \rvert}\ \operatorname{std}\bigl(\mathcal{X}[\bar{\Omega}]\bigr)} .
+\label{eq:nrmse}
+\end{equation}
+
+按留出集标准差归一化，所以 $\NRMSE = 1.0$ \textbf{恰好是"预测均值"的分数}。
+这让每个数字不需要参照任何 baseline 就能读懂。
+
+\textbf{关键约束}：不允许使用任何用于选超参的额外数据。
+这不是自我设限，而是\cref{tab:tuning}所示的现实——受限布局下那种数据不存在。
+
+%=====================================================================
+\section{方法}
+
+方法分三步：从算子得到联合谱；把不可分的联合谱投影成每维一条谱；
+把每维谱变成合法的核并放进宿主。
+
+\subsection{第一步：从算子到解的功率谱}
+
+设场 $u$ 由常系数线性算子 $\Lop$ 驱动，受随机强迫 $w$，即 $\Lop u = w$。
+做时空 Fourier 变换，记 $\hat{\Lop}(\bxi)$ 为算子的\textbf{符号}，
+$\bxi = (\omega, k_x, k_y)$。线性系统的输出谱由\cref{eq:transfer}给出。
+取 $w$ 为白噪（$S_w \equiv \sigma^2$）：
+
+\begin{equation}
+\Sop(\bxi) \;\propto\; \bigl\lvert \hat{\Lop}(\bxi) \bigr\rvert^{-2}.
+\end{equation}
+
+主线算子是各向异性反应-扩散
+$\partial_t u = D_x \partial_{xx} u + D_y \partial_{yy} u - r u + w$，
+符号为 $\hat{\Lop} = i\omega + r + D_x k_x^2 + D_y k_y^2$，于是
+
+\begin{equation}
+\Sop(\omega, k_x, k_y) \;=\; \frac{1}{\omega^2 + \bigl(r + D_x k_x^2 + D_y k_y^2\bigr)^2}.
+\label{eq:joint}
+\end{equation}
+
+\paragraph{必须用离散算子的特征值。}
+在 $n$ 个格点、无流边界下，二阶差分算子的特征值不是 $k^2$ 而是
+
+\begin{equation}
+\lambda(k) \;=\; \frac{2 - 2\cos(\pi k / n)}{h^2}, \qquad h = 1/n .
+\label{eq:eig}
+\end{equation}
+
+这一步曾经出过大错：早期版本用手写的 index-space 系数 $(1.0, 0.3)$，
+而物理系数是 $(0.02, 0.006)$，导致先验衰减快了约 $4$ 倍。
+\textbf{必须从离散算子的特征值构造，不能从连续 $k^2$ 直接套。}
+
+\subsection{第二步：不可分性——本方法要解决的核心问题}
+
+$\Sop$ 是一个 $D$ 阶张量，而\cref{eq:tucker}的宿主要的是\textbf{每个 mode 一条一维谱}。
+二者不兼容，因为对任何一组一维函数都有
+
+\begin{equation}
+\Sop(\omega, k_x, k_y) \;\neq\; S_t(\omega)\, S_x(k_x)\, S_y(k_y),
+\end{equation}
+
+\cref{eq:joint}分母里的 $\bigl(r + D_x k_x^2 + D_y k_y^2\bigr)^2$ \textbf{天然不可分}。
+
+于是问题变成：\emph{如何把一个不可分的联合谱投影成可分的、
+且仍然对应合法核的每维谱？}
+
+\subsection{第三步：非负 CP 投影}
+
+用秩 $Q$ 的\textbf{非负} CP 分解逼近联合谱：
+
+\begin{equation}
+\Sop \;\approx\; \sum_{q=1}^{Q} c_q \; s^{(t)}_q \otimes s^{(x)}_q \otimes s^{(y)}_q,
+\qquad s^{(d)}_q \ge 0 .
+\label{eq:cp}
+\end{equation}
+
+\textbf{非负是必须的而非美观}：谱必须非负才对应一个半正定核。
+若用普通 CP，因子可以取负，得到的"核"不是核。
+
+求解用乘性更新（Euclidean loss），第 $d$ 个 mode 的更新为
+
+\begin{equation}
+s^{(d)} \;\leftarrow\; s^{(d)} \odot
+  \frac{X_{(d)} \, K_{(d)}}{s^{(d)} \bigl(K_{(d)}^\top K_{(d)}\bigr) + \varepsilon},
+\end{equation}
+
+其中 $X_{(d)}$ 是沿 mode $d$ 的展开矩阵，$K_{(d)}$ 是其余因子的 Khatri--Rao 积。
+
+\paragraph{掩码而不是置零。}
+数据做了去均值，这恰好抹掉了\textbf{联合模态} $(0,0,0)$。
+早期实现是把该元素\emph{置零}再分离，这是个真实的缺陷：
+一个秩 $Q$ 的\emph{可分}模型无法只在一个角上取零，
+它只能通过压掉\emph{某个因子}的 $k=0$ 来实现，而它会压掉最"便宜"的那个。
+实测压掉的是时间维——真实场沿时间近乎常数（$k=0$ 占 $0.837$ 的能量），
+而置零版先验只给了 $0.107$，把 $0.514$ 压在 $k=1$ 上，\textbf{先验在和数据对着干}。
+
+正确做法是让 CP \textbf{忽略}该元素。带掩码 $M$ 时 Gram 捷径失效，必须显式加权：
+
+\begin{equation}
+s^{(d)} \;\leftarrow\; s^{(d)} \odot
+  \frac{\bigl(M_{(d)} \odot X_{(d)}\bigr) K_{(d)}}
+       {\bigl(M_{(d)} \odot (s^{(d)} K_{(d)}^\top)\bigr) K_{(d)} + \varepsilon}.
+\end{equation}
+
+逐模态 KL（与真实场的经验谱相比）：时间维 $1.578 \to 0.455$，
+总和 $2.358 \to 1.711$（对照：调好的 Matérn 是 $4.204$）。
+
+\subsection{第四步：从谱到核（Mercer）}
+
+给定一维谱 $s_d$ 和一组正交基 $\{\phi_{dq}\}$，核由 Mercer 展开给出：
+
+\begin{equation}
+k_d(z, z') \;=\; \sum_{q} s_d(q) \, \phi_{dq}(z) \, \phi_{dq}(z') .
+\end{equation}
+
+关键点：当 $\{\phi_{dq}\}$ \textbf{就是算子的本征函数}时，
+这个有限展开不是近似而是\textbf{精确的} Mercer 特征映射。
+所以这里用 inducing points 反而是\textbf{严格的降级}——
+它会用低秩近似去逼近一个本来就精确的有限秩表示。
+
+实现上取特征
+
+\begin{equation}
+\Phi_d(z) \;=\; \bigl[\, \sqrt{s_d(0)}\,\phi_{d0}(z), \; \ldots, \;
+                        \sqrt{s_d(Q)}\,\phi_{dQ}(z) \,\bigr],
+\end{equation}
+
+于是 $k_d(z,z') = \Phi_d(z)^\top \Phi_d(z')$ \textbf{自动半正定}。
+
+\subsection{第五步：边界条件决定本征基}
+
+算子的本征基由\textbf{边界条件}决定，不是由符号决定：
+
+\begin{itemize}[nosep,leftmargin=1.6em]
+  \item 周期边界 $\Rightarrow$ 复指数 $e^{i 2\pi k x}$；
+  \item \textbf{无流（Neumann）边界} $\Rightarrow$ 余弦
+        $\phi_k(x) = \sqrt{2}\cos(\pi k x)$，$\phi_0 \equiv 1$。
+\end{itemize}
+
+房间的墙是无流的，初值数据沿时间也不是周期的；
+强行施加 $f(0) = f(1)$ 是一个很大的非物理约束。
+\textbf{实测}（单面墙，$3$ seeds，只换基）：周期 Fourier $0.5781$ 对无流余弦 $0.5448$。
+
+归一化也随之改变：周期基下平均逐点方差是 $s_0 + 2\sum_{k>0} s_k$；
+余弦基下每个特征的均方都是 $1$，所以是 $\sum_k s_k$。用错会引入系统性的整体尺度偏差。
+
+\subsection{第六步：混合权重与知识档位}
+
+每个 mode 的谱是 bank 内 atom 的凸组合，权重 $\pi$ 由 softmax 参数化并从数据学：
+
+\begin{equation}
+s_d \;=\; \sum_{q} \pi_{dq} \, s_{dq}, \qquad
+\pi_{dq} \ge 0, \quad \textstyle\sum_q \pi_{dq} = 1 .
+\end{equation}
+
+\textbf{知识档位}由 bank 怎么造来定义（\cref{tab:ladder-def}）。
+在 K1 / K0 下，$\pi$ 实际在做\textbf{软参数推断}——
+它在"物理可达的谱"张成的集合内选择，而不是在无约束核空间里搜索。
+
+\begin{table}[t]
+\centering
+\caption{知识档位。这是本构造与 PINN / AutoIP 差别\emph{在种类上}的地方：
+后两者必须先承诺一个具体的 $\theta$ 才能写出残差或虚拟观测。}
+\label{tab:ladder-def}
+\begin{tabular}{lll}
+\toprule
+档 & 学习者知道什么 & bank 构造 \\
+\midrule
+K2 & 真值 $\theta^\star$ & 分离 $\Sop(\theta^\star)$，得 $Q$ 个 atom \\
+K1 & $\theta^\star \in \Theta_1$（预先声明的范围） & 从 $\Theta_1$ 采 $M$ 组，各自分离，atom 池化 \\
+K0 & $\theta^\star \in \Theta_0 \supset \Theta_1$ & 同上，范围更宽 \\
+K$-$1 & 无算子信息 & 通用字典 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{贝叶斯模型：联合概率}
+\label{sec:joint}
+
+前面几步给出的是\emph{先验}。这一节写清楚整个模型的联合概率、
+推断怎么做、以及后验到底长什么样。
+
+\paragraph{生成过程。}模型是
+
+\begin{align}
+\mathbf{a}^{(d)}_r &\sim \mathcal{N}(\mathbf{0}, \mathbf{I}_{K_d}),
+  && d = 1,\dots,D,\quad r = 1,\dots,R_d, \label{eq:prior-a}\\
+f^{(d)}_r(z_d) &= \Psi_d(z_d)^\top \mathbf{a}^{(d)}_r,
+  && \Psi_d(z_d) = \Phi_d(z_d) \odot \sqrt{\bar{s}_d}, \label{eq:factor}\\
+u(\mathbf{z}) &= \sum_{r_1=1}^{R_1}\cdots\sum_{r_D=1}^{R_D}
+  \mathcal{G}_{r_1\cdots r_D} \prod_{d=1}^{D} f^{(d)}_{r_d}(z_d), \label{eq:field}\\
+y_n \mid u &\sim \mathcal{N}\bigl(u(\mathbf{z}_{\mathbf{i}(n)}),\ \sigma^2\bigr),
+  && n = 1,\dots,\lvert\Omega\rvert. \label{eq:lik}
+\end{align}
+
+\paragraph{为什么\cref{eq:prior-a}--\cref{eq:factor}就是那个 GP。}
+把标准正态系数代入\cref{eq:factor}，因子函数的协方差是
+
+\begin{equation}
+\operatorname{Cov}\bigl[f^{(d)}_r(z),\, f^{(d)}_r(z')\bigr]
+  = \Psi_d(z)^\top \mathbb{E}\bigl[\mathbf{a}\mathbf{a}^\top\bigr] \Psi_d(z')
+  = \Psi_d(z)^\top \Psi_d(z')
+  = \sum_{k} \bar{s}_d(k)\,\phi_{dk}(z)\,\phi_{dk}(z')
+  = k_d(z, z'),
+\end{equation}
+
+正是第四步的 Mercer 展开。\textbf{关键在于这里没有近似}：
+当 $\{\phi_{dk}\}$ 是算子的本征函数时，有限展开\emph{精确}给出该核，
+所以\cref{eq:factor}是一个 GP 的精确重参数化，而不是一个低秩近似。
+这也是为什么在这里用 inducing points 是严格的降级。
+
+于是联合概率为
+
+\begin{equation}
+p(\mathbf{y}, \mathbf{A} \mid \mathcal{G}, \boldsymbol{\pi}, \sigma)
+= \underbrace{\prod_{n=1}^{\lvert\Omega\rvert}
+    \mathcal{N}\bigl(y_n \,\big|\, u(\mathbf{z}_{\mathbf{i}(n)}; \mathbf{A}, \mathcal{G}, \boldsymbol{\pi}),\ \sigma^2\bigr)}_{\text{似然}}
+  \; \underbrace{\prod_{d=1}^{D}\prod_{r=1}^{R_d}
+    \mathcal{N}\bigl(\mathbf{a}^{(d)}_r \,\big|\, \mathbf{0}, \mathbf{I}\bigr)}_{\text{算子给出的先验}} .
+\label{eq:joint}
+\end{equation}
+
+\paragraph{哪些量是贝叶斯的，哪些不是。}这一点必须说清楚，
+因为\cref{eq:joint}的写法容易让人以为一切都被积掉了：
+
+\begin{itemize}[nosep,leftmargin=1.6em]
+  \item \textbf{系数 $\mathbf{A}$ 是贝叶斯的}——有先验、有变分后验、被积分掉；
+  \item \textbf{Tucker 核 $\mathcal{G}$、混合权重 $\boldsymbol{\pi}$、噪声 $\sigma$ 是点估计}，
+        与变分参数一起用梯度优化（即 II 型极大似然 / 经验贝叶斯）。
+\end{itemize}
+
+这是刻意的取舍：$\mathcal{G}$ 有 $\prod_d R_d = 200$ 个自由度，
+在 $1\%$ 观测下对它做完整推断既不稳定也不必要；
+而混合权重 $\boldsymbol{\pi}$ 只有 $Q = 4$ 个，
+把它当点估计等于在"物理可达的谱"张成的集合内做一次极大似然选择——
+这正是\cref{tab:ladder-def}中 K1 / K0 档"软参数推断"的含义。
+
+\paragraph{注意$\,$\cref{eq:field}对 $\mathbf{A}$ 不是线性的。}
+似然对每个单独的 $\mathbf{a}^{(d)}_r$ 是线性高斯的，
+但 $D$ 个 mode 的\emph{乘积}使整体成为多线性模型，
+所以后验没有闭式，必须做近似推断。
+
+\subsection{变分推断}
+
+取对角高斯的平均场族：
+
+\begin{equation}
+q(\mathbf{A}) = \prod_{d=1}^{D}\prod_{r=1}^{R_d}
+  \mathcal{N}\bigl(\mathbf{a}^{(d)}_r \,\big|\, \mathbf{m}^{(d)}_r,\ \operatorname{diag}(\mathbf{v}^{(d)}_r)\bigr).
+\label{eq:q}
+\end{equation}
+
+证据下界为
+
+\begin{equation}
+\mathcal{F}(q, \mathcal{G}, \boldsymbol{\pi}, \sigma)
+= \underbrace{\mathbb{E}_{q}\bigl[\log p(\mathbf{y} \mid \mathbf{A}, \mathcal{G}, \boldsymbol{\pi}, \sigma)\bigr]}_{\text{期望对数似然}}
+  \;-\; \underbrace{\mathrm{KL}\bigl(q(\mathbf{A}) \,\Vert\, p(\mathbf{A})\bigr)}_{\text{有闭式}} .
+\label{eq:elbo}
+\end{equation}
+
+\paragraph{KL 项有闭式。}因为先验\cref{eq:prior-a}是标准正态
+（尺度已经吸进了特征 $\Psi_d$ 的 $\sqrt{\bar{s}_d}$），
+
+\begin{equation}
+\mathrm{KL}\bigl(q \Vert p\bigr) = \frac{1}{2}\sum_{d,r,k}
+  \Bigl[\,\bigl(m^{(d)}_{rk}\bigr)^2 + v^{(d)}_{rk} - 1 - \log v^{(d)}_{rk}\,\Bigr].
+\end{equation}
+
+\textbf{这是把谱吸进特征的实际好处}：先验永远是 $\mathcal{N}(\mathbf{0},\mathbf{I})$，
+不管算子给出的谱是什么样，KL 都不需要采样。
+
+\paragraph{期望对数似然用重参数化采样。}由于\cref{eq:field}的乘积结构，
+该期望没有闭式。取 $S = 3$ 个样本，
+$\tilde{\mathbf{a}}^{(d),s}_r = \mathbf{m}^{(d)}_r + \sqrt{\mathbf{v}^{(d)}_r} \odot \boldsymbol{\epsilon}^{s}$，
+$\boldsymbol{\epsilon}^{s} \sim \mathcal{N}(\mathbf{0},\mathbf{I})$：
+
+\begin{equation}
+\mathbb{E}_{q}\bigl[\log p(\mathbf{y} \mid \cdot)\bigr]
+\;\approx\; \frac{1}{S}\sum_{s=1}^{S}\sum_{n \in \mathcal{B}}
+  \log \mathcal{N}\bigl(y_n \,\big|\, \hat{u}^{s}(\mathbf{z}_{\mathbf{i}(n)}),\ \sigma^2\bigr)
+  \cdot \frac{\lvert\Omega\rvert}{\lvert\mathcal{B}\rvert},
+\end{equation}
+
+其中 $\mathcal{B}$ 是 minibatch，末项是无偏放大因子。
+\textbf{只在 $\Omega$ 上求值}，所以 $64^3$ 的张量在训练中从不物化。
+
+\subsection{后验长什么样}
+
+\paragraph{后验均值（本文报告的重构）。}
+实现取\textbf{插值估计}：把变分均值直接代入\cref{eq:field}，
+
+\begin{equation}
+\hat{u}(\mathbf{z}) = \sum_{r_1 \cdots r_D} \mathcal{G}_{r_1\cdots r_D}
+  \prod_{d=1}^{D} \Psi_d(z_d)^\top \mathbf{m}^{(d)}_{r_d}.
+\label{eq:postmean}
+\end{equation}
+
+\textbf{这不是乘积的真后验均值。}对独立随机变量
+$\mathbb{E}\bigl[\prod_d f^{(d)}\bigr] = \prod_d \mathbb{E}\bigl[f^{(d)}\bigr]$ 成立，
+所以在平均场假设下\cref{eq:postmean}\emph{是}无偏的；
+但平均场本身忽略了 mode 之间的后验相关性，
+所以它是对真后验均值的近似，而不是它本身。本文全部 $\NRMSE$ 都基于\cref{eq:postmean}。
+
+\paragraph{后验预测分布。}对新坐标 $\mathbf{z}^\ast$，
+
+\begin{equation}
+p(u^\ast \mid \mathbf{y}) \;\approx\; \int \delta\bigl(u^\ast - u(\mathbf{z}^\ast; \mathbf{A})\bigr)\, q(\mathbf{A})\, \mathrm{d}\mathbf{A},
+\end{equation}
+
+用蒙特卡洛近似：抽 $\tilde{\mathbf{A}}^{s} \sim q$，得到样本
+$u^{\ast,s} = u(\mathbf{z}^\ast; \tilde{\mathbf{A}}^{s})$；
+若要含观测噪声再加 $\mathcal{N}(0,\sigma^2)$。
+在 CP 宿主下还有一条闭式的矩传播路径：对独立因子，
+
+\begin{equation}
+\operatorname{Var}\Bigl[\prod_d f^{(d)}_r\Bigr]
+  = \prod_d \Bigl(\bigl(m_r^{(d)}\bigr)^2 + v_r^{(d)}\Bigr) - \prod_d \bigl(m_r^{(d)}\bigr)^2 ,
+\end{equation}
+
+Tucker 宿主因为核不是对角的，统一走采样。
+
+\paragraph{不确定性是欠覆盖的，必须如实说。}
+在 $1\%$ 观测下，名义 $95\%$ 的预测区间实际覆盖 $83.7\%$
+（通用先验是 $77.5\%$），到 $5\%$ 观测才到 $91\%$。
+本方法的区间也更宽（$1.14$ 对 $1.00$），所以它相对通用先验的优势
+有一部分是"对不确定性更诚实"而不是"更准"。
+\textbf{本文主张的是更好的点预测先验，不是更好的不确定性量化}——
+这一条对任何想在此基础上做贝叶斯决策（例如源定位的置信区域）的后续工作是硬约束。
+
+\subsection{第七步：推断的实现要点}
+
+\begin{itemize}[leftmargin=1.6em]
+  \item $\sqrt{\bar{s}_d}$ 在零点导数无穷，代码只在\emph{构造特征时}把谱截断到 $10^{-12}$。
+        这保住了"严格零支撑"控制实验的语义，同时避免 NaN 梯度。
+  \item 梯度裁剪到 $10$；$\log \sigma$ 与 $\log$ 方差都在对数空间优化以保证正性。
+  \item routing 取 \texttt{global}（三个 mode 共享一组 $\boldsymbol{\pi}$）。
+        逐 mode 或逐 rank 的 routing 在 $1\%$ 观测下过拟合，
+        且对通用字典的伤害（$0.042$）大于对算子 bank（$0.023$），
+        在那个设置下比较会虚高约 $1.6$ 倍。
+\end{itemize}
+
+\subsection{算法总览}
+
+\begin{algorithm}[t]
+\caption{构造逐维核 bank（\textbf{不使用任何观测数据}）}
+\label{alg:bank}
+\begin{algorithmic}[1]
+\Require 算子族与系数 $\theta$（或范围 $\Theta$），网格 $\{n_d\}$，频率预算 $\{K_d\}$，atom 数 $Q$
+\Ensure 每个 mode 一组非负谱 $\{s_{dq}\}$，本征基 $\{\Phi_d\}$
+\For{每个空间 mode $d$}
+  \State $\lambda_d[k] \gets (2 - 2\cos(\pi k / n_d)) / h_d^2$ \Comment{\cref{eq:eig}}
+\EndFor
+\State $\omega[j] \gets \pi j / (T \Delta t)$
+\State $\Sop[j,a,b] \gets \bigl(\omega[j]^2 + (r + D_x \lambda_x[a] + D_y \lambda_y[b])^2\bigr)^{-1}$
+       \Comment{\cref{eq:joint}}
+\State $M \gets \mathbf{1}$；$M[0,\dots,0] \gets 0$ \Comment{掩码而非置零}
+\State $\{s_{dq}\} \gets \textsc{NonnegCP}(\Sop, Q, M)$ \Comment{\cref{eq:cp}}
+\State $s_{dq} \gets s_{dq} / \sum_k s_{dq}[k]$ \Comment{余弦基下的归一化}
+\State $\Phi_d \gets [\,1,\ \sqrt{2}\cos(\pi k x)\,]$ \Comment{无流边界本征基}
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[t]
+\caption{拟合（\textbf{不使用任何留出数据}）}
+\label{alg:fit}
+\begin{algorithmic}[1]
+\Require 观测 $(\Omega, \mathbf{y})$，bank $\{s_{dq}\}$，本征基 $\{\Phi_d\}$，秩 $\{R_d\}$，步数 $N$
+\Ensure 变分参数 $\{\mathbf{a}^{(d)}\}$、核 $\mathcal{G}$、混合权重 $\pi$
+\For{$\text{step} = 1 \dots N$}
+  \State $\pi_d \gets \operatorname{softmax}(\text{logits})$；
+         $\bar{s}_d \gets \sum_q \pi_{dq} s_{dq}$
+  \State $\Psi_d \gets \Phi_d \odot \sqrt{\bar{s}_d}$ \Comment{Mercer 特征，自动半正定}
+  \State $f^{(d)}_r(n) \gets \sum_k \Psi_d[i_d(n), k]\, \tilde{a}^{(d)}[r,k]$
+         \Comment{重参数化采样}
+  \State $\hat{u}(n) \gets \sum_{r_1 \cdots r_D} \mathcal{G}\prod_d f^{(d)}_{r_d}(n)$
+         \Comment{只在 $\Omega$ 上求值}
+  \State 最大化 ELBO，Adam 更新
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{参数量。}主线设置下变分系数 $\sum_d R_d K_d = 216$（乘 $2$ 为均值与方差），
+Tucker 核 $8 \cdot 5 \cdot 5 = 200$，\textbf{混合权重只有 $4$ 个}。
+合计约 $636$ 个参数拟合 $2621$ 个观测。
+"物理省下的是整个核，只留四个数要学"具体指的就是混合权重那四个。
+
+%=====================================================================
+\section{实验设定与数据}
+
+\subsection{数据来源}
+
+\textbf{全部主实验不依赖任何外部数据集}。场由本仓库的求解器现算：
+DCT 谱方法加指数积分器处理扩散-反应（无流边界，余弦基对角化），
+平流用算子分裂（谱步之后在实空间做一阶迎风，CFL 条件运行时检查）。
+二维场约 $1$ 秒、三维场约 $1.4$ 秒一个 seed。
+
+这样做是合理的，因为：真值来自\textbf{独立的}数值积分，
+\emph{不是}从模型自己的先验里采样；而且给模型的名义系数是\textbf{故意错 $1.5$ 倍}的。
+
+若要换真实数据，六个外部来源及其筛查结果见交接文档；其中
+Kolmogorov flow（$\mathrm{Re}=40$）与 PDEBench 2D diffusion-reaction
+已实测\textbf{不通过}低秩可行性筛查（各空间轴需 $63\%$ 的模态才够 $95\%$ 能量）。
+
+\subsection{共享设定}
+
+\begin{table}[t]
+\centering
+\caption{所有表共享的设定。同一 seed 内所有方法共享场、掩码与噪声，
+因此每个比较都是配对的。}
+\label{tab:settings}
+\begin{tabular}{ll}
+\toprule
+真实场 & $64\times64$ 网格，$D=(0.02, 0.006)$，$r=0.04$，三处泄漏 \\
+       & $\Delta t = 0.6$，burn-in $200$ 步，记录 $64$ 帧，背景噪声 $0.02$ \\
+先验被告知 & $D = (0.03, 0.012)$，$r = 0.06$ \quad\textbf{（故意错 $50\%$）} \\
+模型 & 频率数 $(12,12,12)$，Tucker 秩 $(8,5,5)$，atom 数 $4$，routing global \\
+观测 & $1\%$（$2621$ 点），观测噪声 std $0.05$ \\
+优化 & Adam，lr $0.02$，$1000$ 步，$3$ 样本 ELBO，梯度裁剪 $10$ \\
+三维 & $32^4$（$105$ 万格点），频率数 $(8,8,8,8)$，秩 $(5,4,4,4)$，$400$ 步 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{传感器布局}
+
+所有布局的\textbf{观测预算完全相同}，只有排布不同：
+
+\begin{table}[t]
+\centering
+\caption{传感器布局。$\mathrm{depth}$ 指到最近墙面的距离。}
+\label{tab:layouts}
+\begin{tabular}{lll}
+\toprule
+名称 & 区域 & 可达面积 \\
+\midrule
+散布 & 全域 & $100\%$ \\
+四面墙 & $\mathrm{depth} < 2$ & $12\%$ \\
+贴墙带 & $3 \le \mathrm{depth} < 8$ & $26\%$ \\
+\textbf{单面墙} & $x < 5$ & $8\%$ \\
+四个角块 & 四角各 $10\times10$ & $10\%$ \\
+\midrule
+\multicolumn{3}{l}{\emph{配对对照（用于隔离单一因素）}} \\
+单面墙（$y$） & $y < 5$ & $8\%$ \\
+左右两墙 / 上下两墙 & $x<5$ 或 $x \ge n_x-5$ / 同理 $y$ & $16\%$ \\
+两面相邻墙 & $x<5$ 或 $y<5$ & $15\%$ \\
+单个角块 & $x<20$ 且 $y<20$ & $10\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{四个角块与单个角块的配对。}
+这两个布局\textbf{观测格点数完全相同}（$400$ 格，$10\%$ 可达），
+差别只在未观测区是被\emph{包围}还是仅\emph{相邻}。
+把同样的面积摊成四个角，所有方法都变好，本方法从 $1.0346$ 降到 $0.8124$。
+\textbf{这说明未观测区的形状比面积更决定难度。}
+需要说明的是，这两个布局本方法都不占优（分别落后 $6.4\%$ 与 $2.6\%$），
+它们的价值在于隔离出"形状 vs 面积"这一因素。
+
+%=====================================================================
+\section{结果}
+
+\subsection{场景覆盖}
+
+指标是留出集 $\NRMSE$（\cref{eq:nrmse}）。每格对比本方法与
+\textbf{实践者能实际部署的最好那一臂}（在传感器读数上调参的 Matérn、
+谱混合字典、神经张量补全，取三者最好）。
+
+\begin{table}[t]
+\centering
+\caption{场景覆盖：三个算子族、两个维度、每种布局，$1\%$ 观测。}
+\label{tab:coverage}
+\small
+\begin{tabular}{llccccc}
+\toprule
+ & & 散布 & 四面墙 & 贴墙带 & \textbf{单面墙} & 四个角块 \\
+\midrule
+\multicolumn{7}{l}{\emph{二维空间 $+$ 时间（$64^3$，$3$ seeds）}} \\
+反应-扩散 & ours & $0.0547$ & $\mathbf{0.4766}$ & $\mathbf{0.3064}$ & $\mathbf{0.5387}$ & $0.8124$ \\
+          & 最佳 baseline & $0.0530$ & $0.5004$ & $0.4206$ & $0.7719$ & $0.7917$ \\
+          & 相对改进 & $-3.2\%$ & $+4.8\%$ & $\mathbf{+27.1\%}$ & $\mathbf{+30.2\%}$ & $-2.6\%$ \\
+\addlinespace
+扩散主导 & ours & $\mathbf{0.0388}$ & $\mathbf{0.2670}$ & $\mathbf{0.1909}$ & $\mathbf{0.3322}$ & --- \\
+          & 最佳 baseline & $0.0395$ & $0.2895$ & $0.1947$ & $0.6720$ & --- \\
+          & 相对改进 & $+1.7\%$ & $+7.8\%$ & $+1.9\%$ & $\mathbf{+50.6\%}$ & --- \\
+\addlinespace
+平流-扩散 & ours & $\mathbf{0.0265}$ & $0.4102$ & $\mathbf{0.2561}$ & $\mathbf{0.5144}$ & --- \\
+          & 最佳 baseline & $0.0281$ & $0.3969$ & $0.3511$ & $0.7021$ & --- \\
+          & 相对改进 & $+5.9\%$ & $-3.4\%$ & $\mathbf{+27.1\%}$ & $\mathbf{+26.7\%}$ & --- \\
+\midrule
+\multicolumn{7}{l}{\emph{三维空间 $+$ 时间（$32^4$，$2$ seeds；布局为面）}} \\
+ & & 散布 & 对面两墙 & \textbf{单面墙} & 角落立方 & \\
+反应-扩散 & ours & $0.1602$ & $\mathbf{0.5856}$ & $\mathbf{0.6856}$ & $\mathbf{0.9130}$ & \\
+          & 最佳 baseline & $0.1586$ & $0.7356$ & $0.8883$ & $0.9733$ & \\
+          & 相对改进 & $-1.1\%$ & $\mathbf{+20.4\%}$ & $\mathbf{+22.8\%}$ & $+6.2\%$ & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\cref{tab:coverage}的读法：
+
+\begin{itemize}[leftmargin=1.6em]
+  \item \textbf{散布那一列，三个算子族、两个维度上全部打平}（$-3.2\%$ 到 $+5.9\%$）。
+        这是应该的：随机采样下重构是内插，光滑先验已经够用。
+  \item \textbf{单面墙那一列全部大幅改善}（$+22.8\%$ 到 $+50.6\%$）。
+        这是外推，也正是本方法的适用区。
+  \item 四面墙与贴墙带介于两者之间，改善随受限程度上升。
+\end{itemize}
+
+\subsection{与更强的对手比较}
+
+\begin{table}[t]
+\centering
+\caption{与容量更大的模型、以及与同一份物理的另一种花法比较。
+打星的臂\textbf{在留出区域上}选架构、学习率或残差权重，并有 $4$--$6$ 倍优化预算；
+本方法一组配置、零调参数据。最后一列是同一网络关掉物理。}
+\label{tab:baselines}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+布局 & ours & PINN$^\star$ & CoSTCo$^\star$ & Fourier-MLP$^\star$ & LRTFR & 同网络无物理 \\
+\midrule
+散布 & $0.0547$ & $\mathbf{0.0522}$ & $0.1367$ & $0.1039$ & $0.0905$ & $0.1174$ \\
+单面墙 & $\mathbf{0.5387}$ & $0.8008$ & $0.5924$ & $0.6060$ & $0.8966$ & $0.8229$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{同一份物理，当先验比当残差惩罚值钱一个数量级。}
+PINN 臂被告知的与本方法完全相同（方程形式 $+$ 错 $50\%$ 的系数），
+都不知道泄漏源在哪。散布布局下残差买到 $0.065$ 并略胜本方法；
+单面墙下同一个残差只买到 $0.022$，而且三个 seed 里有\textbf{两个}
+在留出区域上的扫描直接选了残差权重 $\mathbf{0}$。
+
+原因是结构性的：残差惩罚只在 collocation 点约束\emph{函数}，
+而齐次方程有大量解，容量足够的网络能处处满足 $\Lop u \approx 0$
+却在远离数据处全错；谱先验约束的是\emph{哪些函数先验上可能}——
+这恰好是数据说完话之后还剩下的东西。
+
+\subsection{需要多少方程知识}
+
+\begin{table}[t]
+\centering
+\caption{知识档位（单面墙，$3$ seeds）。通用字典的 atom 数与池化 bank 完全相同，
+且 collapsed 参数化保证变分系数量与 bank 大小无关，所以比较不被参数预算污染。}
+\label{tab:ladder}
+\begin{tabular}{lc}
+\toprule
+知道什么 & $\NRMSE$ \\
+\midrule
+K2：真实系数 & $0.5450$ \\
+\textbf{K1：只知 $\theta^\star \in \times[1/3,\,3]$} & $\mathbf{0.5468}$ \\
+K0：只知 $\theta^\star \in \times[1/10,\,10]$ & $0.5783$ \\
+K$-$1：无物理（通用字典，atom 数相同） & $0.7408$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+只知道系数落在 $\times[1/3, 3]$ 内，相对知道真值只差 $0.0018$，
+相对无物理好 $0.194$。范围放宽到 $\times[1/10, 10]$ 后退化到 $0.5783$——
+这正是本构造预先声明的可证伪预测：\textbf{bank 池化的范围足够宽时必然趋近通用字典}，
+报告这个退化从哪里开始是主张的一部分，而不是尴尬。
+
+%=====================================================================
+\section{局限与尚未解释的现象}
+
+\paragraph{本方法不赢调好的核，是打平。}
+对着用留出区域选长度尺度的 Matérn，单面墙是 $0.5448$ 对 $0.5449$。
+早期草稿曾声称 $+17.2\%$，那是错的：baseline 的长度尺度网格没有包含它自己的最优值。
+\textbf{该结论已撤回。}
+
+\paragraph{二维上随手固定一个合理常数就几乎追平。}
+一个从不调参、直接固定 $\ell = 1.6$ 的实践者，在任何布局上相对本方法最差只差 $0.0135$。
+本方法真正的价值集中在：跨场景时那个"合理常数"会变
+（三维上需要的尺度跨 $20$--$30$ 倍），而方程自动给出它。
+
+\paragraph{失败模式不体面。}
+全部实验里唯一超过 $\NRMSE = 1.0$（比预测均值还差）的臂\textbf{始终是本方法}
+（单个角块 $1.03$、$y$ 墙 $1.27$），任何 baseline 最差只到 $0.95$。
+长尺度 Matérn 打不过时会收缩到均值并停下；本方法的尺度被方程钉死，
+观测约束不住时会继续外推。\textbf{部署前需要一个检测"正在超出观测约束范围"
+并转为收缩的回退机制，目前没有。}
+
+\paragraph{两面墙的不对称尚未完全解释。}
+同样 $8\%$ 可达，$x$ 墙 $0.5387$ 而 $y$ 墙 $1.2723$。
+预先登记的"各向异性"解释被自己的各向同性对照推翻。
+后续的剖面覆盖解释（贴 $x$ 墙的条带张满整个 $y$ 轴，
+于是"只随 $y$ 变化"的分量被完全观测，而它占 $64\%$ 的方差）解释了约 $85\%$，
+但交换扩散系数后优劣\emph{没有反转}，所以仍不完整。
+需要指出：oracle Matérn 也表现出同样的不对称，
+所以 $y$ 墙对\emph{所有方法}都更难——那是场的性质；
+本方法额外退化得更厉害，才是本方法的问题。
+
+\paragraph{标准物理信息 GP 在这个尺度上更快。}
+AutoIP 式方法在二维规模上是 $1.7$--$8.0$ 秒，本方法是 $20$--$25$ 秒。
+\textbf{不应写"它不 scale"}——在这个规模上该论断不成立，它的问题是精度。
+
+%=====================================================================
+\section{复现}
+
+\begin{verbatim}
+python experiments/run_leak_sensors.py --config base --tag leak_main3tier
+python experiments/make_paper_tables.py
+python experiments/make_leak_figures.py
+\end{verbatim}
+
+换一个场是改配置，不是改代码：
+
+\begin{verbatim}
+python experiments/run_leak_sensors.py --config advection_diffusion
+python experiments/run_leak_sensors.py --config base --set evaluation.ratio=0.02
+\end{verbatim}
+
+未知键会报错而不是被忽略，展开后的完整配置写进每个结果 JSON，
+所以任何数字都能追溯到产生它的设置。详见交接文档与快速上手文档。
+
+\end{document}
