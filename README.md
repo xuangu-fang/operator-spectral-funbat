@@ -1,246 +1,260 @@
-# Operator-Spectral Priors for Sparse Field Reconstruction
+# 算子谱先验：受限传感器布局下的稀疏场重构
 
-## The problem
+## 问题
 
-A gas leak in a plant. You want the concentration **everywhere in the room** —
-where it is worst, which way it is spreading, whether to evacuate. But you do
-not get to choose where the sensors go:
+一个厂房里有气体泄漏。你想知道**整个房间**的浓度分布——哪里最浓、往哪个方向扩、
+要不要疏散。但你能装传感器的地方由不得你选：
 
-- the middle of the room holds equipment and walkways, so nothing can be run or
-  hung there;
-- the only places you can drill are **walls**, often just the one reachable
-  face;
-- a combustion chamber instruments its liner, a pipeline its outer wall, a
-  contaminated aquifer a handful of boreholes.
+- 房间中央是设备和通道，**不能布线也不能悬挂**；
+- 能开孔的只有**墙面**，而且往往只有可达的那一面；
+- 燃烧室只能在壁面开测点，管道监测只能贴外壁，地下水污染监测只能打有限几口井。
 
-So the measurements sit in a small, **contiguous, badly placed** part of the
-domain, and the reconstruction is wanted everywhere else. In a great many
-physical-field problems, sensor placement is decided by what is reachable, not
-by what is informative.
+于是观测集中在域的一小块**连续且位置很差**的区域里，而你要重建的是**其余全部**。
 
-## Why this is not the usual tensor-completion setting
+在很多物理场重构问题里，**传感器的位置是由工程可达性决定的，不是由信息量决定的**。
 
-The literature assumes **uniformly random** missingness. The difference is not
-one of degree:
+## 为什么这不是标准的张量补全设定
 
-| | random missingness | confined layout |
+文献默认的缺失模式是**均匀随机**。两者的差别不是程度问题，是**性质**问题：
+
+| | 随机缺失 | 受限布局 |
 |---|---|---|
-| does an unobserved point have observed neighbours? | always | mostly **none** |
-| what the task actually is | **interpolation** | **extrapolation** |
-| is a smoothness prior enough? | **yes** | **no** |
-| measured, at 1% observed | three methods tie at 0.053 | generic methods reach 0.67–0.96 |
+| 未观测点有没有观测过的邻居 | **总是有** | 大部分**一个都没有** |
+| 任务本质 | **内插** | **外推** |
+| 光滑先验够不够 | **够** | **不够** |
+| 实测（1% 观测） | 三种方法打平在 0.053 | 通用方法崩到 0.67–0.96 |
 
-That last row is our own measurement: under random masks this method **ties**
-generic kernels exactly. That is not a disappointment — it is correct. There,
-physics has nothing to add.
+最后一行是我们自己测的：随机掩码下本方法和通用核**完全打平**。
+这不是失败，是**应该的**——那个设定里物理确实没有可加的东西。
 
-## What a smoothness prior says when it has to extrapolate
+## 光滑先验在外推时说了什么
 
-A stationary kernel says one thing: **correlation decays with distance**.
+平稳核（Matérn / RBF）只说了一句话：**相关性随距离衰减**。
 
-While interpolating that is sufficient — the target has a neighbour, and "close
-to its neighbour" is the answer. While extrapolating, the same sentence becomes:
-far from the sensors, correlation vanishes, **so the field is near its mean**.
+内插时这句话够用：目标点旁边就有观测，"和邻居相似"直接给出答案。
+外推时，同一句话变成：离观测区一远，相关性趋于零，**所以场趋于其均值**。
 
-That is a statement about *our ignorance*, not about the field. It is not wrong;
-it simply says nothing. You can watch it happen — a Matérn tuned on the sensors'
-own readings reconstructs the wall strip and then **collapses to zero** across
-the rest of the room ([figure](results/leak/figure_reconstruction.png), third
-panel).
+这是关于**我们的无知**的陈述，不是关于**场**的陈述。它没说错，但它什么也没说。
 
-## What the physics supplies is exactly the missing sentence
+而且这件事**能看见**：用传感器自己的读数调出来的 Matérn，重建出墙边条带之后，
+整个房间**塌回 0**（见[重构图](results/leak/figure_reconstruction.png)第三列）。
 
-The key observation: **the form of the equation is almost always known**, even
-when the coefficients are not and the solution certainly is not. An engineer
-rarely knows the field, but usually knows whether they are looking at diffusion,
-transport, or a wave.
+## 物理提供的恰好是缺的那句话
 
-For a dissipative operator, the equation states directly how the field decays
-along each axis:
+关键观察：**方程的形式几乎总是已知的**，哪怕系数不知道、解更不知道。
+工程师往往不知道场长什么样，却知道自己面对的是**扩散、输运还是波动**。
+
+对耗散算子，方程直接给出**场沿每个轴如何衰减**：
 
 $$\mathcal{L}u = w \quad\Longrightarrow\quad S_u(\xi) = |\hat{\mathcal{L}}(\xi)|^{-2} S_w(\xi)$$
 
-> A smooth kernel knows only that distant points correlate weakly.
-> The operator knows **what the distant values should be**.
+> 光滑核只知道"远处相关性低"；
+> 算子知道"**远处的值应该是多少**"。
 
-Concretely: anisotropic diffusion has symbol $i\omega + r + D_x k_x^2 + D_y k_y^2$.
-With $D_x \neq D_y$ the two spatial directions **decay differently** — smooth
-along one axis, rough along the other. A generic kernel committed to a single
-length scale has no way to express that, and the equation supplies it for free.
+举个能直接对上的例子：各向异性扩散的符号是 $i\omega + r + D_x k_x^2 + D_y k_y^2$。
+$D_x \neq D_y$ 意味着两个空间方向的**衰减律不同**——沿一个轴平滑、沿另一个轴粗糙。
+一个共享单一长度尺度的通用核**没有办法表达这件事**，而方程免费给出它。
 
-## And in this setting you cannot even tune your way out
+## 而且在这个设定里，连"调参"都做不到
 
-The obvious objection is that generic kernels have hyper-parameters too, so just
-tune them. **In a confined layout you cannot, for a structural reason.**
+最直接的反驳是："通用核也有超参，调一调不就行了？"
+**在受限布局下调不了，而且原因是结构性的。**
 
-Tuning needs validation data resembling the prediction target. With sensors on
-one wall, every point you can hold out is *also on that wall*. Validation
-therefore scores **interpolation inside the strip** while deployment demands
-**extrapolation across the room** — and the split cannot see the difference.
+调参需要**与预测目标相像的验证数据**。传感器全在一面墙上时，
+你能留出来做验证的每一个点**也在那面墙上**。
+于是验证衡量的是**条带内部的内插**，而部署要求的是**横跨整个房间的外推**——
+而这个划分**看不到**这个差别。
 
-| layout | length scale validation picks | what the held-out region wants | tuning cost |
+| 布局 | 验证选出的长度尺度 | 测试集实际需要的 | 调参代价 |
 |---|---|---|---|
-| anywhere in the room | 0.8 | 0.8 | **+0.0003** |
-| one wall | 0.5, 0.5, 0.8 | **1.6, 2.4, 2.4** | **+0.1760** |
-| one face, 3-D room | 0.12 | **3.5** | **+0.2412** |
+| 房间内任意 | 0.8 | 0.8 | **+0.0003** |
+| 单面墙 | 0.5, 0.5, 0.8 | **1.6, 2.4, 2.4** | **+0.1760** |
+| 3D 房间单面墙 | 0.12 | **3.5** | **+0.2412** |
 
-Scattered sensors let validation find the right kernel, and tuning is free.
-Confined sensors make it pick a length scale three to five times too short (in
-3-D, thirty times), consistently, because it is measuring the wrong thing.
+散布传感器时验证选得**准**，调参零代价；受限时它一致地选出**短 3–5 倍**
+（3D 上短 30 倍）的尺度。这不是噪声，是系统性的——因为它衡量的本来就是另一件事。
 
-**So in this setting, needing no tuning data is itself the contribution.**
+**所以在这个设定里，"不需要调参数据"本身就是贡献。**
 
-## What this work does
+## 这项工作做的事
 
-> Project the operator family's **non-separable** joint spectrum onto per-mode
-> one-dimensional spectra — nonnegatively, so the result is still a valid
-> positive semi-definite kernel — and drop those into a functional tensor
-> decomposition in place of its generic kernels. It needs the **form** of the
-> equation and a **range** for the coefficients; no tuning data at all.
+> 把算子族**不可分**的联合谱投影成每个 mode 的一维谱——**非负**投影，
+> 所以结果仍是合法的半正定核——再把它们放进 functional tensor 分解，
+> 替掉其中的通用核。只需要方程的**形式**和系数的一个**范围**，不需要任何调参数据。
 
-Model, capacity, optimiser and step budget are held fixed. The only variable is
-where the spectra come from.
+宿主模型、容量、优化器与步数预算全部锁死，**唯一的变量是谱从哪来**。
 
 ---
 
-## What this actually shows
+## 这项工作实际证明了什么
 
-### 1. Where sensors are scattered, physics is unnecessary. Where sensors are confined, tuning is impossible.
+### 1. 传感器散布时物理没必要；传感器受限时调参做不到
 
-The paper's quantity is the **tuning cost**: what it costs to choose a kernel
-using only data a practitioner can collect (a split of the sensor readings)
-rather than against the held-out region (an oracle nobody can run).
+本文的核心量是**调参代价**：只用实践者采得到的数据（传感器读数的一部分留出验证）
+去选核，相对于用真实留出区域去选（oracle，没人跑得了），要付出多少。
 
-| sensor layout | tuning cost, reaction–diffusion | diffusion-dominated | advection–diffusion |
+| 传感器布局 | 反应-扩散 | 扩散主导 | 平流-扩散 |
 |---|---|---|---|
-| anywhere in the room | **+0.0000** | **+0.0008** | **+0.0031** |
-| all four walls | +0.0519 | +0.0320 | +0.0046 |
-| band inside the walls | +0.1219 | +0.0090 | +0.1154 |
-| **one wall only** | **+0.2281** | **+0.3411** | **+0.1996** |
-| one corner patch | +0.0726 | +0.0581 | +0.1501 |
+| 房间内任意 | **+0.0000** | **+0.0008** | **+0.0031** |
+| 四面墙 | +0.0519 | +0.0320 | +0.0046 |
+| 贴墙带 | +0.1219 | +0.0090 | +0.1154 |
+| **单面墙** | **+0.2281** | **+0.3411** | **+0.1996** |
+| 单个角块 | +0.0726 | +0.0581 | +0.1501 |
 
-The mechanism is visible in the hyper-parameter itself, not only in the error:
-at one wall, validation on the sensors picks length scales of 0.5–0.8 while the
-held-out region wants 1.6–2.4. Every point you can hold out lies inside the
-same strip, so validation scores **interpolation** while deployment demands
-**extrapolation**. In the 3-D room the same split picks 0.12 where the answer
-wants 3.5 — an order of magnitude.
+**机制直接写在超参上，不只在误差里**：单面墙下验证选出 0.5–0.8，
+而留出区域实际需要 1.6–2.4。原因是能留出的每个点都在同一条带内，
+验证衡量的是**内插**、部署要求的是**外推**。3D 房间里同一套流程选 0.12，
+而答案要 3.5——**差一个数量级**。
 
-### 2. The same physics is worth ten times more as a prior than as a residual penalty
+### 2. 同一份物理，当先验比当残差惩罚值钱一个数量级
 
-Both arms are told the equation's form with coefficients wrong by 50%. Neither
-is told where the leaks are.
+两臂被告知的完全相同：方程形式 + 错 50% 的系数。**都不知道泄漏源在哪。**
 
-| sensor layout | ours (prior) | PINN* (residual penalty) | same network, physics off |
+| 传感器布局 | ours（先验） | PINN$^\star$（残差惩罚） | 同一网络关掉物理 |
 |---|---|---|---|
-| anywhere in the room | 0.0547 | **0.0522** | 0.1174 |
-| one wall only | **0.5387** | 0.8008 | 0.8229 |
+| 房间内任意 | 0.0547 | **0.0522** | 0.1174 |
+| 单面墙 | **0.5387** | 0.8008 | 0.8229 |
 
-At one wall the residual is worth 0.022 and on two of three seeds the oracle
-sweep chose a residual weight of **zero**. A residual constrains the function at
-collocation points, and the homogeneous equation has many solutions; a spectral
-prior constrains which functions are *a priori* plausible, which is what is left
-once the data has stopped speaking.
+单面墙上残差只买到 0.022，而且三个 seed 里有**两个** oracle 扫描直接选了残差权重 **0**。
 
-### 3. A declared range for the coefficients is nearly as good as knowing them
+原因说得通：残差只在 collocation 点约束**函数**，而齐次方程有大量解，
+容量足够的网络能处处满足 $\mathcal{L}u \approx 0$ 却在远离数据处全错；
+谱先验约束的是**哪些函数先验上可能**——这恰好是数据说完话之后还剩下的东西。
 
-| what is known | one wall |
+### 3. 只知道系数的一个范围，几乎和知道真值一样好
+
+| 知道什么 | 单面墙 |
 |---|---|
-| the true coefficients | 0.5450 |
-| **only that they lie in ×[1/3, 3]** | **0.5468** |
-| only that they lie in ×[1/10, 10] | 0.5783 |
-| no physics (generic, same atom count) | 0.7408 |
+| 真实系数 | 0.5450 |
+| **只知落在 $\times[1/3, 3]$ 内** | **0.5468** |
+| 只知落在 $\times[1/10, 10]$ 内 | 0.5783 |
+| 无物理（通用字典，atom 数相同） | 0.7408 |
 
-This is where the construction differs *in kind* from the alternatives: a PINN
-must pick one operator to penalise and an AutoIP-style GP must pick one to
-condition on. A pooled bank commits only to a range and lets the mixture weights
-infer within it.
-
----
-
-## What this does **not** show
-
-Reported here because it is load-bearing for reading everything above.
-
-- **We do not beat a well-tuned kernel; we match it.** Against a Matérn whose
-  length scale is chosen on the held-out region, the one-wall case is a tie
-  (0.5448 against 0.5449). An earlier draft claimed +17.2% and was wrong: the
-  baseline's length-scale grid did not contain its own optimum. **Retracted.**
-- **In 2-D, simply fixing a sensible constant nearly matches us.** A practitioner
-  who never tunes and commits to ℓ = 1.6 is at most 0.0135 behind on any layout.
-- **The failure mode is not graceful.** Across every experiment here, the only
-  arm that ever scores worse than predicting the mean is ours (1.03 at a corner
-  patch, 1.27 at the other wall); no baseline exceeds 0.95. A long-length-scale
-  Matérn shrinks toward the mean and stops; our scale is fixed by the equation,
-  so where the observations stop constraining the field it keeps extrapolating.
-  **This needs a fallback before deployment and does not have one.**
-- **A standard physics-informed GP is *faster* than us at this scale** (1.7–8.0 s
-  against 20–25 s). Do not write that it "does not scale" at 2-D sizes.
+**这是本构造与两类替代方案差别"在种类上"而非"在程度上"的地方**：
+PINN 必须挑一个算子去惩罚，AutoIP 式 GP 必须挑一个去条件化，
+**两者都必须先承诺一个具体的 $\theta$**。而池化 bank 只承诺一个范围，
+让混合权重从数据里选。
 
 ---
 
-## Repository map
+## 这项工作**没有**证明什么
 
-| path | what it is |
+写在这里是因为它对读懂上面每一条都是必需的。
+
+- **我们不赢调好的核，是打平。** 对着用留出区域选长度尺度的 Matérn，
+  单面墙是 0.5448 vs 0.5449。早期草稿声称 +17.2%，那是错的：
+  baseline 的长度尺度网格没有包含它自己的最优值。**已撤回。**
+- **2D 上随手固定一个合理常数就几乎追平我们。** 一个从不调参、
+  直接固定 $\ell = 1.6$ 的实践者，在任何布局上相对我们最差只差 0.0135。
+- **失败模式不体面。** 全部实验里唯一超过 NRMSE 1.0（比预测均值还差）的臂
+  **始终是我们**（角块 1.03，另一面墙 1.27），任何 baseline 最差只到 0.95。
+  长尺度 Matérn 打不过时会收缩到均值并停下；我们的尺度被方程钉死，
+  观测约束不住时它会继续外推。**部署前需要一个回退机制，目前没有。**
+- **标准物理信息 GP 在这个尺度上比我们快**（1.7–8.0 秒 vs 20–25 秒）。
+  **不要写"它不 scale"**——在 2D 规模上这个论断不成立，它的问题是精度。
+
+---
+
+## 入口表：先读什么、代码在哪
+
+### 文档
+
+| 文件 | 读它来回答 | 什么时候读 |
+|---|---|---|
+| [`docs/GETTING_STARTED_ZH.md`](docs/GETTING_STARTED_ZH.md) | 怎么把东西跑起来 | **第一个读**，空机器到主表约 20 分钟 |
+| [`docs/HANDOVER_TECHNICAL_ZH.md`](docs/HANDOVER_TECHNICAL_ZH.md) | 方法为什么长这样、公式怎么来、实验怎么设、数据从哪来 | **主文档**，想改方法或加实验之前必读 |
+| [`docs/FUTURE_BRANCHES_ZH.md`](docs/FUTURE_BRANCHES_ZH.md) | 接下来做什么、哪些已经评估过并降级 | 想开新方向时 |
+
+主文档的结构：
+
+| 节 | 内容 |
 |---|---|
-| `docs/GETTING_STARTED_ZH.md` | **run something first** — from an empty machine to the main table in about twenty minutes |
-| `docs/HANDOVER_TECHNICAL_ZH.md` | full derivation with algorithm boxes, related work, baselines, experiment settings, dataset provenance |
-| `configs/*.yaml` | every setting worth varying; a new study is a YAML file, not an edit |
-| `docs/FUTURE_BRANCHES_ZH.md` | parked directions and open puzzles |
-| `src/geoaware/operator_spectral_funbat.py` | spectrum construction, nonnegative CP, Tucker host |
-| `experiments/forced_pde_solver.py` | field generation, 2-D and 3-D |
-| `experiments/run_leak_sensors.py` | main table, layout definitions, shared fit routine |
-| `experiments/make_*.py` | every table and figure, generated from recorded JSON |
-| `tools/check_github_math.py` | formula-rendering check; run after editing any document |
-| `paper/` | LaTeX source, `make` to build |
+| §1 | **背景与动机**：场景 → 为什么不是标准补全 → 光滑核在外推时说了什么 → 物理给了什么 → 为什么连调参都做不到 |
+| §2 | **核心推导**：算子符号 → 联合谱 → 不可分性 → 非负 CP → Mercer 特征 → 边界本征基 → Tucker 宿主 → 知识档位 |
+| §2A | **算法表**：三段伪代码，含张量形状、参数量、代价、以及"写错会怎样" |
+| §3 | **相关工作**，含本文**不**主张什么 |
+| §4 | **Baseline**：每个是什么、怎么实现、给了什么待遇 |
+| §5 | **主实验与完整 setting**，含必须一并报告的负面结果 |
+| §6 | **数据来源**：主线不需下载；换真实数据的链接与必跑筛查 |
+| §7 | **代码地图与配置系统** |
+| §8 | **给接手者的忠告** |
 
-## Reproducing the main table
+### 核心代码
 
-No dataset download is required — the fields are solved locally in about a
-second per seed.
+| 路径 | 是什么 | 行数 |
+|---|---|---|
+| [`src/geoaware/operator_spectral_funbat.py`](src/geoaware/operator_spectral_funbat.py) | **方法核心**：谱构造、非负 CP、Tucker 宿主 | 998 |
+| [`src/geoaware/config.py`](src/geoaware/config.py) | 配置系统（未知键报错、覆盖可追溯） | 170 |
+| [`experiments/forced_pde_solver.py`](experiments/forced_pde_solver.py) | 场生成，2D 与 3D，可选平流 | 590 |
+| [`experiments/run_leak_sensors.py`](experiments/run_leak_sensors.py) | **主表**、布局定义、共享拟合例程（其他脚本都 import 它） | 260 |
+| [`configs/base.yaml`](configs/base.yaml) | 所有值得改的设置；新研究写 YAML，不改 Python | — |
+| [`tools/check_github_math.py`](tools/check_github_math.py) | 公式渲染检查，**改完文档必跑** | 130 |
+
+核心函数的对应关系（详见主文档 §2A）：
+
+| 函数 | 对应公式 |
+|---|---|
+| `neumann_eigenvalues` | 离散算子特征值 $\lambda(k) = (2 - 2\cos(\pi k/n))/h^2$ |
+| `operator_spectra` | 联合谱 $S_{\mathrm{op}} = \bigl(\omega^2 + (r + D_x\lambda_x + D_y\lambda_y)^2\bigr)^{-1}$ |
+| `nonnegative_cp_spectrum` | 非负 CP 投影（任意阶，支持掩码） |
+| `real_cosine_basis` | 无流边界本征基 $\lbrace 1, \sqrt{2}\cos(\pi k x) \rbrace$ |
+| `ModeAdaptiveVariationalTucker` | 宿主模型与 ELBO |
+
+### 实验脚本
+
+| 想问什么 | 脚本 |
+|---|---|
+| 主表：5 布局 × 3 档 | `run_leak_sensors.py` |
+| 换算子族还成立吗 | `run_leak_operators.py` |
+| 三维呢 | `run_leak_3d.py` |
+| 需要多少方程知识 | `run_leak_knowledge_ladder.py` |
+| 打得过神经网络吗 | `run_leak_neural.py` |
+| 物理当损失更好吗 | `run_leak_physics_baselines.py` |
+| 和 AutoIP 比呢 | `run_leak_autoip.py` |
+| 不调参的固定核呢 | `run_leak_fixed_kernel.py` |
+| 表与图 | `make_paper_tables.py`、`make_leak_figures.py`、`make_headline_figure.py` |
+
+---
+
+## 复现主表
+
+**不需要下载任何数据集**，场是本地解的，一个 seed 约一秒。
 
 ```bash
 python experiments/run_leak_sensors.py --config base --tag leak_main3tier
-python experiments/make_paper_tables.py     # writes paper/sections/table_*.tex
-python experiments/make_leak_figures.py     # writes results/leak/figure_*.png
+python experiments/make_paper_tables.py     # 写出 paper/sections/table_*.tex
+python experiments/make_leak_figures.py     # 写出 results/leak/figure_*.png
 ```
 
-A different field is a config, not a code change:
+换一个场是改配置，不是改代码：
 
 ```bash
 python experiments/run_leak_sensors.py --config advection_diffusion --tag advection
 python experiments/run_leak_sensors.py --config base --set evaluation.ratio=0.02
 ```
 
-Unknown keys are refused rather than ignored, and the resolved config is written
-into every summary, so a number can always be traced back to what produced it.
+**未知键会报错而不是被忽略**，展开后的完整配置写进每个结果 JSON，
+所以任何数字都能追溯到产生它的设置。
 
-A GPU is used automatically when available (`--device`), and makes the sweeps
-roughly an order of magnitude cheaper.
-
-## Settings that every table shares
+## 所有表共享的 setting
 
 ```python
-FIELD  = grid 64x64, D = (0.02, 0.006), r = 0.04, three leaks,
-         dt = 0.6, 200 burn-in steps, 64 recorded frames, background noise 0.02
-NOMINAL = D = (0.03, 0.012), r = 0.06        # deliberately wrong by 50%
-BINS   = (12, 12, 12)   RANKS = (8, 5, 5)   observed 1%   noise std 0.05
-Adam, lr 0.02, 1000 steps, 3-sample ELBO
+FIELD   = 64x64 网格, D = (0.02, 0.006), r = 0.04, 三处泄漏,
+          dt = 0.6, burn-in 200 步, 记录 64 帧, 背景噪声 0.02
+NOMINAL = D = (0.03, 0.012), r = 0.06        # 故意错 50%
+BINS = (12, 12, 12)   RANKS = (8, 5, 5)   观测 1%   噪声 std 0.05
+Adam, lr 0.02, 1000 步, 3 样本 ELBO
 ```
 
-Within a seed every arm shares the field, the mask and the noise, so every
-comparison is paired. NRMSE is normalised by the held-out standard deviation,
-so **1.0 is exactly what predicting the mean scores**.
+同一 seed 内**所有臂共享场、掩码与噪声**，所以每个比较都是配对的。
+NRMSE 按留出集标准差归一化，**所以 1.0 恰好是"预测均值"的分数**。
 
-## House rules that earned themselves
+## 用代价换来的几条规矩
 
-1. **Check that every hyper-parameter grid brackets its own optimum.** The one
-   retraction in this project came from a grid that did not. Tuning a baseline
-   *up* is an intervention a reader can see; tuning it *too little* produces a
-   number that looks like a measurement.
-2. **Write the mechanism prediction and its refutation condition into the script
-   before running it.** Four mechanism predictions here have been refuted by
-   their own controls, and each was easy to re-narrate afterwards.
-3. **Generate tables and figures from recorded JSON.** Hand transcription is how
-   a retracted number survives a revision.
-4. **Run the feasibility screens before comparing methods**, not after.
+1. **检查每个超参网格是否夹住了它自己的最优。** 本项目唯一一次撤回就源于此。
+   把 baseline 调**强**是读者能在方法节看见的干预；调**得不够**产生的数字
+   **看起来像测量结果**，没有任何东西会提示你。
+2. **机制预测和它的证伪条件要先写进脚本再跑。** 本项目有四次机制预测
+   被自己的对照推翻，每一次事后都很容易重新叙述。
+3. **表和图从落盘的 JSON 生成。** 手抄正是被撤回的数字混进修订版的典型途径。
+4. **先跑可行性筛查再比方法**，不是反过来。
