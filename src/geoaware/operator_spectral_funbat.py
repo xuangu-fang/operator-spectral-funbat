@@ -230,6 +230,72 @@ def normalize_spectrum_cosine(spectrum: torch.Tensor, eps: float = 1e-12) -> tor
     return spectrum / spectrum.sum(-1, keepdim=True).clamp_min(eps)
 
 
+def heat_kernel_bank(
+    eigenvalues: tuple[torch.Tensor, ...],
+    *,
+    diffusivity: tuple[float, ...],
+    reaction: float,
+    power: float = 2.0,
+    atoms: int = 32,
+    span: tuple[float, float] = (0.5, 20.0),
+) -> list[torch.Tensor]:
+    """Per-mode spectra of an elliptic operator in closed form, without fitting.
+
+    For a dissipative elliptic operator the symbol is a *sum* over axes,
+    ``A = r + sum_d D_d lambda_d``, and the exponential of a sum is a product::
+
+        exp(-t A) = exp(-t r) * prod_d exp(-t D_d lambda_d)
+
+    so every heat kernel is separable by construction.  Bernstein's theorem then
+    does the rest: ``A^{-p}`` is completely monotone, hence a *nonnegative*
+    mixture of exponentials,
+
+        A^{-p} = 1/Gamma(p) * integral_0^inf t^{p-1} exp(-t A) dt,
+
+    which is a nonnegative mixture of separable terms with an explicit density.
+    Discretising ``t`` gives the atom bank directly: no optimisation, no rank or
+    step or seed to choose, every atom nonnegative because it is an exponential,
+    and each one physically meaningful -- the field component that has diffused
+    for time ``t``.
+
+    This replaces :func:`nonnegative_cp_spectrum` exactly when the spectrum is a
+    completely monotone function of the elliptic symbol, which holds for the
+    purely spatial (steady-state) case.  It does **not** hold once the operator
+    carries a time derivative: ``1/(omega^2 + A^2)`` is not completely monotone
+    in ``A``, because the temporal decorrelation rate is tied to the spatial
+    wavenumber, and no nonnegative separable mixture is exact there.  Use the
+    fitted projection in that case.
+
+    Nodes are geometric in ``t`` because ``A`` spans three orders of magnitude
+    across the grid; ``span`` is in units of ``1/max(A)`` and ``1/min(A)``.
+    """
+    import math as _math
+    if power <= 0 or atoms < 2:
+        raise ValueError("power must be positive and atoms at least two")
+    if len(diffusivity) != len(eigenvalues):
+        raise ValueError("one diffusivity per spatial mode")
+    symbol = reaction
+    for coefficient, values in zip(diffusivity, eigenvalues):
+        symbol = symbol + coefficient * values.reshape(
+            [-1 if i == len(symbol.shape) else 1
+             for i in range(len(eigenvalues))]) if torch.is_tensor(symbol)             else reaction + coefficient * values
+    # Build the range from the extreme symbol values rather than guessing.
+    lowest = reaction + sum(float(c * v.min()) for c, v in zip(diffusivity, eigenvalues))
+    highest = reaction + sum(float(c * v.max()) for c, v in zip(diffusivity, eigenvalues))
+    times = torch.exp(torch.linspace(
+        _math.log(span[0] / max(highest, 1e-12)),
+        _math.log(span[1] / max(lowest, 1e-12)), atoms, dtype=torch.float64))
+    log_step = torch.gradient(times.log())[0]
+    weights = log_step * times.pow(power) * torch.exp(-times * reaction)
+    bank = []
+    for coefficient, values in zip(diffusivity, eigenvalues):
+        bank.append(torch.exp(-times[:, None] * coefficient * values[None].double()).float())
+    # Fold the quadrature weight and the reaction term into the first mode, so
+    # the product over modes reproduces the mixture exactly.
+    bank[0] = bank[0] * weights.float()[:, None]
+    return bank
+
+
 def operator_joint_spectrum(
     operator: Literal["diffusion", "wave", "advection", "reaction_diffusion",
                       "banded_pattern", "narrowband_diffusion"],

@@ -1,40 +1,12 @@
-% 中文技术札记 —— 用 xelatex 编译（需要 ctex 与 Noto CJK 字体）
-%   make            在本目录生成 main.pdf 并复制到 docs/
+% 中文技术札记 —— 用 xelatex 编译
+%   make            生成 main.pdf 并复制到 docs/技术札记.pdf
 \documentclass[11pt,a4paper]{article}
+\input{preamble}
 
-\usepackage[UTF8,scheme=plain]{ctex}
-\setCJKmainfont{Noto Serif CJK SC}
-\setCJKsansfont{Noto Sans CJK SC}
-\setCJKmonofont{Noto Sans Mono CJK SC}
-
-\usepackage[margin=2.4cm]{geometry}
-\usepackage{amsmath,amssymb,amsthm,mathtools}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{xcolor}
-\usepackage{caption}
-\usepackage[colorlinks=true,allcolors=blue]{hyperref}
-\usepackage{cleveref}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\usepackage{enumitem}
-
-\crefname{section}{第}{第}
-\crefformat{section}{第#2#1#3节}
-\crefname{table}{表}{表}
-\crefname{figure}{图}{图}
-\crefname{equation}{式}{式}
-\crefname{algorithm}{算法}{算法}
-
-\newcommand{\Lop}{\mathcal{L}}
-\newcommand{\Sop}{S_{\mathrm{op}}}
-\newcommand{\bxi}{\boldsymbol{\xi}}
-\newcommand{\NRMSE}{\mathrm{NRMSE}}
-
-\title{\textbf{算子谱先验：受限传感器布局下的稀疏物理场重构}\\[4pt]
-\large 技术札记（交接版）}
-\author{}
-\date{}
+\title{\bfseries 算子谱先验：受限传感器布局下的稀疏物理场重构\\[4pt]
+\large 从方程的形式导出逐维 GP 核}
+\author{Operator-Spectral FunBaT 项目组}
+\date{\today}
 
 \begin{document}
 \maketitle
@@ -48,10 +20,12 @@
 它只知道"远处相关性低"，于是把远处预测成均值，那是关于我们无知的陈述，
 不是关于场的陈述。
 
-本札记给出一套从\textbf{方程形式}构造先验的方法：算子的符号给出解的联合功率谱，
-把这个\textbf{不可分}的联合谱做\textbf{非负、保半正定}的低秩投影，
-得到函数式张量分解每个 mode 的一维 GP 核。它只需要方程的形式和系数的一个范围，
-\textbf{不需要任何调参数据}。
+本札记给出一套从\textbf{方程形式}构造先验的方法，它可以压缩成一句话：
+\textbf{算子给出的先验，是热核在扩散时间上的非负混合}。
+耗散算子的符号是各轴之和，而和的指数是积，所以每个热核天生逐轴可分；
+把联合谱写成热核的混合，就同时得到了可分性与非负性，
+于是函数式张量分解的每个 mode 都拿到一个合法的一维 GP 核。
+它只需要方程的形式和系数的一个范围，\textbf{不需要任何调参数据}。
 
 在三个算子族、二维与三维、九种传感器布局上：传感器散布时本方法与通用核\textbf{打平}
 （这是应该的，内插不需要物理）；受限到单面墙时重构误差相对实际可部署的最好方法
@@ -59,7 +33,20 @@
 \end{abstract}
 
 \tableofcontents
-\bigskip
+\newpage
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figure_reconstruction.png}
+\caption{单面墙、$1\%$ 观测下的重构。上排是时间平均场，方框是传感器所在的条带，
+其余全部靠外推；下排是误差的空间分布。
+第三列是\textbf{在传感器读数上调参}的 Matérn：离墙一远就塌回均值——
+这正是平稳核在外推时的行为。
+需要如实指出的是：本方法（第二列）恢复的是沿 $y$ 分层的一维剖面，
+真实场里的三个泄漏源\emph{一个都没有恢复出来}。
+在这个观测量下 $\NRMSE = 0.52$ 的真实含义就是"恢复了一维边缘剖面"。}
+\label{fig:recon}
+\end{figure}
 
 %=====================================================================
 %=====================================================================
@@ -272,8 +259,94 @@ multilinear rank 为 $[2, 11, 11]$ 的场需要 $2 \cdot 11 \cdot 11 = 242$ 的�
 %=====================================================================
 \section{方法}
 
-方法分三步：从算子得到联合谱；把不可分的联合谱投影成每维一条谱；
-把每维谱变成合法的核并放进宿主。
+\subsection{一句话与四个公式}
+
+\begin{takeaway}[方法的全部内容]
+\textbf{算子给出的先验，是热核在扩散时间上的非负混合。}
+
+耗散算子的符号是\emph{各轴之和}，而\emph{和的指数是积}，
+所以每个热核天生可分；把联合谱写成热核的混合，就同时得到了可分性与非负性。
+\end{takeaway}
+
+场由算子驱动、受随机强迫：
+\begin{equation}
+\Lop u = w .
+\label{eq:m1}
+\end{equation}
+
+于是解的功率谱由算子的符号给出，它\textbf{对各轴不可分}：
+\begin{equation}
+\Sop(\bxi) = \bigl\lvert \hat{\Lop}(\bxi) \bigr\rvert^{-2},
+\qquad
+\hat{\Lop} = i\omega + \underbrace{r + D_x k_x^2 + D_y k_y^2}_{\textstyle \Aop} .
+\label{eq:m2}
+\end{equation}
+
+关键的一步：椭圆符号 $\Aop$ 是\emph{各轴之和}，而和的指数是积，
+所以\textbf{每个热核都是可分的}；再由 Bernstein 定理，
+$\Aop^{-p}$ 是指数的\emph{非负}混合，密度还是显式的：
+\begin{equation}
+\Aop^{-p}
+= \frac{1}{\Gamma(p)}\int_{0}^{\infty} t^{\,p-1}
+  \underbrace{e^{-tr}\, e^{-tD_x k_x^2}\, e^{-tD_y k_y^2}}_{\textstyle \text{时间 } t \text{ 的热核，逐轴可分}}
+  \,\mathrm{d}t .
+\label{eq:m3}
+\end{equation}
+
+对 $t$ 求积得到 $Q$ 个原子 $\{s_{dq}\}$，混合权重 $\pi$ 从数据学；
+每条一维谱经 Mercer 展开即为一个合法（半正定）的核：
+\begin{equation}
+k_d(z, z') = \sum_{k} \Bigl(\sum_q \pi_{dq}\, s_{dq}(k)\Bigr) \phi_{dk}(z)\,\phi_{dk}(z'),
+\qquad
+\phi_{dk} = \Aop \text{ 的本征函数} .
+\label{eq:m4}
+\end{equation}
+
+\cref{eq:m1}--\cref{eq:m4}就是方法的全部。
+每个原子有物理含义——\textbf{扩散了时间 $t$ 的那个场分量}；
+非负性不是约束而是结果（指数天然非负）；
+不需要拟合、不需要选秩、不需要 seed。
+
+\subsection{两种情形：什么时候闭式成立}
+
+\cref{eq:m3}成立的条件是干净的：\textbf{谱必须是椭圆符号的完全单调函数}
+（Bernstein 定理）。这把问题清楚地分成两半。
+
+\begin{proposition}[纯空间情形：闭式精确]
+稳态场 $\Aop u = f$ 的谱是 $\Aop^{-2}$，它对 $\Aop$ 完全单调，
+所以\cref{eq:m3}\emph{精确}成立，求积即得原子。
+\end{proposition}
+
+实测（$256\times256$，名义系数）：$Q=16$ 个求积节点已把联合谱逼近到
+相对误差 $1.1\times10^{-4}$，$Q=32$ 到 $7\times10^{-6}$，\textbf{全程无需拟合}。
+
+\begin{proposition}[空间$+$时间：闭式不成立]
+含时算子的谱是 $1/(\omega^2 + \Aop^2)$，它对 $\Aop$ \emph{不}完全单调
+（二阶导变号），所以不存在精确的非负可分表示。
+根本原因是\textbf{时间去相关率与空间波数被算子绑在一起}，
+任何可分近似都必须打断这个绑定。
+\end{proposition}
+
+此时退回到数值实现：取联合谱的\textbf{最佳非负低秩投影}，
+即\cref{eq:m3}在无闭式时的数值对应物。这不是另一个方法，
+是同一个对象求不出解析式时的算法版本。
+
+\begin{takeaway}[为什么这个划分值得写出来]
+它把"为什么要做一步谱分离"从\emph{工程选择}变成了\emph{可判定的数学条件}。
+读者不必接受"我们做了个近似"，而是知道：
+闭式在哪一半精确、在另一半为什么不可能、以及数值版本在逼近什么。
+\end{takeaway}
+
+\paragraph{一个反直觉的实测，必须一并报告。}
+闭式 bank 把谱逼近得好得多（$10^{-4}$ 对 CP 停在 $10^{-2}$），
+但在\emph{重构}上并不一律更好：$256^2$ 稳态场上，随机布局它更好
+（$0.0246$ 对 $0.0291$），单面墙上反而略差（$0.4571$ 对 $0.4341$）。
+\textbf{谱逼近精度不等于重构质量}——粗糙的四原子 bank 在外推时起了额外正则化的作用。
+所以主线仍用数值投影，闭式版本作为理解方法\emph{是什么}的正确视角。
+
+\subsection{逐步推导}
+
+以下把\cref{eq:m1}--\cref{eq:m4}展开到可实现的粒度。
 
 \subsection{第一步：从算子到解的功率谱}
 

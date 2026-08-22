@@ -2,121 +2,104 @@
 \providecommand\hyper@newdestlabel[2]{}
 \providecommand*\HyPL@Entry[1]{}
 \HyPL@Entry{0<</S/D>>}
-\@writefile{toc}{\contentsline {section}{\numberline {1}记号}{2}{section.1}\protected@file@percent }
-\newlabel{sec:notation}{{1}{2}{记号}{section.1}{}}
-\newlabel{sec:notation@cref}{{[section][1][]1}{[1][2][]2}}
-\@writefile{toc}{\contentsline {section}{\numberline {2}引言与动机}{2}{section.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}一个具体场景}{2}{subsection.2.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces 两种缺失模式的差别。最后一行是本文的实测。}}{3}{table.caption.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 单面墙、$1\%$ 观测下的重构。上排是时间平均场，方框是传感器所在的条带， 其余全部靠外推；下排是误差的空间分布。 第三列是\textbf  {在传感器读数上调参}的 Matérn：离墙一远就塌回均值—— 这正是平稳核在外推时的行为。 需要如实指出的是：本方法（第二列）恢复的是沿 $y$ 分层的一维剖面， 真实场里的三个泄漏源\emph  {一个都没有恢复出来}。 在这个观测量下 $\mathrm  {NRMSE}= 0.52$ 的真实含义就是"恢复了一维边缘剖面"。}}{3}{figure.caption.2}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{tab:setting}{{1}{3}{两种缺失模式的差别。最后一行是本文的实测。}{table.caption.3}{}}
-\newlabel{tab:setting@cref}{{[table][1][]1}{[1][2][]3}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces 验证选出的长度尺度与实际需要的值。同一网格、同一宿主，只差谁来选。}}{3}{table.caption.4}\protected@file@percent }
-\newlabel{tab:tuning}{{2}{3}{验证选出的长度尺度与实际需要的值。同一网格、同一宿主，只差谁来选。}{table.caption.4}{}}
-\newlabel{tab:tuning@cref}{{[table][2][]2}{[1][3][]3}}
+\newlabel{fig:recon}{{1}{3}{单面墙、$1\%$ 观测下的重构。上排是时间平均场，方框是传感器所在的条带， 其余全部靠外推；下排是误差的空间分布。 第三列是\textbf {在传感器读数上调参}的 Matérn：离墙一远就塌回均值—— 这正是平稳核在外推时的行为。 需要如实指出的是：本方法（第二列）恢复的是沿 $y$ 分层的一维剖面， 真实场里的三个泄漏源\emph {一个都没有恢复出来}。 在这个观测量下 $\NRMSE = 0.52$ 的真实含义就是"恢复了一维边缘剖面"。}{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1}记号}{3}{section.1}\protected@file@percent }
+\newlabel{sec:notation}{{1}{3}{记号}{section.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}引言与动机}{3}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}一个具体场景}{3}{subsection.2.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}为什么这不是标准的张量补全设定}{3}{subsection.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}光滑先验在外推时说了什么}{3}{subsection.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}物理提供的恰好是缺的那句话}{3}{subsection.2.4}\protected@file@percent }
-\newlabel{eq:transfer}{{1}{3}{物理提供的恰好是缺的那句话}{equation.2.1}{}}
-\newlabel{eq:transfer@cref}{{[equation][1][]1}{[1][3][]3}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}而且在这个设定里连"调参"都做不到}{3}{subsection.2.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}背景}{4}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}函数式张量分解}{4}{subsection.3.1}\protected@file@percent }
-\newlabel{eq:tucker}{{2}{4}{函数式张量分解}{equation.3.2}{}}
-\newlabel{eq:tucker@cref}{{[equation][2][]2}{[1][4][]4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}为什么宿主必须是 Tucker 而不是 CP}{4}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}问题设定}{4}{section.4}\protected@file@percent }
-\newlabel{sec:setting}{{4}{4}{问题设定}{section.4}{}}
-\newlabel{sec:setting@cref}{{[section][4][]4}{[1][4][]4}}
-\newlabel{eq:nrmse}{{3}{4}{问题设定}{equation.4.3}{}}
-\newlabel{eq:nrmse@cref}{{[equation][3][]3}{[1][4][]4}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}方法}{4}{section.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}第一步：从算子到解的功率谱}{4}{subsection.5.1}\protected@file@percent }
-\newlabel{eq:joint}{{5}{5}{第一步：从算子到解的功率谱}{equation.5.5}{}}
-\newlabel{eq:joint@cref}{{[equation][5][]5}{[1][4][]5}}
-\@writefile{toc}{\contentsline {paragraph}{必须用离散算子的特征值。}{5}{section*.5}\protected@file@percent }
-\newlabel{eq:eig}{{6}{5}{必须用离散算子的特征值。}{equation.5.6}{}}
-\newlabel{eq:eig@cref}{{[equation][6][]6}{[1][5][]5}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}第二步：不可分性——本方法要解决的核心问题}{5}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}第三步：非负 CP 投影}{5}{subsection.5.3}\protected@file@percent }
-\newlabel{eq:cp}{{8}{5}{第三步：非负 CP 投影}{equation.5.8}{}}
-\newlabel{eq:cp@cref}{{[equation][8][]8}{[1][5][]5}}
-\@writefile{toc}{\contentsline {paragraph}{掩码而不是置零。}{5}{section*.6}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces 知识档位。这是本构造与 PINN / AutoIP 差别\emph  {在种类上}的地方： 后两者必须先承诺一个具体的 $\theta $ 才能写出残差或虚拟观测。}}{6}{table.caption.7}\protected@file@percent }
-\newlabel{tab:ladder-def}{{3}{6}{知识档位。这是本构造与 PINN / AutoIP 差别\emph {在种类上}的地方： 后两者必须先承诺一个具体的 $\theta $ 才能写出残差或虚拟观测。}{table.caption.7}{}}
-\newlabel{tab:ladder-def@cref}{{[table][3][]3}{[1][6][]6}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}第四步：从谱到核（Mercer）}{6}{subsection.5.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}第五步：边界条件决定本征基}{6}{subsection.5.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}第六步：混合权重与知识档位}{6}{subsection.5.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}贝叶斯模型：联合概率}{6}{subsection.5.7}\protected@file@percent }
-\newlabel{sec:joint}{{5.7}{6}{贝叶斯模型：联合概率}{subsection.5.7}{}}
-\newlabel{sec:joint@cref}{{[subsection][7][5]5.7}{[1][6][]6}}
-\@writefile{toc}{\contentsline {paragraph}{生成过程。}{7}{section*.8}\protected@file@percent }
-\newlabel{eq:prior-a}{{14}{7}{生成过程。}{equation.5.14}{}}
-\newlabel{eq:prior-a@cref}{{[equation][14][]14}{[1][6][]7}}
-\newlabel{eq:factor}{{15}{7}{生成过程。}{equation.5.15}{}}
-\newlabel{eq:factor@cref}{{[equation][15][]15}{[1][6][]7}}
-\newlabel{eq:field}{{16}{7}{生成过程。}{equation.5.16}{}}
-\newlabel{eq:field@cref}{{[equation][16][]16}{[1][6][]7}}
-\newlabel{eq:lik}{{17}{7}{生成过程。}{equation.5.17}{}}
-\newlabel{eq:lik@cref}{{[equation][17][]17}{[1][6][]7}}
-\@writefile{toc}{\contentsline {paragraph}{为什么\cref  {eq:prior-a}--\cref  {eq:factor}就是那个 GP。}{7}{section*.9}\protected@file@percent }
-\newlabel{eq:joint}{{19}{7}{为什么\cref {eq:prior-a}--\cref {eq:factor}就是那个 GP。}{equation.5.19}{}}
-\newlabel{eq:joint@cref}{{[equation][19][]19}{[1][7][]7}}
-\@writefile{toc}{\contentsline {paragraph}{哪些量是贝叶斯的，哪些不是。}{7}{section*.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{注意$\,$\cref  {eq:field}对 $\mathbf  {A}$ 不是线性的。}{7}{section*.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}变分推断}{7}{subsection.5.8}\protected@file@percent }
-\newlabel{eq:q}{{20}{7}{变分推断}{equation.5.20}{}}
-\newlabel{eq:q@cref}{{[equation][20][]20}{[1][7][]7}}
-\newlabel{eq:elbo}{{21}{7}{变分推断}{equation.5.21}{}}
-\newlabel{eq:elbo@cref}{{[equation][21][]21}{[1][7][]7}}
-\@writefile{toc}{\contentsline {paragraph}{KL 项有闭式。}{8}{section*.12}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{期望对数似然用重参数化采样。}{8}{section*.13}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.9}后验长什么样}{8}{subsection.5.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{后验均值（本文报告的重构）。}{8}{section*.14}\protected@file@percent }
-\newlabel{eq:postmean}{{24}{8}{后验均值（本文报告的重构）。}{equation.5.24}{}}
-\newlabel{eq:postmean@cref}{{[equation][24][]24}{[1][8][]8}}
-\@writefile{toc}{\contentsline {paragraph}{后验预测分布。}{8}{section*.15}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{不确定性是欠覆盖的，必须如实说。}{8}{section*.16}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.10}第七步：推断的实现要点}{8}{subsection.5.10}\protected@file@percent }
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces 构造逐维核 bank（\textbf  {不使用任何观测数据}）}}{9}{algorithm.1}\protected@file@percent }
-\newlabel{alg:bank}{{1}{9}{构造逐维核 bank（\textbf {不使用任何观测数据}）}{algorithm.1}{}}
-\newlabel{alg:bank@cref}{{[algorithm][1][]1}{[1][9][]9}}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces 拟合（\textbf  {不使用任何留出数据}）}}{9}{algorithm.2}\protected@file@percent }
-\newlabel{alg:fit}{{2}{9}{拟合（\textbf {不使用任何留出数据}）}{algorithm.2}{}}
-\newlabel{alg:fit@cref}{{[algorithm][2][]2}{[1][9][]9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.11}算法总览}{9}{subsection.5.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{参数量。}{9}{section*.17}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}实验设定与数据}{9}{section.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}数据来源}{9}{subsection.6.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces 所有表共享的设定。同一 seed 内所有方法共享场、掩码与噪声， 因此每个比较都是配对的。}}{10}{table.caption.18}\protected@file@percent }
-\newlabel{tab:settings}{{4}{10}{所有表共享的设定。同一 seed 内所有方法共享场、掩码与噪声， 因此每个比较都是配对的。}{table.caption.18}{}}
-\newlabel{tab:settings@cref}{{[table][4][]4}{[1][9][]10}}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces 传感器布局。$\mathrm  {depth}$ 指到最近墙面的距离。}}{10}{table.caption.19}\protected@file@percent }
-\newlabel{tab:layouts}{{5}{10}{传感器布局。$\mathrm {depth}$ 指到最近墙面的距离。}{table.caption.19}{}}
-\newlabel{tab:layouts@cref}{{[table][5][]5}{[1][9][]10}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}共享设定}{10}{subsection.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}传感器布局}{10}{subsection.6.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{四个角块与单个角块的配对。}{10}{section*.20}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}结果}{10}{section.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}场景覆盖}{10}{subsection.7.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces 场景覆盖：三个算子族、两个维度、每种布局，$1\%$ 观测。}}{11}{table.caption.21}\protected@file@percent }
-\newlabel{tab:coverage}{{6}{11}{场景覆盖：三个算子族、两个维度、每种布局，$1\%$ 观测。}{table.caption.21}{}}
-\newlabel{tab:coverage@cref}{{[table][6][]6}{[1][10][]11}}
-\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces 与容量更大的模型、以及与同一份物理的另一种花法比较。 打星的臂\textbf  {在留出区域上}选架构、学习率或残差权重，并有 $4$--$6$ 倍优化预算； 本方法一组配置、零调参数据。最后一列是同一网络关掉物理。}}{11}{table.caption.22}\protected@file@percent }
-\newlabel{tab:baselines}{{7}{11}{与容量更大的模型、以及与同一份物理的另一种花法比较。 打星的臂\textbf {在留出区域上}选架构、学习率或残差权重，并有 $4$--$6$ 倍优化预算； 本方法一组配置、零调参数据。最后一列是同一网络关掉物理。}{table.caption.22}{}}
-\newlabel{tab:baselines@cref}{{[table][7][]7}{[1][10][]11}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}与更强的对手比较}{11}{subsection.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{同一份物理，当先验比当残差惩罚值钱一个数量级。}{11}{section*.23}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}需要多少方程知识}{11}{subsection.7.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {8}局限与尚未解释的现象}{11}{section.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{本方法不赢调好的核，是打平。}{11}{section*.25}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{二维上随手固定一个合理常数就几乎追平。}{11}{section*.26}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces 知识档位（单面墙，$3$ seeds）。通用字典的 atom 数与池化 bank 完全相同， 且 collapsed 参数化保证变分系数量与 bank 大小无关，所以比较不被参数预算污染。}}{12}{table.caption.24}\protected@file@percent }
-\newlabel{tab:ladder}{{8}{12}{知识档位（单面墙，$3$ seeds）。通用字典的 atom 数与池化 bank 完全相同， 且 collapsed 参数化保证变分系数量与 bank 大小无关，所以比较不被参数预算污染。}{table.caption.24}{}}
-\newlabel{tab:ladder@cref}{{[table][8][]8}{[1][11][]12}}
-\@writefile{toc}{\contentsline {paragraph}{失败模式不体面。}{12}{section*.27}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{两面墙的不对称尚未完全解释。}{12}{section*.28}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{标准物理信息 GP 在这个尺度上更快。}{12}{section*.29}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {9}复现}{12}{section.9}\protected@file@percent }
-\gdef \@abspage@last{12}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}光滑先验在外推时说了什么}{4}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}物理提供的恰好是缺的那句话}{4}{subsection.2.4}\protected@file@percent }
+\newlabel{eq:transfer}{{1}{4}{物理提供的恰好是缺的那句话}{equation.2.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces 两种缺失模式的差别。最后一行是本文的实测。}}{5}{table.caption.4}\protected@file@percent }
+\newlabel{tab:setting}{{1}{5}{两种缺失模式的差别。最后一行是本文的实测。}{table.caption.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces 验证选出的长度尺度与实际需要的值。同一网格、同一宿主，只差谁来选。}}{5}{table.caption.5}\protected@file@percent }
+\newlabel{tab:tuning}{{2}{5}{验证选出的长度尺度与实际需要的值。同一网格、同一宿主，只差谁来选。}{table.caption.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}而且在这个设定里连"调参"都做不到}{5}{subsection.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}背景}{5}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}函数式张量分解}{5}{subsection.3.1}\protected@file@percent }
+\newlabel{eq:tucker}{{2}{5}{函数式张量分解}{equation.3.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}为什么宿主必须是 Tucker 而不是 CP}{6}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}问题设定}{6}{section.4}\protected@file@percent }
+\newlabel{sec:setting}{{4}{6}{问题设定}{section.4}{}}
+\newlabel{eq:nrmse}{{3}{6}{问题设定}{equation.4.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}方法}{6}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}一句话与四个公式}{6}{subsection.5.1}\protected@file@percent }
+\newlabel{eq:m1}{{4}{6}{一句话与四个公式}{equation.5.4}{}}
+\newlabel{eq:m2}{{5}{6}{一句话与四个公式}{equation.5.5}{}}
+\newlabel{eq:m3}{{6}{7}{一句话与四个公式}{equation.5.6}{}}
+\newlabel{eq:m4}{{7}{7}{一句话与四个公式}{equation.5.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}两种情形：什么时候闭式成立}{7}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{一个反直觉的实测，必须一并报告。}{7}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}逐步推导}{7}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}第一步：从算子到解的功率谱}{8}{subsection.5.4}\protected@file@percent }
+\newlabel{eq:joint}{{9}{8}{第一步：从算子到解的功率谱}{equation.5.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{必须用离散算子的特征值。}{8}{section*.7}\protected@file@percent }
+\newlabel{eq:eig}{{10}{8}{必须用离散算子的特征值。}{equation.5.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}第二步：不可分性——本方法要解决的核心问题}{8}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}第三步：非负 CP 投影}{8}{subsection.5.6}\protected@file@percent }
+\newlabel{eq:cp}{{12}{8}{第三步：非负 CP 投影}{equation.5.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{掩码而不是置零。}{9}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}第四步：从谱到核（Mercer）}{9}{subsection.5.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}第五步：边界条件决定本征基}{9}{subsection.5.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.9}第六步：混合权重与知识档位}{9}{subsection.5.9}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces 知识档位。这是本构造与 PINN / AutoIP 差别\emph  {在种类上}的地方： 后两者必须先承诺一个具体的 $\theta $ 才能写出残差或虚拟观测。}}{10}{table.caption.9}\protected@file@percent }
+\newlabel{tab:ladder-def}{{3}{10}{知识档位。这是本构造与 PINN / AutoIP 差别\emph {在种类上}的地方： 后两者必须先承诺一个具体的 $\theta $ 才能写出残差或虚拟观测。}{table.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.10}贝叶斯模型：联合概率}{10}{subsection.5.10}\protected@file@percent }
+\newlabel{sec:joint}{{5.10}{10}{贝叶斯模型：联合概率}{subsection.5.10}{}}
+\@writefile{toc}{\contentsline {paragraph}{生成过程。}{10}{section*.10}\protected@file@percent }
+\newlabel{eq:prior-a}{{18}{10}{生成过程。}{equation.5.18}{}}
+\newlabel{eq:factor}{{19}{10}{生成过程。}{equation.5.19}{}}
+\newlabel{eq:field}{{20}{10}{生成过程。}{equation.5.20}{}}
+\newlabel{eq:lik}{{21}{10}{生成过程。}{equation.5.21}{}}
+\@writefile{toc}{\contentsline {paragraph}{为什么{eq:prior-a}--{eq:factor}就是那个 GP。}{10}{section*.11}\protected@file@percent }
+\newlabel{eq:joint}{{23}{10}{为什么\cref {eq:prior-a}--\cref {eq:factor}就是那个 GP。}{equation.5.23}{}}
+\@writefile{toc}{\contentsline {paragraph}{哪些量是贝叶斯的，哪些不是。}{11}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{注意$\,${eq:field}对 $\mathbf  {A}$ 不是线性的。}{11}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.11}变分推断}{11}{subsection.5.11}\protected@file@percent }
+\newlabel{eq:q}{{24}{11}{变分推断}{equation.5.24}{}}
+\newlabel{eq:elbo}{{25}{11}{变分推断}{equation.5.25}{}}
+\@writefile{toc}{\contentsline {paragraph}{KL 项有闭式。}{11}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{期望对数似然用重参数化采样。}{11}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.12}后验长什么样}{11}{subsection.5.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{后验均值（本文报告的重构）。}{11}{section*.16}\protected@file@percent }
+\newlabel{eq:postmean}{{28}{12}{后验均值（本文报告的重构）。}{equation.5.28}{}}
+\@writefile{toc}{\contentsline {paragraph}{后验预测分布。}{12}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{不确定性是欠覆盖的，必须如实说。}{12}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.13}第七步：推断的实现要点}{12}{subsection.5.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.14}算法总览}{12}{subsection.5.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{参数量。}{12}{section*.19}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces 构造逐维核 bank（\textbf  {不使用任何观测数据}）}}{13}{algorithm.1}\protected@file@percent }
+\newlabel{alg:bank}{{1}{13}{构造逐维核 bank（\textbf {不使用任何观测数据}）}{algorithm.1}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces 拟合（\textbf  {不使用任何留出数据}）}}{13}{algorithm.2}\protected@file@percent }
+\newlabel{alg:fit}{{2}{13}{拟合（\textbf {不使用任何留出数据}）}{algorithm.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}实验设定与数据}{13}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}数据来源}{13}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}共享设定}{13}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}传感器布局}{13}{subsection.6.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces 所有表共享的设定。同一 seed 内所有方法共享场、掩码与噪声， 因此每个比较都是配对的。}}{14}{table.caption.20}\protected@file@percent }
+\newlabel{tab:settings}{{4}{14}{所有表共享的设定。同一 seed 内所有方法共享场、掩码与噪声， 因此每个比较都是配对的。}{table.caption.20}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces 传感器布局。$\mathrm  {depth}$ 指到最近墙面的距离。}}{14}{table.caption.21}\protected@file@percent }
+\newlabel{tab:layouts}{{5}{14}{传感器布局。$\mathrm {depth}$ 指到最近墙面的距离。}{table.caption.21}{}}
+\@writefile{toc}{\contentsline {paragraph}{四个角块与单个角块的配对。}{14}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}结果}{14}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}场景覆盖}{14}{subsection.7.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces 场景覆盖：三个算子族、两个维度、每种布局，$1\%$ 观测。}}{15}{table.caption.23}\protected@file@percent }
+\newlabel{tab:coverage}{{6}{15}{场景覆盖：三个算子族、两个维度、每种布局，$1\%$ 观测。}{table.caption.23}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces 与容量更大的模型、以及与同一份物理的另一种花法比较。 打星的臂\textbf  {在留出区域上}选架构、学习率或残差权重，并有 $4$--$6$ 倍优化预算； 本方法一组配置、零调参数据。最后一列是同一网络关掉物理。}}{15}{table.caption.24}\protected@file@percent }
+\newlabel{tab:baselines}{{7}{15}{与容量更大的模型、以及与同一份物理的另一种花法比较。 打星的臂\textbf {在留出区域上}选架构、学习率或残差权重，并有 $4$--$6$ 倍优化预算； 本方法一组配置、零调参数据。最后一列是同一网络关掉物理。}{table.caption.24}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}与更强的对手比较}{15}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{同一份物理，当先验比当残差惩罚值钱一个数量级。}{15}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}需要多少方程知识}{15}{subsection.7.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces 知识档位（单面墙，$3$ seeds）。通用字典的 atom 数与池化 bank 完全相同， 且 collapsed 参数化保证变分系数量与 bank 大小无关，所以比较不被参数预算污染。}}{16}{table.caption.26}\protected@file@percent }
+\newlabel{tab:ladder}{{8}{16}{知识档位（单面墙，$3$ seeds）。通用字典的 atom 数与池化 bank 完全相同， 且 collapsed 参数化保证变分系数量与 bank 大小无关，所以比较不被参数预算污染。}{table.caption.26}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}局限与尚未解释的现象}{16}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{本方法不赢调好的核，是打平。}{16}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{二维上随手固定一个合理常数就几乎追平。}{16}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{失败模式不体面。}{16}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{两面墙的不对称尚未完全解释。}{16}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{标准物理信息 GP 在这个尺度上更快。}{16}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}复现}{16}{section.9}\protected@file@percent }
+\gdef \@abspage@last{17}

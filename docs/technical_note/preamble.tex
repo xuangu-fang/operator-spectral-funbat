@@ -1,0 +1,63 @@
+% 共享导言区。与正文分开，使正文保持可读。
+\usepackage[UTF8]{ctex}
+\setCJKmainfont{Noto Serif CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmonofont{Noto Sans Mono CJK SC}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,multirow,array}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{graphicx}
+\graphicspath{{../../results/leak/}}
+\usepackage[table]{xcolor}
+\usepackage{geometry}
+\geometry{a4paper,margin=2.4cm}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,
+            urlcolor=blue!55!black]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,parsep=0pt,topsep=3pt}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\addtolength{\topmargin}{-2pt}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small 算子谱先验}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% 中文算法环境
+\floatname{algorithm}{算法}
+\renewcommand{\algorithmicrequire}{\textbf{输入：}}
+\renewcommand{\algorithmicensure}{\textbf{输出：}}
+\algrenewcommand\algorithmicfor{\textbf{对}}
+\algrenewcommand\algorithmicdo{\textbf{执行}}
+\algrenewcommand\algorithmicwhile{\textbf{当}}
+\algrenewcommand\algorithmicif{\textbf{若}}
+\algrenewcommand\algorithmicthen{\textbf{则}}
+\algrenewcommand\algorithmicelse{\textbf{否则}}
+\algrenewcommand\algorithmicend{\textbf{结束}}
+\algrenewcommand\algorithmicreturn{\textbf{返回}}
+
+% 记号
+\newcommand{\Lop}{\mathcal{L}}
+\newcommand{\Aop}{\mathcal{A}}
+\newcommand{\Sop}{S_{\mathrm{op}}}
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\NRMSE}{\mathrm{NRMSE}}
+\newcommand{\Om}{\Omega}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\theoremstyle{definition}
+\newtheorem{principle}{准则}
+\theoremstyle{plain}
+\newtheorem{proposition}{命题}
+
+% 结论框：把"能守住的话"和正文分开
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{takeaway}[1][]{
+  enhanced, breakable, colback=blue!3, colframe=blue!45!black,
+  boxrule=0.5pt, left=6pt, right=6pt, top=5pt, bottom=5pt,
+  fonttitle=\bfseries\small, title={#1}}
