@@ -23,6 +23,7 @@ from geoaware.operator_spectral_funbat import (  # noqa: E402
     ModeAdaptiveVariationalTucker, nonnegative_cp_spectrum, normalize_spectrum_cosine,
     real_cosine_basis)
 from forced_pde_solver import solve_multi_leak_3d  # noqa: E402
+from geoaware.config import add_config_arguments, load_config  # noqa: E402
 from run_leak_sensors import neumann_eigenvalues  # noqa: E402
 
 FIELD = dict(grid=(32, 32, 32), diffusivity=(0.02, 0.006, 0.012), reaction=0.04,
@@ -113,7 +114,8 @@ def fit_gp(shape, observed, targets, test, truth, spectra, bases, *, steps, seed
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
+    add_config_arguments(p)
+    p.add_argument("--seeds", type=int, nargs="+", default=None)
     p.add_argument("--layouts", nargs="+",
                    default=["random", "all_six_faces", "two_faces_opposite",
                             "one_face", "corner_cube"])
@@ -132,9 +134,16 @@ def main() -> None:
     a.output.mkdir(parents=True, exist_ok=True)
     device = torch.device(a.device)
 
-    shape = tuple(solve_multi_leak_3d(seed=0, **FIELD).field.shape)
+    config = load_config(a.config, overrides=a.overrides)
+    settings = config.field_kwargs()
+    NOMINAL.update({k: v for k, v in config.nominal().items()})
+    seeds = a.seeds if a.seeds is not None else config.require("evaluation")["seeds"]
+    print(f"  config '{config.name}'"
+          + (f" with {a.overrides}" if a.overrides else ""), flush=True)
+
+    shape = tuple(solve_multi_leak_3d(seed=0, **settings).field.shape)
     budget = int(round(a.ratio * int(np.prod(shape))))
-    ours = operator_spectra(shape, FIELD["dt"], BINS)
+    ours = operator_spectra(shape, settings["dt"], BINS)
     bases = tuple(real_cosine_basis(torch.arange(s, dtype=torch.float64) / s, b).float()
                   for s, b in zip(shape, BINS))
     print(f"  tensor {shape}, {int(np.prod(shape))} cells, {budget} observed", flush=True)
@@ -142,8 +151,8 @@ def main() -> None:
     records = []
     for layout in a.layouts:
         rows: dict[str, list] = {}
-        for seed in a.seeds:
-            field = solve_multi_leak_3d(seed=seed, **FIELD).field.to(device)
+        for seed in seeds:
+            field = solve_multi_leak_3d(seed=seed, **settings).field.to(device)
             observed, test = sensor_mask(shape, layout, budget, seed, device)
             if len(test) > a.max_test:
                 pick = torch.randperm(len(test), generator=torch.Generator(
@@ -200,7 +209,7 @@ def main() -> None:
 
     (a.output / f"{a.tag}_summary.json").write_text(json.dumps(
         {"field": {k: str(v) for k, v in FIELD.items()}, "nominal": NOMINAL,
-         "bins": BINS, "ranks": RANKS, "seeds": a.seeds, "records": records}, indent=2))
+         "bins": BINS, "ranks": RANKS, "seeds": seeds, "config": config.as_record(), "records": records}, indent=2))
 
 
 if __name__ == "__main__":

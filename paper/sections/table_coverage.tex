@@ -1,0 +1,24 @@
+\begin{table}[t]
+  \centering
+  \caption{\textbf{Scenario coverage.}  The tuning cost -- what it costs to choose a kernel from data a practitioner can collect rather than from the held-out region -- across three operator families, two dimensionalities and every sensor layout.  It is near zero wherever the sensors are scattered and large wherever they are confined, in every scenario, which is the claim this paper makes.  Cells marked \emph{---} were not run.}
+  \label{tab:coverage}
+  \small
+  \begin{tabular}{llccccc}
+    \toprule
+    & & \multicolumn{5}{c}{tuning cost, by sensor layout} \\
+    \cmidrule(lr){3-7}
+    dimension & operator & scattered & \multicolumn{3}{c}{confined} & \\
+    \midrule
+    \multicolumn{2}{l}{\emph{2-D space $+$ time}} & scattered & all walls & inner band & one wall & one corner \\
+    & reaction--diffusion & $+0.0000$ & $+0.0519$ & $+0.1219$ & $+0.2281$ & $+0.0726$ \\
+    & diffusion-dominated & $+0.0008$ & $+0.0320$ & $+0.0090$ & $+0.3411$ & $+0.0581$ \\
+    & advection--diffusion & $+0.0031$ & $+0.0046$ & $+0.1154$ & $+0.1996$ & $+0.1501$ \\
+    \addlinespace
+    \multicolumn{2}{l}{\emph{3-D space $+$ time}} & scattered & two faces & one face & one corner &  \\
+    & reaction--diffusion & $+0.0002$ & $+0.1463$ & $+0.2412$ & $+0.0031$ &  \\
+    & diffusion-dominated & --- & --- & --- & --- &  \\
+    & advection--diffusion & --- & --- & --- & --- &  \\
+    \addlinespace
+    \bottomrule
+  \end{tabular}
+\end{table}

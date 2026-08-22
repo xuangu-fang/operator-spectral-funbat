@@ -1,0 +1,6 @@
+# The 3-D room with decay from diffusion rather than absorption.
+inherits: room3d
+field:
+  reaction: 0.004
+nominal:
+  reaction: 0.006

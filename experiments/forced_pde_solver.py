@@ -501,6 +501,7 @@ def solve_multi_leak_3d(
     record_steps: int = 32,
     background_noise: float = 0.02,
     forcing_scale: int = 8,
+    drift: tuple[float, float, float] = (0.0, 0.0, 0.0),
     seed: int = 0,
 ) -> ForcedField:
     """The leak room in three spatial dimensions.
@@ -550,6 +551,23 @@ def solve_multi_leak_3d(
             forcing = forcing + background_noise * _smooth_noise(rng, grid, forcing_scale)
         hat = dctn(state, norm="ortho") * decay + dctn(forcing, norm="ortho") * dt
         state = idctn(hat, norm="ortho")
+        if any(drift):
+            # Same operator splitting as in two dimensions: a first-order upwind
+            # step in real space after the spectral diffusion-reaction step, with
+            # the CFL condition checked rather than assumed.
+            for axis, speed in enumerate(drift):
+                if not speed:
+                    continue
+                spacing = 1.0 / grid[axis]
+                if abs(speed) * dt / spacing >= 1.0:
+                    raise ValueError(
+                        f"advection violates CFL on axis {axis}: "
+                        f"|v| dt / h = {abs(speed) * dt / spacing:.2f} >= 1")
+                forward = np.diff(state, axis=axis, append=np.take(
+                    state, [-1], axis=axis)) / spacing
+                backward = np.diff(state, axis=axis, prepend=np.take(
+                    state, [0], axis=axis)) / spacing
+                state = state - dt * speed * (backward if speed > 0 else forward)
         if not np.isfinite(state).all():
             raise FloatingPointError(f"3-D multi-leak solver diverged at step {step}")
         if step >= burn_in:

@@ -1,0 +1,10 @@
+# The 3-D room with a mean wind.  The smaller time step is what allows a
+# velocity large enough to matter while keeping the upwind step inside its CFL
+# condition, which the solver checks at run time.
+inherits: room3d
+field:
+  dt: 0.15
+  burn_in: 800
+  drift: [0.09, 0.0, 0.0]
+nominal:
+  drift: [0.13, 0.0, 0.0]
