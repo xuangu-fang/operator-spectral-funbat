@@ -1,0 +1,10 @@
+# The negative control: with equal diffusivities the axes are equivalent, so a
+# per-axis prior should have nothing extra to offer.  Note that this does NOT
+# remove the wall asymmetry -- that comes from where the sources sit, not from
+# the operator, which is what this control was originally designed to test and
+# failed to.  See the handover document.
+inherits: base
+field:
+  diffusivity: [0.013, 0.013]
+nominal:
+  diffusivity: [0.02, 0.02]

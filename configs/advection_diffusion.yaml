@@ -1,0 +1,15 @@
+# A mean wind, Peclet about five, so transport dominates.  Included because we
+# expected to lose it: the construction uses an axis-wise even magnitude
+# spectrum and advection tilts the spectrum off centre, which our own
+# signed-spectrum audit lists as a representational limit.  At this Peclet
+# number it does not fail.
+#
+# The smaller time step is what allows a velocity large enough to matter while
+# keeping the upwind step inside its CFL condition, which the solver checks.
+inherits: base
+field:
+  dt: 0.15
+  burn_in: 800
+  drift: [0.09, 0.0]
+nominal:
+  drift: [0.13, 0.0]

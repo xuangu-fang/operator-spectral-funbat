@@ -1,0 +1,29 @@
+# The room in three spatial dimensions, which is the geometry the motivating
+# applications have.  A wall-mounted array is a face rather than a line and the
+# unobserved region is half a volume, so the same fraction of observed cells
+# buys considerably less.
+inherits: base
+field:
+  solver: multi_leak_3d
+  grid: [32, 32, 32]
+  diffusivity: [0.02, 0.006, 0.012]
+  sources:                    # (x, y, z, width, period)
+    - [0.30, 0.65, 0.40, 0.10, 15.0]
+    - [0.70, 0.35, 0.60, 0.09, 25.0]
+    - [0.55, 0.75, 0.30, 0.08, 40.0]
+  record_steps: 32
+nominal:
+  diffusivity: [0.03, 0.012, 0.018]
+model:
+  bins: [8, 8, 8, 8]
+  ranks: [5, 4, 4, 4]
+optimisation:
+  steps: 400
+evaluation:
+  seeds: [0, 1]
+layouts:
+  - random
+  - all_six_faces
+  - two_faces_opposite
+  - one_face
+  - corner_cube

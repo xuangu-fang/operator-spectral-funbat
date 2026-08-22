@@ -70,10 +70,9 @@ def main() -> None:
         budget = int(round(a.ratio * int(np.prod(shape))))
         bases = tuple(real_cosine_basis(torch.arange(s, dtype=torch.float64) / s, b).float()
                       for s, b in zip(shape, base.BINS))
-        saved = dict(base.NOMINAL)
-        base.NOMINAL.update(diffusivity=tuple(1.5 * d for d in diffusivity))
-        ours = base.operator_spectra(shape, settings["dt"], base.BINS)
-        base.NOMINAL.clear(); base.NOMINAL.update(saved)
+        # The prior is told coefficients 1.5x the truth, as everywhere else.
+        told = dict(base.NOMINAL, diffusivity=tuple(1.5 * d for d in diffusivity))
+        ours = base.operator_spectra(shape, settings["dt"], base.BINS, nominal=told)
 
         share_x, share_y = profile_share(solve_multi_leak(seed=0, **settings).field)
         entry = {"condition": label, "profile_share_x": share_x,

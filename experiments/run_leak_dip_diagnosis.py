@@ -64,11 +64,12 @@ def main() -> None:
                   for s, b in zip(shape, base.BINS))
 
     banks = {}
-    saved = dict(base.NOMINAL)
-    banks["nominal (wrong by 50%)"] = base.operator_spectra(shape, base.FIELD["dt"], base.BINS)
-    base.NOMINAL.update(diffusivity=base.FIELD["diffusivity"], reaction=base.FIELD["reaction"])
-    banks["true coefficients"] = base.operator_spectra(shape, base.FIELD["dt"], base.BINS)
-    base.NOMINAL.clear(); base.NOMINAL.update(saved)
+    banks["nominal (wrong by 50%)"] = base.operator_spectra(
+        shape, base.FIELD["dt"], base.BINS)
+    banks["true coefficients"] = base.operator_spectra(
+        shape, base.FIELD["dt"], base.BINS,
+        nominal={"diffusivity": base.FIELD["diffusivity"],
+                 "reaction": base.FIELD["reaction"]})
 
     records = []
     for width in a.widths:

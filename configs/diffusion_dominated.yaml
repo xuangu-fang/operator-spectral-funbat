@@ -1,0 +1,7 @@
+# Decay comes from diffusion rather than absorption: the reaction term is cut
+# tenfold.  Tests whether the result needs the absorbing term at all.
+inherits: base
+field:
+  reaction: 0.004
+nominal:
+  reaction: 0.006

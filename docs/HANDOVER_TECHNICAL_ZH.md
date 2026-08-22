@@ -267,6 +267,140 @@ $$
 
 ---
 
+## 2A. 算法表：公式、代码与输入输出的对应
+
+下面三段伪代码把 §2 的推导落到可执行的粒度。**每一行都标了对应的公式号和函数名**，
+接手时可以逐行对照，不必猜。
+
+### 记号
+
+| 符号 | 含义 | 代码里的东西 |
+|---|---|---|
+| $D$ | mode 数（2D 场为 3，3D 场为 4） | `len(shape)` |
+| $n_d$ | 第 $d$ 个 mode 的格点数 | `shape[d]` |
+| $K_d$ | 第 $d$ 个 mode 的频率数 | `BINS[d]` |
+| $R_d$ | 第 $d$ 个 mode 的 Tucker 秩 | `RANKS[d]` |
+| $Q$ | bank 里的 atom 数 | `atoms`，主线为 4 |
+| $\theta$ | 算子系数 $(D_x, D_y, r)$ | `NOMINAL` |
+| $S_{\mathrm{op}}$ | 联合谱，$K_1 \times \cdots \times K_D$ | `joint` |
+| $s_{dq}$ | 第 $d$ 个 mode 的第 $q$ 条谱，长 $K_d$ | `spectra[d][q]` |
+| $\Phi_d$ | 第 $d$ 个 mode 的本征基，$n_d \times K_d$ | `bases[d]` |
+| $\pi_{dq}$ | 混合权重 | `routing_weights()` |
+| $\mathbf{a}^{(d)}$ | 变分系数，$R_d \times K_d$ | `variational_mean[d]` |
+| $\mathcal{G}$ | Tucker 核，$R_1 \times \cdots \times R_D$ | `core` |
+
+---
+
+### 算法 1：从算子构造逐维核 bank
+
+> **输入** 算子族与系数 $\theta$（或范围 $\Theta$）、网格 $\lbrace n_d \rbrace$、
+> 频率预算 $\lbrace K_d \rbrace$、atom 数 $Q$、时间步长 $\Delta t$
+> **输出** 每个 mode 一组非负谱 $\lbrace s_{dq} \rbrace_{q=1}^{Q}$，以及本征基 $\lbrace \Phi_d \rbrace$
+> **不需要** 任何观测数据
+
+```
+ 1  for d in spatial modes:                                   # 式 (2.1) 离散化
+ 2      λ_d[k] ← (2 − 2 cos(π k / n_d)) / h_d²   for k < K_d      neumann_eigenvalues
+ 3  ω[j] ← π j / (T Δt)                          for j < K_t
+ 4
+ 5  for each (j, a, b):                                        # 式 (2.2) 联合谱
+ 6      S_op[j,a,b] ← 1 / ( ω[j]² + (r + D_x λ_x[a] + D_y λ_y[b])² )
+ 7
+ 8  M ← ones_like(S_op);  M[0,…,0] ← 0                        # §2.3 掩码而非置零
+ 9  {s_dq} ← NonnegCP(S_op, rank=Q, mask=M)                    nonnegative_cp_spectrum
+10  for d: s_dq ← s_dq / Σ_k s_dq[k]                          # §2.5 余弦基归一化
+11
+12  for d:                                                     # §2.5 边界决定本征基
+13      Φ_d ← [ 1 , √2·cos(π k x) ]  for k = 1 … K_d−1            real_cosine_basis
+14  return {s_dq}, {Φ_d}
+```
+
+**K1 档的唯一改动**（§2.7）：把第 5–9 行放进对 $\Theta_1$ 的采样循环，
+每组 $\theta_m$ 分离出 $Q_1$ 个 atom，最后把 $M \cdot Q_1$ 个 atom **池化**成一个 bank：
+
+```
+ 5' for m = 1 … M:
+ 6'     θ_m ← LogUniform(Θ₁)                        确定性 seed，Latin hypercube
+ 7'     S_op^(m) ← 式 (2.2) with θ_m
+ 8'     {s_dq^(m)} ← NonnegCP(S_op^(m), rank=Q₁, mask=M)
+ 9' {s_d·} ← concat over m                                   # atom 数变成 M·Q₁
+```
+
+> **公平性**：与 K1 bank 比较的 generic 字典必须有**完全相同的 atom 数**。
+> collapsed 参数化保证变分系数量与 bank 大小无关，所以这个比较不被参数预算污染。
+
+---
+
+### 算法 2：拟合（变分推断）
+
+> **输入** 观测索引 $\Omega$ 与读数 $\mathbf{y}$、bank $\lbrace s_{dq} \rbrace$、
+> 本征基 $\lbrace \Phi_d \rbrace$、秩 $\lbrace R_d \rbrace$、步数 $N$、学习率 $\eta$
+> **输出** 后验均值参数 $\lbrace \mathbf{a}^{(d)} \rbrace$、$\mathcal{G}$、混合权重 $\pi$
+> **不使用** 任何留出数据（我们这一臂没有验证集）
+
+```
+ 1  初始化 a^(d) ~ N(0, 0.12²),  log σ^(d) ← −2.5,  G ~ N(0, 1/√∏R_d),  logits ← 0
+ 2  for step = 1 … N:
+ 3      π_d ← softmax(logits)                                  routing="global": 三个 mode 共享
+ 4      s̄_d ← Σ_q π_dq · s_dq                                 # §2.7 混合
+ 5      Ψ_d ← Φ_d ⊙ √s̄_d          (广播到 [n_d, K_d])         # §2.4 Mercer 特征
+ 6      for each observed entry n ∈ minibatch:
+ 7          f_r^(d) ← Σ_k Ψ_d[i_d(n), k] · ã^(d)[r, k]         ã = a + σ·ε  重参数化
+ 8          û(n)   ← Σ_{r₁…r_D} G[r₁,…,r_D] · Π_d f_{r_d}^(d)      _contract
+ 9      L ← −Σ_n log N(y_n ; û(n), σ_noise²)  +  KL(q‖N(0,I))  # §2.8 ELBO
+10      反向传播，梯度裁剪到 10，Adam(η) 更新 a, log σ, G, logits, log σ_noise
+11  return 参数
+```
+
+**几个必须知道的实现细节**
+
+| 行 | 细节 | 为什么 |
+|---|---|---|
+| 5 | $\sqrt{\cdot}$ 前把谱截断到 $10^{-12}$，**只在构造特征时** | $\sqrt{\cdot}$ 在 0 处导数无穷；截断保住"严格零支撑"控制实验的语义，同时避免 NaN 梯度 |
+| 8 | 只在观测到的 entry 上求值 | $64^3$ 的张量在训练中**从不物化** |
+| 9 | 先验是标准正态 | 尺度已经吸进 $\sqrt{s_d}$，所以 KL 有闭式 |
+| 3 | `routing="global"` | `per_mode` / `per_mode_rank` 在 1% 观测下过拟合，实测更差 |
+
+---
+
+### 算法 3：三档评估协议（主表怎么来的）
+
+> **输入** 场生成器、布局、观测比例、seed 列表、长度尺度网格 $\mathcal{E}$
+> **输出** 每个臂的 held-out NRMSE，以及**调参代价**
+
+```
+ 1  for seed in seeds:
+ 2      X      ← Solve(seed)                                   独立求解器，非模型先验采样
+ 3      Ω, Ω̄  ← SensorMask(layout, budget, seed)               同 seed 内所有臂共用
+ 4      y      ← X[Ω] + noise                                  同 seed 内所有臂共用
+ 5
+ 6      # 臂一：我们，零调参数据
+ 7      e_ours ← Fit(Ω, y, bank=算法1(θ_nominal)) 在 Ω̄ 上评估
+ 8
+ 9      # 臂二：可部署 Matérn —— 实践者唯一能做的
+10      Ω_tr, Ω_val ← 把 Ω 随机切成 75% / 25%
+11      ℓ_dep ← argmin_{ℓ∈ℰ}  Fit(Ω_tr, y_tr, Matérn(ℓ)) 在 Ω_val 上的误差
+12      e_dep ← Fit(Ω, y, Matérn(ℓ_dep)) 在 Ω̄ 上评估
+13
+14      # 臂三：oracle Matérn —— 上界，标 ★，没人跑得了
+15      ℓ_orc ← argmin_{ℓ∈ℰ}  Fit(Ω, y, Matérn(ℓ)) 在 Ω̄ 上的误差
+16      e_orc ← 该最小值
+17
+18  调参代价 ← mean(e_dep) − mean(e_orc)          ← 本文的核心量
+19  报告 ℓ_dep 与 ℓ_orc 的实际取值           ← 机制证据，比差值更难反驳
+```
+
+> **第 15 行是作弊的，这正是重点。** oracle 用真实留出区域选超参，
+> 现实中拿不到。它存在是为了回答"假如你事先知道最佳超参，通用核能做到多好"。
+> **第 18 行的差值是 setting 的性质，与我们的方法好坏无关**——
+> 这是本文最难被推翻的那个数字。
+>
+> **第 11 行和第 15 行的网格 $\mathcal{E}$ 必须夹住最优。**
+> 检查方法：如果 $\ell_{\mathrm{orc}}$ 落在 $\mathcal{E}$ 的端点，网格不够宽，**结果不可用**。
+> 这个项目唯一一次撤回就是因为没检查。
+
+---
+
 ## 3. 相关工作（以及本文**不**主张什么）
 
 | 工作 | 它做什么 | 关键差别 |

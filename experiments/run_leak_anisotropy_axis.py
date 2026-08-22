@@ -31,11 +31,10 @@ WALLS = ("one_wall_strip", "one_wall_strip_y")
 
 
 def run_condition(name, field_kwargs, nominal, seeds, a, device):
-    saved = dict(base.NOMINAL)
-    base.NOMINAL.update(nominal)
     shape = tuple(solve_multi_leak(seed=0, **field_kwargs).field.shape)
     budget = int(round(a.ratio * int(np.prod(shape))))
-    ours = base.operator_spectra(shape, field_kwargs["dt"], base.BINS)
+    ours = base.operator_spectra(shape, field_kwargs["dt"], base.BINS,
+                                 nominal=nominal)
     bases = tuple(real_cosine_basis(torch.arange(s, dtype=torch.float64) / s, b).float()
                   for s, b in zip(shape, base.BINS))
     out = []
@@ -67,7 +66,6 @@ def run_condition(name, field_kwargs, nominal, seeds, a, device):
               f"matern {cell['matern']['mean']:.4f}  margin {cell['paired_margin']:+.4f} "
               f"({cell['relative_percent']:+.1f}%)  wins {cell['paired_wins']}/{len(seeds)}",
               flush=True)
-    base.NOMINAL.clear(); base.NOMINAL.update(saved)
     return out
 
 

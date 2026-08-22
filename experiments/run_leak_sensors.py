@@ -24,6 +24,7 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src")); sys.path.insert(0, str(ROOT / "experiments"))
 
+from geoaware.config import add_config_arguments, load_config  # noqa: E402
 from geoaware.operator_spectral_funbat import (  # noqa: E402
     ModeAdaptiveVariationalTucker, extended_generic_dictionary, nonnegative_cp_spectrum,
     normalize_spectrum_cosine, real_cosine_basis,
@@ -31,21 +32,28 @@ from geoaware.operator_spectral_funbat import (  # noqa: E402
 from forced_pde_solver import solve_multi_leak  # noqa: E402
 from neural_functional_tucker import fit_neural_tucker  # noqa: E402
 
-FIELD = dict(grid=(64, 64), diffusivity=(0.02, 0.006), reaction=0.04,
-             sources=((0.30, 0.65, 0.09, 15.0), (0.70, 0.35, 0.07, 25.0),
-                      (0.55, 0.75, 0.06, 40.0)),
-             dt=0.6, burn_in=200, record_steps=64, background_noise=0.02)
+# The defaults below are read from configs/base.yaml rather than written here,
+# so a new study is a YAML file instead of an edit to this module.  They stay
+# module-level because a dozen scripts import them by name; a script that wants
+# a different setting should load its own Config and pass the values in, not
+# reassign these.  (Three scripts used to reach in and rewrite NOMINAL, which is
+# unsafe the moment two studies share a process and hides what a run used.)
+_DEFAULTS = load_config("base")
+
+FIELD = _DEFAULTS.field_kwargs()
+FIELD.pop("drift", None) if not any(_DEFAULTS.get("field.drift", (0, 0))) else None
 # What the method is told: the equation's form with nominal coefficients that
 # are deliberately not the generating ones.
-NOMINAL = dict(diffusivity=(0.03, 0.012), reaction=0.06)
+NOMINAL = {k: v for k, v in _DEFAULTS.nominal().items() if k != "drift"}
 # The baseline's length-scale grid must contain the baseline's own optimum.  An
 # audit against a wide grid found it at 2.4 on the one-wall layout -- far outside
 # the original (0.12, 0.32, 0.8) -- where Matern reaches 0.545 rather than the
-# 0.657 that grid could manage.  The optimum is now interior (0.553 at 1.6, 0.545
-# at 2.4, 0.567 at 3.5), so the arm is no longer limited by where we stopped.
-LENGTH_SCALES = (0.12, 0.32, 0.8, 1.6, 2.4, 3.5)
-BINS = (12, 12, 12)
-RANKS = (8, 5, 5)
+# 0.657 that grid could manage.  Any new grid must be checked the same way: if
+# the chosen value lands on an end point, the grid is too narrow and the numbers
+# are not usable.
+LENGTH_SCALES = tuple(_DEFAULTS.require("baselines")["length_scales"])
+BINS = tuple(_DEFAULTS.require("model")["bins"])
+RANKS = tuple(_DEFAULTS.require("model")["ranks"])
 
 
 def neumann_eigenvalues(size: int) -> torch.Tensor:
@@ -53,13 +61,21 @@ def neumann_eigenvalues(size: int) -> torch.Tensor:
     return (2 - 2 * torch.cos(np.pi * k / size)) * size ** 2
 
 
-def operator_spectra(shape, dt: float, bins, atoms: int = 4):
-    """Per-mode spectra from the discrete operator with nominal coefficients."""
-    dx, dy = NOMINAL["diffusivity"]
+def operator_spectra(shape, dt: float, bins, atoms: int = 4, nominal=None):
+    """Per-mode spectra from the discrete operator with nominal coefficients.
+
+    ``nominal`` defaults to the module-level NOMINAL.  Pass it explicitly to
+    build a bank for different coefficients -- a knowledge-ladder rung, an
+    isotropic control, a coefficient sweep -- rather than rewriting the global,
+    which several scripts used to do and which is unsafe as soon as two studies
+    share a process.
+    """
+    told = NOMINAL if nominal is None else nominal
+    dx, dy = told["diffusivity"]
     lam_x = neumann_eigenvalues(shape[1])[:bins[1]]
     lam_y = neumann_eigenvalues(shape[2])[:bins[2]]
     omega = np.pi * torch.arange(bins[0], dtype=torch.float64) / (shape[0] * dt)
-    elliptic = NOMINAL["reaction"] + dx * lam_x[:, None] + dy * lam_y[None, :]
+    elliptic = told["reaction"] + dx * lam_x[:, None] + dy * lam_y[None, :]
     joint = (1.0 / (omega[:, None, None].square() + elliptic[None].square())
              .clamp_min(1e-12)).float()
     # The data is mean-centred, which removes exactly the (0,0,0) joint mode.
@@ -144,19 +160,30 @@ def sensor_mask(shape, layout: str, budget: int, seed: int, device):
     return grid[keep], grid[~keep]
 
 
-def fit_gp(field, observed, targets, test, truth, spectra, bases, *, steps, seed, device, lr):
+def fit_gp(field, observed, targets, test, truth, spectra, bases, *, steps, seed,
+           device, lr, ranks=None, routing="global", noise_std=0.08,
+           elbo_samples=3, grad_clip=10.0):
+    """Fit the host on the observed entries and score it on the held-out ones.
+
+    The keyword defaults reproduce every table in the paper.  They are arguments
+    rather than constants so a study can vary them from a config without editing
+    this module, which fourteen scripts import.
+    """
     torch.manual_seed(seed + 10_000)
     model = ModeAdaptiveVariationalTucker(
         tuple(torch.arange(s, device=device) / s for s in field.shape),
-        [s.to(device) for s in spectra], ranks=RANKS, routing="global", noise_std=0.08,
-        basis=("operator", "operator", "operator"),
+        [s.to(device) for s in spectra],
+        ranks=RANKS if ranks is None else tuple(ranks),
+        routing=routing, noise_std=noise_std,
+        basis=("operator",) * len(field.shape),
         eigenbasis=tuple(b.to(device) for b in bases)).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     for _ in range(steps):
         optimizer.zero_grad(set_to_none=True)
-        loss, _ = model.negative_elbo(observed, targets, total_count=len(targets), samples=3)
+        loss, _ = model.negative_elbo(observed, targets, total_count=len(targets),
+                                      samples=elbo_samples)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
         optimizer.step()
     with torch.no_grad():
         prediction = model.posterior_mean(test)
@@ -166,10 +193,9 @@ def fit_gp(field, observed, targets, test, truth, spectra, bases, *, steps, seed
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
-    parser.add_argument("--layouts", nargs="+",
-                        default=["random", "wall_ring", "near_wall",
-                                 "one_wall_strip", "corner_block"])
+    add_config_arguments(parser)
+    parser.add_argument("--seeds", type=int, nargs="+", default=None)
+    parser.add_argument("--layouts", nargs="+", default=None)
     parser.add_argument("--ratio", type=float, default=0.01)
     parser.add_argument("--noise-std", type=float, default=0.05)
     parser.add_argument("--steps", type=int, default=1000)
@@ -182,20 +208,35 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     device = torch.device(args.device)
 
-    probe = solve_multi_leak(seed=0, **FIELD)
+    # A run is defined by its config; the command line only overrides leaves,
+    # and both are written into the summary so a number can always be traced to
+    # the exact settings that produced it.
+    config = load_config(args.config, overrides=args.overrides)
+    field_settings = config.field_kwargs()
+    told = {k: v for k, v in config.nominal().items() if k != "drift"}
+    bins = tuple(config.require("model")["bins"])
+    ranks = tuple(config.require("model")["ranks"])
+    length_scales = tuple(config.require("baselines")["length_scales"])
+    seeds = args.seeds if args.seeds is not None else config.require("evaluation")["seeds"]
+    layouts = args.layouts if args.layouts is not None else config.require("layouts")
+    print(f"  config '{config.name}'"
+          + (f" with {args.overrides}" if args.overrides else "")
+          + f", {len(seeds)} seeds, {len(layouts)} layouts", flush=True)
+
+    probe = solve_multi_leak(seed=0, **field_settings)
     shape = tuple(probe.field.shape)
     budget = int(round(args.ratio * int(np.prod(shape))))
-    ours = operator_spectra(shape, FIELD["dt"], BINS)
+    ours = operator_spectra(shape, field_settings["dt"], bins, nominal=told)
     dictionary = [normalize_spectrum_cosine(extended_generic_dictionary(4, b - 1)[1])
-                  for b in BINS]
+                  for b in bins]
     bases = tuple(real_cosine_basis(torch.arange(s, dtype=torch.float64) / s, b).float()
-                  for s, b in zip(shape, BINS))
+                  for s, b in zip(shape, bins))
 
     records = []
-    for layout in args.layouts:
+    for layout in layouts:
         rows: dict[str, list[float]] = {}
-        for seed in args.seeds:
-            solved = solve_multi_leak(seed=seed, **FIELD)
+        for seed in seeds:
+            solved = solve_multi_leak(seed=seed, **field_settings)
             field = solved.field.to(device)
             observed, test = sensor_mask(shape, layout, budget, seed, device)
             generator = torch.Generator(device=device).manual_seed(seed + 991)
@@ -216,7 +257,7 @@ def main() -> None:
             # length scales on those.  With sensors confined, every point it can
             # hold out sits inside the same patch, so it scores interpolation
             # while deployment asks for extrapolation.
-            oracle = {ls: gp(matern_spectra(BINS, ls)) for ls in LENGTH_SCALES}
+            oracle = {ls: gp(matern_spectra(bins, ls)) for ls in length_scales}
             oracle_best = min(oracle, key=oracle.get)
             rows.setdefault("matern_oracle", []).append(oracle[oracle_best])
             rows.setdefault("_oracle_length_scale", []).append(oracle_best)
@@ -227,15 +268,15 @@ def main() -> None:
             inner, held = split[:cut], split[cut:]
             validation = {ls: fit_gp(field, observed[inner], targets[inner],
                                      observed[held], targets[held],
-                                     matern_spectra(BINS, ls), bases, steps=args.steps,
+                                     matern_spectra(bins, ls), bases, steps=args.steps,
                                      seed=seed, device=device, lr=args.lr)
-                          for ls in LENGTH_SCALES}
+                          for ls in length_scales}
             chosen = min(validation, key=validation.get)
-            rows.setdefault("matern_deployable", []).append(gp(matern_spectra(BINS, chosen)))
+            rows.setdefault("matern_deployable", []).append(gp(matern_spectra(bins, chosen)))
             rows.setdefault("_chosen_length_scale", []).append(chosen)
             rows.setdefault("spectral_mixture", []).append(gp(dictionary))
             rows.setdefault("neural_tucker", []).append(fit_neural_tucker(
-                shape, observed, targets, test, truth, ranks=RANKS,
+                shape, observed, targets, test, truth, ranks=ranks,
                 steps=args.neural_steps, seed=seed, device=device))
         cell = {"layout": layout, "observed": budget,
                 "chosen_length_scales": rows.pop("_chosen_length_scale"),
@@ -265,8 +306,9 @@ def main() -> None:
               f"ours vs oracle {cell['gap_to_oracle']:+.4f}", flush=True)
 
     (args.output / f"{args.tag}_summary.json").write_text(json.dumps(
-        {"field": FIELD, "nominal_prior": NOMINAL, "bins": BINS, "ranks": RANKS,
-         "config": {k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()},
+        {"config": config.as_record(),
+         "command_line": {k: (str(v) if isinstance(v, Path) else v)
+                          for k, v in vars(args).items()},
          "records": records}, indent=2))
 
 

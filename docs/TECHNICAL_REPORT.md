@@ -1,5 +1,22 @@
 # 方向 3 技术报告：Operator-Spectral FunBaT
 
+<!-- STATUS BANNER -- keep at the top -->
+> ## ⚠ 历史档案，不是当前口径
+>
+> **当前有效的技术口径见 [`HANDOVER_TECHNICAL_ZH.md`](HANDOVER_TECHNICAL_ZH.md)。**
+>
+> 本文写于主线转向**受限传感器布局**之前，其中的结论有一部分已被后续实验推翻：
+>
+> | 本文可能出现的说法 | 现状 |
+> |---|---|
+> | 随机掩码下相对通用字典 **+5.5% / +8.0%** | **打平**。该 margin 建立在只扫了 3 个长度尺度的 Matérn 上；网格放宽后 baseline 自己的最优在 $\ell = 2.4$ |
+> | 单面墙 **+17.2%** | **已撤回**，同一原因。修正后 0.5448 vs 0.5449 |
+> | "只需要方程的形式" | 不准确。主表用的是**单个点估计（错 1.5 倍）走 K2 的机器**，真正的 K1（范围 + 池化）见交接文稿 §2.7 |
+> | 主指标是随机掩码下的重构 | 主指标已改为**受限布局**下的重构，核心量是**调参代价** |
+>
+> 保留本文是为了记录推导与失败路径，**不要从这里取数字**。
+
+
 > **本文件是历史档案，不是当前投稿口径。** 论文级的 Introduction + Related Work + Method + 冻结确认结果见 [`PAPER_TECHNICAL_REPORT_ZH.md`](PAPER_TECHNICAL_REPORT_ZH.md)。
 > 本文件保留 2026-08-15 expanded-feature POC 与更早 domain-kernel dictionary 支线的完整历史。**其数值使用 expanded 参数化（每个 atom 一套独立系数），与新的 collapsed 公平确认结果不可混表。**
 > 公式已于 2026-08-19 统一为 `$ ... $` / `$$ ... $$`，可在 GitHub 网页端渲染。

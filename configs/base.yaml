@@ -1,0 +1,65 @@
+# The reaction-diffusion leak room: every table in the paper starts from this.
+#
+# A variant names this file under `inherits` and overrides only what differs,
+# so a new operator family or a new room is a dozen lines rather than a copy.
+# Unknown keys are an error, not a silent no-op -- a typo in a hyper-parameter
+# name is otherwise indistinguishable from a null result.
+
+field:
+  solver: multi_leak          # experiments/forced_pde_solver.py
+  grid: [64, 64]
+  diffusivity: [0.02, 0.006]  # the truth; the prior is not told these
+  reaction: 0.04
+  sources:                    # (x, y, width, period)
+    - [0.30, 0.65, 0.09, 15.0]
+    - [0.70, 0.35, 0.07, 25.0]
+    - [0.55, 0.75, 0.06, 40.0]
+  dt: 0.6
+  burn_in: 200
+  record_steps: 64
+  background_noise: 0.02
+  drift: [0.0, 0.0]           # mean wind; a variant overrides it, base declares it
+
+# What the prior is told.  Deliberately wrong by 50%: the claim is that the
+# form of the equation suffices, so the coefficients must not be correct.
+nominal:
+  diffusivity: [0.03, 0.012]
+  reaction: 0.06
+  drift: [0.0, 0.0]
+
+model:
+  bins: [12, 12, 12]          # frequencies per mode
+  ranks: [8, 5, 5]            # Tucker rank per mode; independent on purpose
+  atoms: 4                    # atoms in the operator bank
+  routing: global             # per_mode / per_mode_rank over-fit at 1% observed
+  basis: operator             # boundary-matched cosines; see handover doc 2.5
+  noise_std: 0.08
+  separation_steps: 1200
+  separation_seed: 17
+
+optimisation:
+  steps: 1000
+  lr: 0.02
+  elbo_samples: 3
+  grad_clip: 10.0
+
+evaluation:
+  ratio: 0.01                 # fraction of entries observed
+  noise_std: 0.05             # observation noise
+  seeds: [0, 1, 2, 3, 4]
+  validation_fraction: 0.25   # the deployable tier's split of the sensor data
+
+# The grid the Matern arms search.  It MUST bracket their own optimum -- a grid
+# that stops short produces a number that looks like a measurement.  The one
+# retraction in this project came from (0.12, 0.32, 0.8), whose optimum sat
+# outside it at 2.4.  Check that the chosen value is never an end point.
+baselines:
+  length_scales: [0.12, 0.32, 0.8, 1.6, 2.4, 3.5]
+  fixed_length_scale: 1.6     # the best single constant, for the no-tuning arm
+
+layouts:
+  - random
+  - wall_ring
+  - near_wall
+  - one_wall_strip
+  - corner_block
