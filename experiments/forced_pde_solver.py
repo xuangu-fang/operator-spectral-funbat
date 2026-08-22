@@ -582,3 +582,70 @@ def solve_multi_leak_3d(
         grid=grid,
         dt=dt,
     )
+
+
+def solve_steady_state_2d(
+    *,
+    grid: tuple[int, int] = (256, 256),
+    diffusivity: tuple[float, float] = (0.02, 0.006),
+    reaction: float = 0.04,
+    sources: tuple[tuple[float, float, float, float], ...] = (
+        (0.30, 0.65, 0.09, 1.0),
+        (0.70, 0.35, 0.07, 0.8),
+        (0.55, 0.75, 0.06, 0.6),
+    ),
+    background_noise: float = 0.02,
+    forcing_scale: int = 32,
+    seed: int = 0,
+) -> ForcedField:
+    """A purely spatial field at steady state: no time axis at all.
+
+    Every other field in this project is space plus time, so the tensor has a
+    mode along which the operator is a first derivative and the field is nearly
+    constant -- a mode that carries a great deal of the structure and is fully
+    observed by any sensor layout.  Removing it is a genuinely different regime,
+    not a smaller version of the same one: two modes instead of three, and no
+    time axis to borrow information along.
+
+    It is also where resolution can be pushed.  At steady state the solve is a
+    single division in the cosine domain rather than an integration, so 256x256
+    costs no more than 64x64 did with 64 frames, while making the same 1%
+    observation budget cover far more of the domain.
+
+    Solves ``(r - Dx d_xx - Dy d_yy) u = f`` with no-flux walls, which is
+    diagonal in the DCT basis, so the answer is exact rather than integrated.
+    Each source is ``(x, y, width, amplitude)``.
+    """
+    from scipy.fft import dctn, idctn
+
+    rng = np.random.default_rng(seed)
+    nx, ny = grid
+    lx = -_dct_eigenvalues(nx, 1.0 / nx)[:, None]
+    ly = -_dct_eigenvalues(ny, 1.0 / ny)[None, :]
+    elliptic = reaction + diffusivity[0] * lx + diffusivity[1] * ly
+    if np.any(elliptic <= 0):
+        raise ValueError("elliptic operator is not positive definite")
+
+    x = (np.arange(nx) + 0.5) / nx
+    y = (np.arange(ny) + 0.5) / ny
+    forcing = np.zeros(grid)
+    for cx, cy, width, amplitude in sources:
+        squared = (x[:, None] - cx) ** 2 + (y[None, :] - cy) ** 2
+        blob = np.exp(-0.5 * squared / width ** 2)
+        forcing = forcing + amplitude * blob / max(blob.max(), 1e-12)
+    if background_noise > 0:
+        forcing = forcing + background_noise * _smooth_noise(rng, grid, forcing_scale)
+
+    field = idctn(dctn(forcing, norm="ortho") / elliptic, norm="ortho")
+    if not np.isfinite(field).all():
+        raise FloatingPointError("steady-state solve produced non-finite values")
+    field = torch.from_numpy(field).float()
+    field = (field - field.mean()) / field.std().clamp_min(1e-8)
+    return ForcedField(
+        field=field,
+        operator="steady_state_2d",
+        parameters={"diffusivity": diffusivity, "reaction": reaction,
+                    "sources": sources, "seed": seed},
+        grid=grid,
+        dt=0.0,
+    )

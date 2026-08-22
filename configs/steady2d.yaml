@@ -1,0 +1,31 @@
+# A purely spatial field at steady state, at high resolution.
+#
+# Every other configuration here is space plus time.  That gives the tensor a
+# mode along which the field is nearly constant and which every sensor layout
+# observes in full -- a mode that carries structure for free.  Removing it is a
+# different regime rather than a smaller one: two modes instead of three, and no
+# time axis to borrow information along.
+#
+# Resolution can be pushed here because the steady state is one division in the
+# cosine domain rather than an integration: 256x256 solves in 0.02 s.
+inherits: base
+field:
+  solver: steady_state_2d
+  grid: [256, 256]
+  sources:                    # (x, y, width, amplitude) -- amplitude, not period
+    - [0.30, 0.65, 0.09, 1.0]
+    - [0.70, 0.35, 0.07, 0.8]
+    - [0.55, 0.75, 0.06, 0.6]
+  dt: 0.0                     # unused; kept so the schema stays uniform
+  burn_in: 0
+  record_steps: 0
+model:
+  bins: [16, 16]              # two modes, and a larger budget than 64x64 allowed
+  ranks: [8, 8]
+evaluation:
+  seeds: [0, 1, 2]
+layouts:
+  - random
+  - wall_ring
+  - one_wall_strip
+  - corner_block
